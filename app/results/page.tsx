@@ -1,0 +1,76 @@
+import type { Metadata } from "next";
+import { SiteFrame } from "@/components/ui/SiteFrame";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+export const metadata: Metadata = { title: "Results" };
+
+// "Live" numbers — never cache this page.
+export const dynamic = "force-dynamic";
+
+export default async function ResultsPage() {
+  const db = createAdminClient();
+
+  const [{ count: verifiedCount }, { data: winnerRows }, { data: latestDraw }] =
+    await Promise.all([
+      db.from("entries").select("*", { count: "exact", head: true }).eq("verified", true),
+      db.from("winners").select("entry_id, created_at").order("created_at", { ascending: true }),
+      db.from("draws").select("drawn_at").order("drawn_at", { ascending: false }).limit(1).maybeSingle(),
+    ]);
+
+  const entryIds = (winnerRows ?? []).map((w) => w.entry_id);
+  const { data: winnerEntries } = entryIds.length
+    ? await db
+        .from("entries")
+        .select("name, ticket_code")
+        .in("id", entryIds)
+        .order("name", { ascending: true })
+    : { data: [] as { name: string; ticket_code: string }[] };
+
+  const hasWinners = (winnerEntries ?? []).length > 0;
+
+  return (
+    <SiteFrame>
+      <div className="py-12">
+        <h1 className="text-3xl text-ink">Results</h1>
+
+        <p className="mt-4 font-sans text-sm text-ink-muted">
+          <span className="text-2xl font-semibold text-ink">
+            {(verifiedCount ?? 0).toLocaleString()}
+          </span>{" "}
+          confirmed entr{verifiedCount === 1 ? "y" : "ies"} in the draw.
+        </p>
+
+        <hr className="my-8 border-hairline" />
+
+        {hasWinners ? (
+          <section>
+            <h2 className="text-xl text-ink">Winners</h2>
+            {latestDraw?.drawn_at && (
+              <p className="mt-1 font-sans text-xs text-ink-muted">
+                Drawn {new Date(latestDraw.drawn_at).toLocaleDateString()}.
+              </p>
+            )}
+            <ul className="mt-4 divide-y divide-hairline">
+              {(winnerEntries ?? []).map((w) => (
+                <li
+                  key={w.ticket_code}
+                  className="flex items-center justify-between py-3 font-sans text-sm"
+                >
+                  <span className="text-ink">{w.name}</span>
+                  <span className="font-mono text-xs text-accent-strong">
+                    {w.ticket_code}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : (
+          <p className="font-sans text-sm text-ink-muted">
+            Winners will be announced here after the draw. Thank you to everyone
+            who has entered.
+          </p>
+        )}
+      </div>
+    </SiteFrame>
+  );
+}

@@ -1,14 +1,19 @@
 /**
  * Hand-written database types mirroring supabase/migrations/0001_init.sql.
  *
- * Later this can be replaced by the generated file:
+ * These are declared as `type` (not `interface`) on purpose: the Supabase client
+ * generics require each Row/Insert/Update to be assignable to
+ * `Record<string, unknown>`, and TypeScript only allows that for type aliases,
+ * not interfaces (interfaces can be augmented, so they lack an implicit index
+ * signature).
+ *
+ * Can later be replaced by the generated file:
  *   npx supabase gen types typescript --project-id <ref> > lib/supabase/types.ts
- * For now a hand-written shape keeps the app fully typed without the CLI.
  */
 
 export type EmailStatus = "pending" | "sent" | "failed";
 
-export interface EntryRow {
+export type EntryRow = {
   id: string;
   name: string;
   email: string;
@@ -26,11 +31,11 @@ export interface EntryRow {
   verification_sent_at: string | null;
   ticket_code: string;
   created_at: string;
-}
+};
 
-/** Columns the anon client is allowed to provide on INSERT. Everything else is
- *  set by the `trg_set_entry_defaults` trigger. */
-export interface EntryInsert {
+/** Columns the anon client may provide on INSERT. Everything else is set by the
+ *  `trg_set_entry_defaults` trigger. */
+export type EntryInsert = {
   name: string;
   email: string;
   phone: string;
@@ -41,53 +46,103 @@ export interface EntryInsert {
   district?: string | null;
   consent_at: string;
   ad_watched_at?: string | null;
-}
+  /** Server-generated in the entry API route; never sent to the browser. */
+  verification_token?: string;
+};
 
-export interface DrawRow {
+export type DrawRow = {
   id: string;
   admin_id: string | null;
   winner_count: number;
   drawn_at: string;
-}
+};
 
-export interface WinnerRow {
+export type WinnerRow = {
   id: string;
   entry_id: string;
   draw_id: string;
   email_status: EmailStatus;
   email_sent_at: string | null;
   created_at: string;
-}
+};
 
-export interface AuditLogRow {
+export type AuditLogRow = {
   id: string;
   admin_id: string | null;
   action: string;
   details: Record<string, unknown>;
   created_at: string;
-}
+};
 
-export interface Database {
+export type EventType = "ad_view" | "ad_complete";
+
+export type EventRow = {
+  id: string;
+  type: EventType;
+  created_at: string;
+};
+
+export type VideoKind = "youtube" | "file";
+
+export type VideoConfigRow = {
+  id: string;
+  kind: VideoKind;
+  youtube_id: string | null;
+  storage_path: string | null;
+  title: string;
+  updated_at: string;
+  updated_by: string | null;
+};
+
+type TableShape<Row, Insert, Update> = {
+  Row: Row;
+  Insert: Insert;
+  Update: Update;
+  Relationships: [];
+};
+
+export type Database = {
   public: {
     Tables: {
-      entries: { Row: EntryRow; Insert: EntryInsert; Update: Partial<EntryRow> };
-      draws: {
-        Row: DrawRow;
-        Insert: Omit<DrawRow, "id" | "drawn_at"> & Partial<Pick<DrawRow, "id" | "drawn_at">>;
-        Update: Partial<DrawRow>;
-      };
-      winners: {
-        Row: WinnerRow;
-        Insert: Omit<WinnerRow, "id" | "created_at"> &
-          Partial<Pick<WinnerRow, "id" | "created_at" | "email_status" | "email_sent_at">>;
-        Update: Partial<WinnerRow>;
-      };
-      audit_log: {
-        Row: AuditLogRow;
-        Insert: Omit<AuditLogRow, "id" | "created_at"> &
-          Partial<Pick<AuditLogRow, "id" | "created_at" | "details">>;
-        Update: Partial<AuditLogRow>;
+      entries: TableShape<EntryRow, EntryInsert, Partial<EntryRow>>;
+      draws: TableShape<
+        DrawRow,
+        Omit<DrawRow, "id" | "drawn_at"> & Partial<Pick<DrawRow, "id" | "drawn_at">>,
+        Partial<DrawRow>
+      >;
+      winners: TableShape<
+        WinnerRow,
+        Pick<WinnerRow, "entry_id" | "draw_id"> &
+          Partial<Omit<WinnerRow, "entry_id" | "draw_id">>,
+        Partial<WinnerRow>
+      >;
+      audit_log: TableShape<
+        AuditLogRow,
+        Omit<AuditLogRow, "id" | "created_at"> &
+          Partial<Pick<AuditLogRow, "id" | "created_at" | "details">>,
+        Partial<AuditLogRow>
+      >;
+      events: TableShape<
+        EventRow,
+        Pick<EventRow, "type"> & Partial<Omit<EventRow, "type">>,
+        Partial<EventRow>
+      >;
+      video_config: TableShape<
+        VideoConfigRow,
+        Partial<VideoConfigRow>,
+        Partial<VideoConfigRow>
+      >;
+    };
+    Views: { [_ in never]: never };
+    Functions: {
+      generate_ticket_code: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
       };
     };
+    Enums: {
+      email_status: EmailStatus;
+    };
+    CompositeTypes: { [_ in never]: never };
   };
-}
+};

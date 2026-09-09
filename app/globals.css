@@ -1,26 +1,100 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ===========================================================================
+   Lilac design tokens — light mode only (brief: "Light mode only").
+   White canvas dominant, one cool blue-leaning purple accent, near-black ink
+   with a plum undertone, pale lavender-gray hairlines.
+   Exposed through @theme so Tailwind generates utilities: bg-canvas, text-ink,
+   text-accent, border-hairline, font-serif, font-sans, rounded-card ...
+   =========================================================================== */
+@theme {
+  --color-canvas: #ffffff;
+  --color-canvas-raised: #faf9fd; /* barely-there lavender tint for panels */
+  --color-ink: #211b26; /* near-black, plum undertone — body text */
+  --color-ink-muted: #6c6577; /* labels, captions, inactive step text */
+  --color-accent: #5a45d6; /* the single accent — ties to the "Lilac" name */
+  --color-accent-strong: #45329f; /* darker accent for small text / links (AA on white) */
+  --color-accent-wash: #f1eefc; /* faint purple fill: active step dot, focus halo */
+  --color-hairline: #e6e2f0; /* pale lavender-gray borders / rules */
+
+  --font-serif: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-manrope), system-ui, -apple-system, Segoe UI, Roboto,
+    sans-serif;
+
+  /* Soft rounded corners throughout. */
+  --radius-field: 0.5rem;
+  --radius-card: 1rem;
+  --radius-pill: 9999px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Base element defaults. Kept tiny on purpose — components carry their own
+   styling with utility classes. */
+html {
+  color-scheme: light;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Headlines use the warm serif. Sizes are set per-use with utilities; the base
+   rule owns the family, weight, optical sizing, tracking and rhythm so every
+   heading feels the same. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+/* Brand accent touches. */
+::selection {
+  background: var(--color-accent-wash);
+  color: var(--color-accent-strong);
+}
+
+/* Consistent, on-brand keyboard focus for anything interactive that doesn't
+   set its own (links especially). */
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Motion — the brief allows exactly two moments and nothing else:
+     1. a fade/scale entrance on the ad video frame  (.lilac-frame-in)
+     2. confetti on the "entry confirmed" screen     (canvas-confetti)
+   No hover animations, no scroll-triggered reveals.
+   --------------------------------------------------------------------------- */
+@keyframes lilac-frame-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.lilac-frame-in {
+  animation: lilac-frame-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lilac-frame-in {
+    animation: none;
+  }
 }

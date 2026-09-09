@@ -1,37 +1,30 @@
 import "server-only";
 
 /**
- * Service-role Supabase client. SERVER ONLY.
+ * Service-role Supabase client. SERVER ONLY (the `server-only` import fails the
+ * build if this is pulled into a client bundle).
  *
- * The `server-only` import above makes the build fail if this module is ever
- * pulled into a Client Component bundle.
- *
- * This client uses the service-role key and therefore BYPASSES Row Level
- * Security. Every admin read/write (dashboard, draws, winners, CSV export) and
- * every public aggregate query (results page winners list, live entry count)
- * goes through here — inside API routes / server components only, never exposed
- * to the browser.
+ * Uses the service-role key and therefore BYPASSES Row Level Security. Every
+ * admin read/write (dashboard, draws, winners, CSV export) and every public
+ * aggregate query (results winners list, live entry count) goes through here —
+ * inside API routes / server components only.
  */
-import { createClient } from "@supabase/supabase-js";
-import { publicEnv } from "@/lib/env";
-import { serverEnv } from "@/lib/env";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { requirePublic, requireServer, serverEnv } from "@/lib/env";
 import type { Database } from "@/lib/supabase/types";
 
-let cached: ReturnType<typeof createClient<Database>> | null = null;
+let cached: SupabaseClient<Database> | null = null;
 
-export function createAdminClient() {
+export function createAdminClient(): SupabaseClient<Database> {
   // Reuse one instance per server runtime — the Supabase JS client is a
-  // PostgREST wrapper over pooled HTTP, so this is safe under serverless
-  // concurrency (and we never open a raw `pg` connection).
+  // PostgREST wrapper over pooled HTTP, safe under serverless concurrency
+  // (we never open a raw `pg` connection).
   if (cached) return cached;
   cached = createClient<Database>(
-    publicEnv.supabaseUrl,
-    serverEnv.supabaseServiceRoleKey,
+    requirePublic("supabaseUrl"),
+    requireServer("SUPABASE_SERVICE_ROLE_KEY", serverEnv.supabaseServiceRoleKey),
     {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
+      auth: { persistSession: false, autoRefreshToken: false },
     },
   );
   return cached;

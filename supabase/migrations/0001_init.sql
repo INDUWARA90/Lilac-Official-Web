@@ -80,12 +80,15 @@ create table if not exists public.entries (
   verified            boolean not null default false,
   verified_at         timestamptz,
 
-  -- Opaque token embedded in the Brevo confirmation link. Generated server-side
-  -- by the trigger below — never trusted from client input.
+  -- Opaque token embedded in the Brevo confirmation link. The entry API route
+  -- generates this server-side and never returns it to the browser, so only a
+  -- recipient of the email can verify. The column default is a safety net; the
+  -- trigger deliberately does NOT overwrite a route-supplied value.
   verification_token  uuid not null default gen_random_uuid(),
   verification_sent_at timestamptz,
 
-  -- Public-facing raffle ticket. Assigned at insert by the trigger.
+  -- Public-facing raffle ticket. Assigned at insert by the trigger so every
+  -- entry has one immediately; only verified winners' codes are ever shown.
   ticket_code         text not null,
 
   created_at          timestamptz not null default now()
@@ -104,18 +107,20 @@ create index if not exists entries_verified_idx  on public.entries (verified);
 create index if not exists entries_created_at_idx on public.entries (created_at desc);
 
 -- Trigger: force server-controlled columns on insert regardless of what the
--- (anon) caller sends. Defence-in-depth on top of the API route's zod schema.
+-- (anon) caller sends. Defence-in-depth on top of the API route's zod schema —
+-- a crafted anon insert can't self-verify or choose its own ticket code.
+-- Note: verification_token is intentionally left alone so the entry API route
+-- can supply its own server-generated, never-echoed value.
 create or replace function public.set_entry_defaults()
 returns trigger
 language plpgsql
 as $$
 begin
-  new.verified            := false;
-  new.verified_at         := null;
-  new.verification_token  := gen_random_uuid();
+  new.verified             := false;
+  new.verified_at          := null;
   new.verification_sent_at := null;
-  new.ticket_code         := public.generate_ticket_code();
-  new.created_at          := now();
+  new.ticket_code          := public.generate_ticket_code();
+  new.created_at           := now();
   return new;
 end $$;
 
@@ -180,13 +185,6 @@ alter table public.entries   enable row level security;
 alter table public.draws     enable row level security;
 alter table public.winners   enable row level security;
 alter table public.audit_log enable row level security;
-
--- Also force RLS for the table owner, so a mistaken query with the anon/auth
--- role can never be silently owner-privileged.
-alter table public.entries   force row level security;
-alter table public.draws     force row level security;
-alter table public.winners   force row level security;
-alter table public.audit_log force row level security;
 
 -- entries: anon + authenticated may INSERT only. The trigger above neutralises
 -- any attempt to pre-set verified / ticket_code, so `with check (true)` is safe.
