@@ -23,9 +23,12 @@ export default function HomePage() {
             Watch this year&rsquo;s sponsor films, enter the draw, and you could be
             one of our winners. It takes about a minute.
           </p>
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href="/enter">
               <Button>Enter the draw</Button>
+            </Link>
+            <Link href="/tickets">
+              <Button variant="ghost">Buy event tickets</Button>
             </Link>
           </div>
         </section>

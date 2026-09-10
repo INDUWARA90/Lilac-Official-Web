@@ -19,6 +19,14 @@ export interface SendResult {
   reason?: string;
 }
 
+/** An email attachment — `content` is base64. `contentId` makes it inline (`cid:`). */
+export interface EmailAttachment {
+  filename: string;
+  content: string;
+  contentType?: string;
+  contentId?: string;
+}
+
 interface SendArgs {
   to: string;
   subject: string;
@@ -26,10 +34,18 @@ interface SendArgs {
   text: string;
   /** Optional Reply-To — used so the admin can reply straight to a contact sender. */
   replyTo?: { email: string; name?: string };
+  attachments?: EmailAttachment[];
 }
 
 /** Low-level send. Callers handle the "not configured" case themselves. */
-async function send({ to, subject, html, text, replyTo }: SendArgs): Promise<SendResult> {
+async function send({
+  to,
+  subject,
+  html,
+  text,
+  replyTo,
+  attachments,
+}: SendArgs): Promise<SendResult> {
   const { apiKey, senderEmail, senderName } = serverEnv.resend;
 
   if (!apiKey || !senderEmail) {
@@ -49,6 +65,14 @@ async function send({ to, subject, html, text, replyTo }: SendArgs): Promise<Sen
   };
   if (replyTo) {
     body.reply_to = replyTo.name ? `${replyTo.name} <${replyTo.email}>` : replyTo.email;
+  }
+  if (attachments?.length) {
+    body.attachments = attachments.map((a) => ({
+      filename: a.filename,
+      content: a.content,
+      ...(a.contentType ? { content_type: a.contentType } : {}),
+      ...(a.contentId ? { content_id: a.contentId } : {}),
+    }));
   }
 
   try {
@@ -165,6 +189,108 @@ export function sendAdminAlert(subject: string, text: string): Promise<SendResul
     subject: `[Lilac admin] ${subject}`,
     html: `<pre style="font-family:Arial,Helvetica,sans-serif;font-size:14px;white-space:pre-wrap;">${escapeHtml(text)}</pre>`,
     text,
+  });
+}
+
+function shell(inner: string): string {
+  return `<!doctype html><html><body style="margin:0;background:#f6f4fd;font-family:Arial,Helvetica,sans-serif;color:#211b26;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f4fd;padding:32px 16px;"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(69,50,159,0.12);">
+<tr><td style="background:linear-gradient(135deg,#5a45d6,#45329f);padding:24px 32px;text-align:center;">
+<div style="font-size:14px;font-weight:bold;letter-spacing:2px;color:#d9d2f7;text-transform:uppercase;">Lilac</div></td></tr>
+${inner}
+</table></td></tr></table></body></html>`;
+}
+
+/** Buyer confirmation the moment a purchase is submitted (payment not yet verified). */
+export function sendTicketPending(args: {
+  to: string;
+  name: string;
+  reference: string;
+  quantity: number;
+  amountLkr: number;
+}): Promise<SendResult> {
+  const first = args.name.split(" ")[0] || "there";
+  const text =
+    `${first}, we've received your ticket request.\n\n` +
+    `Reference: ${args.reference}\n` +
+    `Tickets: ${args.quantity}\n` +
+    `Amount: Rs. ${args.amountLkr.toLocaleString("en-LK")}\n\n` +
+    `We're verifying your bank transfer now. Once it's confirmed we'll email your ` +
+    `e-ticket${args.quantity === 1 ? "" : "s"} with the QR code${args.quantity === 1 ? "" : "s"} ` +
+    `you'll show at the entrance.\n\nThe Lilac Team`;
+  return send({
+    to: args.to,
+    subject: `Lilac tickets — request received (${args.reference})`,
+    text,
+    html: shell(`<tr><td style="padding:28px 32px;font-size:15px;line-height:1.65;">
+<p style="margin:0 0 14px;"><strong>${escapeHtml(first)}</strong>, we've received your ticket request.</p>
+<p style="margin:0 0 6px;">Reference: <strong>${escapeHtml(args.reference)}</strong></p>
+<p style="margin:0 0 6px;">Tickets: <strong>${args.quantity}</strong></p>
+<p style="margin:0 0 16px;">Amount: <strong>Rs.&nbsp;${args.amountLkr.toLocaleString("en-LK")}</strong></p>
+<p style="margin:0;color:#6c6577;">We're verifying your bank transfer. Once confirmed we'll email your e-ticket${args.quantity === 1 ? "" : "s"} with the QR code${args.quantity === 1 ? "" : "s"} to show at the entrance.</p>
+</td></tr>`),
+  });
+}
+
+/** The e-ticket(s) — sent once an admin approves the payment. */
+export function sendTicketApproved(args: {
+  to: string;
+  name: string;
+  reference: string;
+  tickets: { seatLabel: string; url: string }[];
+  attachments: EmailAttachment[];
+}): Promise<SendResult> {
+  const first = args.name.split(" ")[0] || "there";
+  const text =
+    `${first}, your Lilac ticket${args.tickets.length === 1 ? " is" : "s are"} confirmed.\n\n` +
+    `Reference: ${args.reference}\n\n` +
+    args.tickets.map((t) => `${t.seatLabel}: ${t.url}`).join("\n") +
+    `\n\nShow the QR code at the entrance. See you there.\n\nThe Lilac Team`;
+
+  const rows = args.tickets
+    .map(
+      (t, i) => `<tr><td style="padding:18px 32px;border-top:1px solid #e6e2f0;text-align:center;">
+<div style="font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#6c6577;">${escapeHtml(t.seatLabel)}</div>
+<img src="cid:qr-${i}" width="200" height="200" alt="Ticket QR code" style="display:block;margin:12px auto;border-radius:8px;" />
+<a href="${escapeHtml(t.url)}" style="font-size:13px;color:#45329f;">Open this ticket</a>
+</td></tr>`,
+    )
+    .join("");
+
+  return send({
+    to: args.to,
+    subject: `Your Lilac ticket${args.tickets.length === 1 ? "" : "s"} (${args.reference})`,
+    text,
+    attachments: args.attachments,
+    html: shell(`<tr><td style="padding:24px 32px 4px;font-size:15px;line-height:1.65;">
+<p style="margin:0 0 8px;"><strong>${escapeHtml(first)}</strong>, your ticket${args.tickets.length === 1 ? " is" : "s are"} confirmed.</p>
+<p style="margin:0;color:#6c6577;">Reference ${escapeHtml(args.reference)} · show the QR code at the entrance.</p>
+</td></tr>${rows}`),
+  });
+}
+
+/** Sent when an admin rejects a purchase. */
+export function sendTicketRejected(args: {
+  to: string;
+  name: string;
+  reference: string;
+  reason: string;
+}): Promise<SendResult> {
+  const first = args.name.split(" ")[0] || "there";
+  const text =
+    `${first}, we couldn't confirm your Lilac ticket purchase (${args.reference}).\n\n` +
+    `${args.reason}\n\n` +
+    `If you think this is a mistake, reply to this email.\n\nThe Lilac Team`;
+  return send({
+    to: args.to,
+    subject: `Lilac tickets — could not confirm (${args.reference})`,
+    text,
+    html: shell(`<tr><td style="padding:28px 32px;font-size:15px;line-height:1.65;">
+<p style="margin:0 0 12px;"><strong>${escapeHtml(first)}</strong>, we couldn't confirm your ticket purchase (${escapeHtml(args.reference)}).</p>
+<p style="margin:0 0 12px;">${escapeHtml(args.reason)}</p>
+<p style="margin:0;color:#6c6577;">If you think this is a mistake, reply to this email.</p>
+</td></tr>`),
   });
 }
 

@@ -12,6 +12,8 @@ const PAGE_SIZE = 50;
 const ACTION_LABEL: Record<string, string> = {
   "admin.login": "Admin signed in",
   "draw.run": "Draw run",
+  "draw.unlock": "Draw unlocked",
+  "draw.lock": "Draw locked",
   "winner.email_resend": "Winner email resent",
   "export.entries": "Entries exported",
   "export.winners": "Winners exported",
@@ -19,6 +21,11 @@ const ACTION_LABEL: Record<string, string> = {
   "ad.update_title": "Ad renamed",
   "ad.delete": "Ad removed",
   "ad.reorder": "Ads reordered",
+  "ticket.approve": "Ticket approved",
+  "ticket.reject": "Ticket rejected",
+  "ticket.checkin": "Ticket checked in",
+  "ticket.checkin_undo": "Check-in reverted",
+  "ticket.settings": "Ticket settings updated",
 };
 
 export default async function AuditPage({

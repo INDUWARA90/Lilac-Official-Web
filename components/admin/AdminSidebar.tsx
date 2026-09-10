@@ -10,7 +10,13 @@ import { AdminNav } from "@/components/admin/AdminNav";
  * bar with a hamburger button that slides in a left-side drawer holding the
  * same links.
  */
-export function AdminSidebar({ email }: { email: string }) {
+export function AdminSidebar({
+  email,
+  drawUnlocked,
+}: {
+  email: string;
+  drawUnlocked: boolean;
+}) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -28,7 +34,7 @@ export function AdminSidebar({ email }: { email: string }) {
           <Brand />
         </div>
         <div className="flex-1 overflow-y-auto">
-          <AdminNav />
+          <AdminNav drawUnlocked={drawUnlocked} />
         </div>
         <div className="border-t border-hairline px-5 py-4">
           <AccountBlock email={email} />
@@ -83,7 +89,7 @@ export function AdminSidebar({ email }: { email: string }) {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto">
-          <AdminNav onNavigate={() => setOpen(false)} />
+          <AdminNav drawUnlocked={drawUnlocked} onNavigate={() => setOpen(false)} />
         </div>
         <div className="border-t border-hairline px-5 py-4">
           <AccountBlock email={email} />

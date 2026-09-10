@@ -71,6 +71,26 @@ const NAV: NavItem[] = [
     ),
   },
   {
+    href: "/admin/tickets",
+    label: "Tickets",
+    icon: (
+      <svg {...s}>
+        <path d="M4 7a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 000 4v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2a2 2 0 000-4V7z" />
+        <path d="M14 5v14" strokeDasharray="2 2" />
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/checkin",
+    label: "Check-in",
+    icon: (
+      <svg {...s}>
+        <path d="M9 12l2 2 4-4" />
+        <path d="M12 3a9 9 0 100 18 9 9 0 000-18z" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/export",
     label: "Export",
     icon: (
@@ -96,13 +116,23 @@ const NAV: NavItem[] = [
  * Admin nav — a vertical list of icon + label links, used in both the desktop
  * sidebar and the mobile drawer. Highlights the section matching the current
  * path. Pass `onNavigate` to close the mobile drawer on selection.
+ *
+ * "Draw winners" is hidden until the draw is unlocked (event day) — unlock it
+ * from the dashboard.
  */
-export function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
+export function AdminNav({
+  drawUnlocked = true,
+  onNavigate,
+}: {
+  drawUnlocked?: boolean;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
+  const items = NAV.filter((i) => i.href !== "/admin/draw" || drawUnlocked);
 
   return (
     <nav className="flex flex-col gap-1 px-3 py-2">
-      {NAV.map((item) => {
+      {items.map((item) => {
         const active =
           item.href === "/admin"
             ? pathname === "/admin"

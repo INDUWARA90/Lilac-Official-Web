@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { DrawPanel } from "@/components/admin/DrawPanel";
+import { DrawLock } from "@/components/admin/DrawLock";
 
 export const metadata: Metadata = { title: "Draw winners", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -11,11 +13,13 @@ export default async function DrawPage() {
   const session = await requireAdmin();
   const db = createAdminClient();
 
-  const [{ data: verified }, { data: prevWinners }, { data: draws }] = await Promise.all([
-    db.from("entries").select("id").eq("verified", true),
-    db.from("winners").select("entry_id"),
-    db.from("draws").select("id, winner_count, drawn_at").order("drawn_at", { ascending: false }),
-  ]);
+  const [drawUnlocked, { data: verified }, { data: prevWinners }, { data: draws }] =
+    await Promise.all([
+      getDrawUnlocked(),
+      db.from("entries").select("id").eq("verified", true),
+      db.from("winners").select("entry_id"),
+      db.from("draws").select("id, winner_count, drawn_at").order("drawn_at", { ascending: false }),
+    ]);
 
   const wonIds = new Set((prevWinners ?? []).map((w) => w.entry_id));
   const eligibleCount = (verified ?? []).filter((e) => !wonIds.has(e.id)).length;
@@ -29,8 +33,18 @@ export default async function DrawPage() {
       </p>
 
       <div className="mt-6">
-        <DrawPanel eligibleCount={eligibleCount} />
+        {drawUnlocked ? (
+          <DrawPanel eligibleCount={eligibleCount} />
+        ) : (
+          <DrawLock unlocked={false} />
+        )}
       </div>
+
+      {drawUnlocked && (
+        <div className="mt-4">
+          <DrawLock unlocked variant="inline" />
+        </div>
+      )}
 
       <h2 className="mt-10 text-lg text-ink">Previous draws</h2>
       {(draws ?? []).length === 0 ? (

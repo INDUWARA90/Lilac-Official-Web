@@ -94,6 +94,61 @@ export type AdRow = {
   updated_by: string | null;
 };
 
+export type AppConfigRow = {
+  id: string;
+  draw_unlocked: boolean;
+  updated_at: string;
+  updated_by: string | null;
+};
+
+export type TicketSettingsRow = {
+  id: string;
+  price_lkr: number;
+  capacity: number;
+  sales_open: boolean;
+  bank_name: string;
+  bank_account_name: string;
+  bank_account_number: string;
+  bank_branch: string;
+  bank_instructions: string;
+  updated_at: string;
+  updated_by: string | null;
+};
+
+export type TicketPurchaseStatusDb =
+  | "pending_review"
+  | "approved"
+  | "rejected"
+  | "cancelled";
+
+export type TicketPurchaseRow = {
+  id: string;
+  reference: string;
+  name: string;
+  email: string;
+  phone: string;
+  quantity: number;
+  amount_lkr: number;
+  slip_path: string;
+  status: TicketPurchaseStatusDb;
+  review_note: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TicketRow = {
+  id: string;
+  purchase_id: string;
+  token: string;
+  seat_label: string;
+  holder_name: string;
+  checked_in_at: string | null;
+  checked_in_by: string | null;
+  created_at: string;
+};
+
 type TableShape<Row, Insert, Update> = {
   Row: Row;
   Insert: Insert;
@@ -133,12 +188,43 @@ export type Database = {
           Partial<Pick<AdRow, "id" | "created_at" | "updated_at">>,
         Partial<AdRow>
       >;
+      app_config: TableShape<AppConfigRow, Partial<AppConfigRow>, Partial<AppConfigRow>>;
+      ticket_settings: TableShape<
+        TicketSettingsRow,
+        Partial<TicketSettingsRow>,
+        Partial<TicketSettingsRow>
+      >;
+      ticket_purchases: TableShape<
+        TicketPurchaseRow,
+        Omit<TicketPurchaseRow, "id" | "created_at" | "updated_at" | "status"> &
+          Partial<Pick<TicketPurchaseRow, "id" | "created_at" | "updated_at" | "status">>,
+        Partial<TicketPurchaseRow>
+      >;
+      tickets: TableShape<
+        TicketRow,
+        Omit<TicketRow, "id" | "created_at" | "checked_in_at" | "checked_in_by"> &
+          Partial<
+            Pick<TicketRow, "id" | "created_at" | "checked_in_at" | "checked_in_by">
+          >,
+        Partial<TicketRow>
+      >;
     };
     Views: { [_ in never]: never };
     Functions: {
       rl_hit: {
         Args: { p_key: string; p_limit: number; p_window_ms: number };
         Returns: boolean;
+      };
+      create_ticket_purchase: {
+        Args: {
+          p_name: string;
+          p_email: string;
+          p_phone: string;
+          p_quantity: number;
+          p_slip_path: string;
+          p_reference: string;
+        };
+        Returns: { purchase_id: string; purchase_reference: string }[];
       };
     };
     Enums: {

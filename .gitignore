@@ -37,6 +37,15 @@ yarn-error.log*
 # vercel
 .vercel
 
+# supabase cli (local state — not the migrations)
+supabase/.temp
+supabase/.branches
+supabase/logs
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# scratch / local experiments
+__*.mjs
+__*.png

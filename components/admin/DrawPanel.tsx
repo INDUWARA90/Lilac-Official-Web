@@ -34,7 +34,7 @@ export function DrawPanel({ eligibleCount }: { eligibleCount: number }) {
       const res = await fetch("/api/admin/draw", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ winnerCount: n }),
+        body: JSON.stringify({ action: "run", winnerCount: n }),
       });
       const data = (await res.json()) as {
         ok: boolean;

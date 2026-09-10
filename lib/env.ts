@@ -46,6 +46,11 @@ export const serverEnv = {
   // so no new env var is strictly required.
   adSessionSecret:
     clean(process.env.AD_SESSION_SECRET) || clean(process.env.ADMIN_SESSION_SECRET),
+
+  // Door-staff scanner: a shared code that unlocks the check-in pages only
+  // (never the rest of the admin panel). Its cookie is signed with
+  // `adminSessionSecret`.
+  checkinAccessCode: clean(process.env.CHECKIN_ACCESS_CODE),
 };
 
 export function requirePublic<K extends keyof typeof publicEnv>(

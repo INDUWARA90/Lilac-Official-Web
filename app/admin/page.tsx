@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { DrawLock } from "@/components/admin/DrawLock";
 
 export const metadata: Metadata = { title: "Dashboard", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -17,12 +19,26 @@ export default async function AdminDashboard() {
   const db = createAdminClient();
 
   const head = { count: "exact", head: true } as const;
-  const [total, draws, winners, adViews, adCompletes] = await Promise.all([
+  const [
+    total,
+    draws,
+    winners,
+    adViews,
+    adCompletes,
+    drawUnlocked,
+    ticketsPending,
+    ticketsIssued,
+    ticketsCheckedIn,
+  ] = await Promise.all([
     db.from("entries").select("*", head),
     db.from("draws").select("*", head),
     db.from("winners").select("*", head),
     db.from("events").select("*", head).eq("type", "ad_view"),
     db.from("events").select("*", head).eq("type", "ad_complete"),
+    getDrawUnlocked(),
+    db.from("ticket_purchases").select("id", head).eq("status", "pending_review"),
+    db.from("tickets").select("id", head),
+    db.from("tickets").select("id", head).not("checked_in_at", "is", null),
   ]);
 
   const totalC = total.count ?? 0;
@@ -71,13 +87,38 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
+      <h2 className="mt-8 font-sans text-sm font-semibold uppercase tracking-wider text-ink-muted">
+        Tickets &amp; check-in
+      </h2>
+      <div className="mt-3 grid grid-cols-3 gap-3 sm:max-w-md">
+        {[
+          { label: "Awaiting review", value: ticketsPending.count ?? 0, href: "/admin/tickets?status=pending_review" },
+          { label: "Tickets issued", value: ticketsIssued.count ?? 0, href: "/admin/tickets" },
+          { label: "Checked in", value: ticketsCheckedIn.count ?? 0, href: "/admin/checkin" },
+        ].map((c) => (
+          <Link key={c.label} href={c.href} className="rounded-card border border-hairline p-4 transition-colors hover:border-accent">
+            <div className="font-sans text-2xl font-semibold text-ink">{c.value}</div>
+            <div className="mt-1 font-sans text-xs text-ink-muted">{c.label}</div>
+          </Link>
+        ))}
+      </div>
+
+      <h2 className="mt-8 font-sans text-sm font-semibold uppercase tracking-wider text-ink-muted">
+        Winner draw
+      </h2>
+      <div className="mt-3">
+        <DrawLock unlocked={drawUnlocked} variant="inline" />
+      </div>
+
       <div className="mt-8 flex flex-wrap gap-3 font-sans text-sm">
         <Link href="/admin/entries" className="rounded-field border border-hairline px-4 py-2 text-accent-strong hover:border-accent">
           Browse entries
         </Link>
-        <Link href="/admin/draw" className="rounded-field border border-hairline px-4 py-2 text-accent-strong hover:border-accent">
-          Run a draw
-        </Link>
+        {drawUnlocked && (
+          <Link href="/admin/draw" className="rounded-field border border-hairline px-4 py-2 text-accent-strong hover:border-accent">
+            Run a draw
+          </Link>
+        )}
         <Link href="/admin/winners" className="rounded-field border border-hairline px-4 py-2 text-accent-strong hover:border-accent">
           View winners
         </Link>

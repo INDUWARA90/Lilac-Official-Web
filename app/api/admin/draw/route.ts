@@ -4,20 +4,26 @@ import { getAdminSession } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pickRandom } from "@/lib/draw";
 import { logAudit } from "@/lib/audit";
+import { getDrawUnlocked, setDrawUnlocked } from "@/lib/app-config";
 import { triggerWinnerEmailProcessor } from "@/lib/winner-emails";
 
 /**
- * POST /api/admin/draw — run a draw.
+ * POST /api/admin/draw
  *
- *  1. eligible = verified entries that haven't already won
- *  2. pick `winnerCount` of them with crypto.randomInt
- *  3. record the draw + winners (email_status defaults to 'pending'), audit
- *  4. kick the background winner-email processor and return immediately
- *     (see lib/winner-emails.ts — the draw no longer waits on email delivery)
+ *   { action: "unlock" | "lock" }  — toggle the event-day draw lock
+ *   { action: "run", winnerCount } — run a draw (only when unlocked):
+ *     1. eligible = verified entries that haven't already won
+ *     2. pick `winnerCount` of them with crypto.randomInt
+ *     3. record the draw + winners (email_status defaults to 'pending'), audit
+ *     4. kick the background winner-email processor and return immediately
  */
 export const dynamic = "force-dynamic";
 
-const schema = z.object({ winnerCount: z.number().int().min(1).max(500) });
+const schema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("unlock") }),
+  z.object({ action: z.literal("lock") }),
+  z.object({ action: z.literal("run"), winnerCount: z.number().int().min(1).max(500) }),
+]);
 const json = (b: unknown, s = 200) => Response.json(b, { status: s });
 
 export async function POST(req: Request) {
@@ -26,9 +32,27 @@ export async function POST(req: Request) {
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
-    return json({ ok: false, error: "Enter a winner count between 1 and 500." }, 400);
+    return json({ ok: false, error: "Invalid request." }, 400);
   }
-  const { winnerCount } = parsed.data;
+  const input = parsed.data;
+
+  if (input.action === "unlock" || input.action === "lock") {
+    const unlocked = input.action === "unlock";
+    const ok = await setDrawUnlocked(unlocked, session.email);
+    if (!ok) return json({ ok: false, error: "Could not update the draw lock." }, 500);
+    await logAudit(`draw.${input.action}`, { by: session.email }, null);
+    return json({ ok: true, drawUnlocked: unlocked });
+  }
+
+  // action === "run" — refuse unless an admin has unlocked the draw.
+  if (!(await getDrawUnlocked())) {
+    return json(
+      { ok: false, error: "The draw is locked. Unlock it from the dashboard first." },
+      403,
+    );
+  }
+
+  const { winnerCount } = input;
   const db = createAdminClient();
 
   // 1. Work out who's eligible.
