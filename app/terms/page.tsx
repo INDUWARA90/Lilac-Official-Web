@@ -29,8 +29,7 @@ export default function TermsPage() {
       <ul>
         <li>
           <strong>
-            Winners&rsquo; full names and ticket codes are published on the
-            public results page.
+            Winners&rsquo; full names are published on the public results page.
           </strong>
         </li>
         <li>Winners are also notified by email.</li>

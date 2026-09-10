@@ -1,14 +1,10 @@
 "use client";
 
-import * as Sentry from "@sentry/nextjs";
-import { useEffect } from "react";
-
-/** Catches errors in the root layout. Reports to Sentry (inert without a DSN). */
-export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
-  useEffect(() => {
-    Sentry.captureException(error);
-  }, [error]);
-
+/**
+ * Root error boundary — the last-resort UI when the root layout itself throws.
+ * Next.js passes `{ error, reset }`; this screen needs neither.
+ */
+export default function GlobalError() {
   return (
     <html lang="en">
       <body

@@ -21,10 +21,10 @@ export default async function ResultsPage() {
   const { data: winnerEntries } = entryIds.length
     ? await db
         .from("entries")
-        .select("name, ticket_code")
+        .select("id, name")
         .in("id", entryIds)
         .order("name", { ascending: true })
-    : { data: [] as { name: string; ticket_code: string }[] };
+    : { data: [] as { id: string; name: string }[] };
 
   const hasWinners = (winnerEntries ?? []).length > 0;
 
@@ -52,14 +52,8 @@ export default async function ResultsPage() {
             )}
             <ul className="mt-4 divide-y divide-hairline">
               {(winnerEntries ?? []).map((w) => (
-                <li
-                  key={w.ticket_code}
-                  className="flex items-center justify-between py-3 font-sans text-sm"
-                >
-                  <span className="text-ink">{w.name}</span>
-                  <span className="font-mono text-xs text-accent-strong">
-                    {w.ticket_code}
-                  </span>
+                <li key={w.id} className="py-3 font-sans text-sm text-ink">
+                  {w.name}
                 </li>
               ))}
             </ul>

@@ -7,23 +7,31 @@ import { requireServer, serverEnv } from "@/lib/env";
 /**
  * Admin session — a single signed cookie, no external session store.
  *
- * After passwordless email sign-in succeeds (see /api/admin/login), we drop an
- * `admin_session` cookie holding `{ email, sub, exp }` signed with HMAC-SHA256.
- * Every admin page/route calls `requireAdmin()` / `getAdminSession()`, which
- * verify the signature and the 24h expiry (brief: "session expires after 1 day").
- * `sub` is the Supabase Auth user id, used for `draws.admin_id` / audit rows.
+ * Sign-in is a plain email + password check against ADMIN_EMAIL / ADMIN_PASSWORD
+ * (see /api/admin/login). On success we drop an `admin_session` cookie holding
+ * `{ email, exp }` signed with HMAC-SHA256. Every admin page/route calls
+ * `requireAdmin()` / `getAdminSession()`, which verify the signature and the 24h
+ * expiry (brief: "session expires after 1 day").
  */
 export const ADMIN_COOKIE = "admin_session";
 const SESSION_MS = 24 * 60 * 60 * 1000;
 
 export interface AdminSession {
   email: string;
-  sub: string;
 }
 
 function sign(payload: string): string {
   const secret = requireServer("ADMIN_SESSION_SECRET", serverEnv.adminSessionSecret);
   return createHmac("sha256", secret).update(payload).digest("base64url");
+}
+
+/** Constant-time compare of the submitted password against ADMIN_PASSWORD. */
+export function passwordMatches(candidate: string): boolean {
+  const expected = serverEnv.adminPassword;
+  if (!expected) return false;
+  const a = Buffer.from(candidate);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 /** Build the cookie value for a freshly authenticated admin. */
@@ -52,12 +60,11 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   try {
     const data = JSON.parse(Buffer.from(payload, "base64url").toString()) as {
       email: string;
-      sub: string;
       exp: number;
     };
     if (typeof data.exp !== "number" || Date.now() > data.exp) return null;
     if (data.email.toLowerCase() !== serverEnv.adminEmail) return null;
-    return { email: data.email, sub: data.sub };
+    return { email: data.email };
   } catch {
     return null;
   }

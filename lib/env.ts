@@ -23,28 +23,22 @@ export const publicEnv = {
   supabaseAnonKey: clean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
   siteUrl: clean(process.env.NEXT_PUBLIC_SITE_URL).replace(/\/$/, "") ||
     "http://localhost:3000",
-  turnstileSiteKey: clean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
 };
 
 /** SERVER ONLY. */
 export const serverEnv = {
   supabaseServiceRoleKey: clean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-  brevo: {
-    apiKey: clean(process.env.BREVO_API_KEY),
-    senderEmail: clean(process.env.BREVO_SENDER_EMAIL),
-    senderName: clean(process.env.BREVO_SENDER_NAME) || "Lilac",
-  },
   resend: {
     apiKey: clean(process.env.RESEND_API_KEY),
     senderEmail: clean(process.env.RESEND_SENDER_EMAIL),
     senderName: clean(process.env.RESEND_SENDER_NAME) || "Lilac",
   },
   adminNotifyEmail: clean(process.env.ADMIN_NOTIFY_EMAIL),
-  turnstileSecretKey: clean(process.env.TURNSTILE_SECRET_KEY),
 
-  // Admin panel: the single allowed admin email, and the secret used to sign
-  // the admin session cookie.
+  // Admin panel: the single allowed admin email + password, and the secret used
+  // to sign the admin session cookie.
   adminEmail: clean(process.env.ADMIN_EMAIL).toLowerCase(),
+  adminPassword: clean(process.env.ADMIN_PASSWORD),
   adminSessionSecret: clean(process.env.ADMIN_SESSION_SECRET),
 };
 

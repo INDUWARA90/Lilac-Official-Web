@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 25;
 
-type Search = { q?: string; status?: string; page?: string };
+type Search = { q?: string; page?: string };
 
 export default async function EntriesPage({
   searchParams,
@@ -21,22 +21,16 @@ export default async function EntriesPage({
 
   // PostgREST's .or() filter treats , ( ) as syntax — strip them from the query.
   const q = (sp.q ?? "").trim().replace(/[,()*%]/g, "").slice(0, 80);
-  const status = sp.status === "verified" || sp.status === "unverified" ? sp.status : "all";
   const page = Math.max(1, Number(sp.page) || 1);
 
   const db = createAdminClient();
   let query = db
     .from("entries")
-    .select("id, ticket_code, name, email, phone, district, verified, created_at", {
-      count: "exact",
-    })
+    .select("id, name, email, phone, district, created_at", { count: "exact" })
     .order("created_at", { ascending: false });
 
-  if (status !== "all") query = query.eq("verified", status === "verified");
   if (q) {
-    query = query.or(
-      `name.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%,ticket_code.ilike.%${q}%`,
-    );
+    query = query.or(`name.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%`);
   }
 
   const from = (page - 1) * PAGE_SIZE;
@@ -47,7 +41,6 @@ export default async function EntriesPage({
   const pageLink = (p: number) => {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
-    if (status !== "all") params.set("status", status);
     if (p > 1) params.set("page", String(p));
     const s = params.toString();
     return s ? `/admin/entries?${s}` : "/admin/entries";
@@ -59,24 +52,12 @@ export default async function EntriesPage({
 
       <form method="get" className="mt-4 flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 font-sans text-xs text-ink-muted">
-          Search name, email, phone, ticket
+          Search name, email, phone
           <input
             name="q"
             defaultValue={q}
             className="w-64 rounded-field border border-hairline bg-transparent px-3 py-1.5 text-sm text-ink focus:border-accent focus:outline-none"
           />
-        </label>
-        <label className="flex flex-col gap-1 font-sans text-xs text-ink-muted">
-          Status
-          <select
-            name="status"
-            defaultValue={status}
-            className="rounded-field border border-hairline bg-transparent px-3 py-1.5 text-sm text-ink focus:border-accent focus:outline-none"
-          >
-            <option value="all">All</option>
-            <option value="verified">Verified</option>
-            <option value="unverified">Unverified</option>
-          </select>
         </label>
         <button
           type="submit"
@@ -84,7 +65,7 @@ export default async function EntriesPage({
         >
           Apply
         </button>
-        {(q || status !== "all") && (
+        {q && (
           <Link href="/admin/entries" className="font-sans text-xs text-ink-muted underline">
             Clear
           </Link>
@@ -99,35 +80,27 @@ export default async function EntriesPage({
         <table className="w-full border-collapse font-sans text-sm">
           <thead>
             <tr className="border-b border-hairline text-left text-ink-muted">
-              <th className="py-2 pr-4 font-medium">Ticket</th>
               <th className="py-2 pr-4 font-medium">Name</th>
               <th className="py-2 pr-4 font-medium">Email</th>
               <th className="py-2 pr-4 font-medium">Phone</th>
               <th className="py-2 pr-4 font-medium">District</th>
-              <th className="py-2 pr-4 font-medium">Status</th>
               <th className="py-2 font-medium">Entered</th>
             </tr>
           </thead>
           <tbody>
             {(entries ?? []).length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-6 text-center text-ink-muted">
+                <td colSpan={5} className="py-6 text-center text-ink-muted">
                   No entries match.
                 </td>
               </tr>
             ) : (
               (entries ?? []).map((e) => (
                 <tr key={e.id} className="border-b border-hairline">
-                  <td className="py-2 pr-4 font-mono text-xs">{e.ticket_code}</td>
                   <td className="py-2 pr-4">{e.name}</td>
                   <td className="py-2 pr-4 text-ink-muted">{e.email}</td>
                   <td className="py-2 pr-4 text-ink-muted">{e.phone}</td>
                   <td className="py-2 pr-4 text-ink-muted">{e.district ?? "—"}</td>
-                  <td className="py-2 pr-4">
-                    <span className={e.verified ? "text-ink" : "text-ink-muted"}>
-                      {e.verified ? "Verified" : "Unverified"}
-                    </span>
-                  </td>
                   <td className="py-2 text-ink-muted">
                     {new Date(e.created_at).toLocaleDateString()}
                   </td>

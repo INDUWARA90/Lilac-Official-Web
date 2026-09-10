@@ -7,21 +7,13 @@ import { Button } from "@/components/ui/Button";
 
 /**
  * The one big celebratory moment on the site (brief motion spec) — fired once
- * when an entry is confirmed. Respects prefers-reduced-motion.
+ * when an entry is submitted. Respects prefers-reduced-motion.
  */
-export function SuccessCelebration({
-  firstName,
-  ticketCode,
-  alreadyVerified,
-}: {
-  firstName: string;
-  ticketCode: string;
-  alreadyVerified: boolean;
-}) {
+export function SuccessCelebration({ firstName }: { firstName: string }) {
   const fired = useRef(false);
 
   useEffect(() => {
-    if (fired.current || alreadyVerified) return;
+    if (fired.current) return;
     fired.current = true;
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -46,28 +38,15 @@ export function SuccessCelebration({
       });
       if (Date.now() < end) requestAnimationFrame(frame);
     })();
-  }, [alreadyVerified]);
+  }, []);
 
   return (
     <section className="flex flex-col items-center gap-6 pt-8 text-center">
       <div className="space-y-3">
-        <h1 className="text-3xl text-ink">
-          {alreadyVerified
-            ? "Your entry is already confirmed"
-            : "Your entry has been confirmed"}
-        </h1>
+        <h1 className="text-3xl text-ink">You&rsquo;re in the draw</h1>
         <p className="mx-auto max-w-sm font-sans text-sm leading-relaxed text-ink-muted">
-          Thank you, {firstName}. You are now entered into the Lilac draw. Winners
-          are selected after entries close and are notified by email.
-        </p>
-      </div>
-
-      <div className="w-full rounded-card bg-canvas-raised px-6 py-5 ring-1 ring-hairline">
-        <p className="font-sans text-xs uppercase tracking-wider text-ink-muted">
-          Your ticket code
-        </p>
-        <p className="mt-1 font-serif text-2xl font-semibold tracking-wider text-accent-strong">
-          {ticketCode}
+          Thank you, {firstName}. Your entry is confirmed. Winners are selected
+          after entries close and are notified by email.
         </p>
       </div>
 

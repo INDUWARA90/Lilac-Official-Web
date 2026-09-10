@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
-import { Turnstile } from "@/components/flow/Turnstile";
 import { contactInputSchema } from "@/lib/validation/contact";
 
 type FieldErrors = Partial<Record<string, string>>;
@@ -12,13 +11,10 @@ type FieldErrors = Partial<Record<string, string>>;
 /** Contact form. Same validate-twice pattern as the entry form. */
 export function ContactForm() {
   const [values, setValues] = useState({ name: "", email: "", message: "" });
-  const [token, setToken] = useState<string | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-
-  const handleToken = useCallback((t: string) => setToken(t), []);
 
   function set(key: keyof typeof values, value: string) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -29,17 +25,13 @@ export function ContactForm() {
     e.preventDefault();
     setFormError(null);
 
-    const candidate = { ...values, turnstileToken: token ?? "" };
+    const candidate = { ...values };
     const parsed = contactInputSchema.safeParse(candidate);
     if (!parsed.success) {
       const flat = z.flattenError(parsed.error).fieldErrors;
       const mapped: FieldErrors = {};
       for (const [k, v] of Object.entries(flat)) if (v?.length) mapped[k] = v[0];
       setErrors(mapped);
-      return;
-    }
-    if (token === null) {
-      setFormError("Please complete the bot check.");
       return;
     }
 
@@ -116,8 +108,6 @@ export function ContactForm() {
           <p className="font-sans text-xs text-red-600">{errors.message}</p>
         )}
       </div>
-
-      <Turnstile onToken={handleToken} />
 
       {formError && (
         <p

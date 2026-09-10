@@ -26,7 +26,7 @@ export default async function WinnersPage() {
   const entryIds = [...new Set((winners ?? []).map((w) => w.entry_id))];
   const { data: entries } = await db
     .from("entries")
-    .select("id, ticket_code, name, email")
+    .select("id, name, email")
     .in("id", entryIds.length ? entryIds : ["00000000-0000-0000-0000-000000000000"]);
   const byId = new Map((entries ?? []).map((e) => [e.id, e]));
   const pending = (winners ?? []).filter((w) => w.email_status === "pending").length;
@@ -47,7 +47,6 @@ export default async function WinnersPage() {
           <table className="w-full border-collapse font-sans text-sm">
             <thead>
               <tr className="border-b border-hairline text-left text-ink-muted">
-                <th className="py-2 pr-4 font-medium">Ticket</th>
                 <th className="py-2 pr-4 font-medium">Name</th>
                 <th className="py-2 pr-4 font-medium">Email</th>
                 <th className="py-2 pr-4 font-medium">Status</th>
@@ -60,7 +59,6 @@ export default async function WinnersPage() {
                 const e = byId.get(w.entry_id);
                 return (
                   <tr key={w.id} className="border-b border-hairline align-middle">
-                    <td className="py-2 pr-4 font-mono text-xs">{e?.ticket_code ?? "—"}</td>
                     <td className="py-2 pr-4">{e?.name ?? "—"}</td>
                     <td className="py-2 pr-4 text-ink-muted">{e?.email ?? "—"}</td>
                     <td className="py-2 pr-4">

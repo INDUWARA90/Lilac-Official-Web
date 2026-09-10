@@ -17,30 +17,25 @@ export default async function AdminDashboard() {
   const db = createAdminClient();
 
   const head = { count: "exact", head: true } as const;
-  const [total, verified, draws, winners, adViews, adCompletes] =
-    await Promise.all([
-      db.from("entries").select("*", head),
-      db.from("entries").select("*", head).eq("verified", true),
-      db.from("draws").select("*", head),
-      db.from("winners").select("*", head),
-      db.from("events").select("*", head).eq("type", "ad_view"),
-      db.from("events").select("*", head).eq("type", "ad_complete"),
-    ]);
+  const [total, draws, winners, adViews, adCompletes] = await Promise.all([
+    db.from("entries").select("*", head),
+    db.from("draws").select("*", head),
+    db.from("winners").select("*", head),
+    db.from("events").select("*", head).eq("type", "ad_view"),
+    db.from("events").select("*", head).eq("type", "ad_complete"),
+  ]);
 
   const totalC = total.count ?? 0;
-  const verifiedC = verified.count ?? 0;
   const viewsC = adViews.count ?? 0;
   const completesC = adCompletes.count ?? 0;
 
   const funnel = [
     { label: "Ad views", value: viewsC, sub: "people who opened the flow" },
     { label: "Ad completed", value: completesC, sub: pct(completesC, viewsC) + " of views" },
-    { label: "Entries submitted", value: totalC, sub: pct(totalC, viewsC) + " of views" },
-    { label: "Verified entries", value: verifiedC, sub: pct(verifiedC, totalC) + " of entries" },
+    { label: "Entries", value: totalC, sub: pct(totalC, viewsC) + " of views" },
   ];
 
   const stats = [
-    { label: "Unverified", value: totalC - verifiedC },
     { label: "Draws run", value: draws.count ?? 0 },
     { label: "Winners", value: winners.count ?? 0 },
   ];
@@ -52,7 +47,7 @@ export default async function AdminDashboard() {
       <h2 className="mt-6 font-sans text-sm font-semibold uppercase tracking-wider text-ink-muted">
         Funnel
       </h2>
-      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {funnel.map((f) => (
           <div key={f.label} className="rounded-card border border-hairline p-4">
             <div className="font-sans text-2xl font-semibold text-ink">
@@ -67,7 +62,7 @@ export default async function AdminDashboard() {
       <h2 className="mt-8 font-sans text-sm font-semibold uppercase tracking-wider text-ink-muted">
         Other
       </h2>
-      <div className="mt-3 grid grid-cols-3 gap-3 sm:max-w-md">
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:max-w-xs">
         {stats.map((s) => (
           <div key={s.label} className="rounded-card border border-hairline p-4">
             <div className="font-sans text-2xl font-semibold text-ink">{s.value}</div>

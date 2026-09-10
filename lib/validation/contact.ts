@@ -12,7 +12,6 @@ export const contactInputSchema = z.object({
     .trim()
     .min(10, "Please enter a little more detail.")
     .max(4000, "That message is too long."),
-  turnstileToken: z.string().optional().default(""),
 });
 
 export type ContactInput = z.infer<typeof contactInputSchema>;

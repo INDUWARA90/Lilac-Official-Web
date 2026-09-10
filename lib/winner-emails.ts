@@ -43,7 +43,7 @@ export async function processWinnerEmailBatch(
   for (const winner of pending ?? []) {
     const { data: entry } = await db
       .from("entries")
-      .select("name, email, ticket_code")
+      .select("name, email")
       .eq("id", winner.entry_id)
       .single();
 
@@ -56,7 +56,6 @@ export async function processWinnerEmailBatch(
     const result = await sendWinnerEmail({
       to: entry.email,
       name: entry.name,
-      ticketCode: entry.ticket_code,
     });
 
     await db
@@ -91,14 +90,14 @@ export async function alertOnWinnerEmailFailures(): Promise<void> {
 
   const { data: entries } = await db
     .from("entries")
-    .select("ticket_code")
+    .select("name, email")
     .in("id", failedWinners.map((w) => w.entry_id));
 
-  const tickets = (entries ?? []).map((e) => e.ticket_code).join(", ");
+  const who = (entries ?? []).map((e) => `${e.name} <${e.email}>`).join(", ");
   await sendAdminAlert(
     "Winner emails failed to send",
     `${failedWinners.length} winner confirmation email(s) failed.\n` +
-      `Affected tickets: ${tickets}\n` +
+      `Affected winners: ${who}\n` +
       `Resend them from the Winners page.`,
   );
 }

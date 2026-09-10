@@ -1,22 +1,21 @@
 import { z } from "zod";
 import { entryInputSchema } from "@/lib/validation/entry";
 import { createAnonClient } from "@/lib/supabase/client";
-import { verifyTurnstile } from "@/lib/turnstile";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
-import { sendVerificationEmail } from "@/lib/email/brevo";
-import { publicEnv } from "@/lib/env";
 
 /**
- * POST /api/entry — create an UNVERIFIED raffle entry and email a confirmation link.
+ * POST /api/entry — create a raffle entry. There is no email confirmation step:
+ * the entry counts immediately and the client shows the success screen. Only
+ * winners are emailed (after a draw).
  *
  * Flow:
- *   1. rate-limit + Turnstile + zod        (cheap rejections first)
+ *   1. rate-limit + zod                    (cheap rejections first)
  *   2. INSERT the row via the anon client  (RLS: INSERT-only on `entries`)
- *        - unique violation → 409 "already entered", and no email is sent,
- *          so this endpoint can't be used to spam a victim's inbox.
- *   3. send the verification email (best effort — a provider hiccup doesn't
- *      lose the entry; the row already exists unverified).
+ *        - unique violation → 409 "already entered"
+ *   3. mark it verified (service-role). A BEFORE INSERT trigger forces
+ *      `verified=false`, so this flip is a separate statement.
  */
 
 export const dynamic = "force-dynamic";
@@ -61,19 +60,6 @@ export async function POST(req: Request) {
   }
   const input = parsed.data;
 
-  // ---- 1c. Turnstile -------------------------------------------------
-  const turnstile = await verifyTurnstile(input.turnstileToken, ip);
-  if (!turnstile.ok) {
-    return json(
-      { ok: false, error: "Bot check failed. Please refresh the page and try again." } satisfies ErrorBody,
-      400,
-    );
-  }
-
-  // ---- server-controlled values ------------------------------------
-  const verificationToken = crypto.randomUUID();
-  const verifyUrl = `${publicEnv.siteUrl}/verify?token=${verificationToken}`;
-
   // adWatchedAt: accept only a sane, non-future timestamp.
   let adWatchedAt: string | null = null;
   if (input.adWatchedAt) {
@@ -83,7 +69,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // ---- 2. Insert the unverified entry -----------------------------
+  // ---- 2. Insert the entry (anon client, constrained by RLS) -----------
   const supabase = createAnonClient();
   const { error: insertError } = await supabase.from("entries").insert({
     name: input.name,
@@ -96,7 +82,6 @@ export async function POST(req: Request) {
     district: input.district,
     consent_at: new Date().toISOString(),
     ad_watched_at: adWatchedAt,
-    verification_token: verificationToken,
   });
 
   if (insertError) {
@@ -117,13 +102,18 @@ export async function POST(req: Request) {
     );
   }
 
-  // ---- 3. Send the verification email (best effort) ------------
-  const mail = await sendVerificationEmail({
-    to: input.email,
-    name: input.name,
-    verifyUrl,
-  });
-  // `emailSent: false` lets the UI tell the user to expect a delay / check spam,
-  // but the entry is saved either way.
-  return json({ ok: true, emailSent: mail.ok });
+  // ---- 3. Confirm it (service-role — the trigger forced verified=false) ----
+  const admin = createAdminClient();
+  const { error: confirmError } = await admin
+    .from("entries")
+    .update({ verified: true, verified_at: new Date().toISOString() })
+    .eq("email", input.email);
+
+  if (confirmError) {
+    // The row exists; only the confirm flip failed. Don't fail the user — a
+    // later reconcile / the draw's verified filter is the backstop.
+    console.error(`Entry confirm failed: ${confirmError.code ?? "unknown"}`);
+  }
+
+  return json({ ok: true, firstName: input.name.split(" ")[0] || "there" });
 }

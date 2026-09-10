@@ -26,8 +26,7 @@ export default function PrivacyPage() {
       <h2>What is made public</h2>
       <p>
         <strong>
-          If you win, your full name and ticket code are published on the public
-          results page.
+          If you win, your full name is published on the public results page.
         </strong>{" "}
         No other information you provide is shown publicly.
       </p>

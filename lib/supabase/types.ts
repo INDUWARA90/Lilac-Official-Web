@@ -25,11 +25,11 @@ export type EntryRow = {
   district: string | null;
   consent_at: string;
   ad_watched_at: string | null;
+  // `verified` is flipped to true by the entry API route right after insert (a
+  // BEFORE INSERT trigger forces it false). It stays as an "insert completed"
+  // marker; the draw only considers verified entries.
   verified: boolean;
   verified_at: string | null;
-  verification_token: string;
-  verification_sent_at: string | null;
-  ticket_code: string;
   created_at: string;
 };
 
@@ -46,8 +46,6 @@ export type EntryInsert = {
   district?: string | null;
   consent_at: string;
   ad_watched_at?: string | null;
-  /** Server-generated in the entry API route; never sent to the browser. */
-  verification_token?: string;
 };
 
 export type DrawRow = {
@@ -134,12 +132,7 @@ export type Database = {
       >;
     };
     Views: { [_ in never]: never };
-    Functions: {
-      generate_ticket_code: {
-        Args: Record<PropertyKey, never>;
-        Returns: string;
-      };
-    };
+    Functions: { [_ in never]: never };
     Enums: {
       email_status: EmailStatus;
     };

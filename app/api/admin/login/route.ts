@@ -1,31 +1,25 @@
 import { z } from "zod";
 import { cookies } from "next/headers";
-import { createAnonClient } from "@/lib/supabase/client";
-import { ADMIN_COOKIE, createSessionValue } from "@/lib/auth";
+import { ADMIN_COOKIE, createSessionValue, passwordMatches } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { serverEnv } from "@/lib/env";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
 
 /**
- * POST /api/admin/login — passwordless email sign-in for the single admin.
+ * POST /api/admin/login — email + password sign-in for the single admin.
  *
- *   { action: "request", email }        → emails a 6-digit sign-in code
- *   { action: "verify", email, code }   → checks the code, sets the session cookie
+ *   { email, password }  → on a match, sets the signed `admin_session` cookie.
  *
- * Uses Supabase Auth's email OTP. On success we mint our own signed
- * `admin_session` cookie (see lib/auth.ts) and don't keep a Supabase session.
+ * The allowed credentials are ADMIN_EMAIL / ADMIN_PASSWORD. There is no account
+ * store — this is a one-operator panel.
  */
 export const dynamic = "force-dynamic";
 
-const schema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("request"), email: z.email() }),
-  z.object({
-    action: z.literal("verify"),
-    email: z.email(),
-    code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code."),
-  }),
-]);
+const schema = z.object({
+  email: z.email(),
+  password: z.string().min(1).max(200),
+});
 
 const json = (body: unknown, status = 200) => Response.json(body, { status });
 
@@ -37,44 +31,19 @@ export async function POST(req: Request) {
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
-    return json({ ok: false, error: "Invalid request." }, 400);
+    return json({ ok: false, error: "Enter your email and password." }, 400);
   }
 
-  const input = parsed.data;
-  const isAdmin = input.email.toLowerCase() === serverEnv.adminEmail;
-  const supabase = createAnonClient();
+  const emailOk = parsed.data.email.toLowerCase() === serverEnv.adminEmail;
+  const passwordOk = passwordMatches(parsed.data.password);
 
-  if (input.action === "request") {
-    // Only actually send to the configured admin address, but always respond the
-    // same way so this can't be used to probe for the admin email.
-    if (isAdmin) {
-      await supabase.auth.signInWithOtp({
-        email: input.email,
-        options: { shouldCreateUser: false },
-      });
-    }
-    return json({ ok: true });
+  // Same response whichever half is wrong, so this can't be used to probe.
+  if (!emailOk || !passwordOk) {
+    await logAudit("admin.login_failed", { email: parsed.data.email }, null);
+    return json({ ok: false, error: "Email or password is incorrect." }, 401);
   }
 
-  // action === "verify"
-  if (!isAdmin) {
-    return json({ ok: false, error: "That code is not valid." }, 401);
-  }
-
-  const { data, error } = await supabase.auth.verifyOtp({
-    email: input.email,
-    token: input.code,
-    type: "email",
-  });
-
-  if (error || !data.user || data.user.email?.toLowerCase() !== serverEnv.adminEmail) {
-    return json({ ok: false, error: "That code is not valid or has expired." }, 401);
-  }
-
-  const { value, maxAgeSeconds } = createSessionValue({
-    email: data.user.email,
-    sub: data.user.id,
-  });
+  const { value, maxAgeSeconds } = createSessionValue({ email: serverEnv.adminEmail });
   (await cookies()).set(ADMIN_COOKIE, value, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -83,10 +52,7 @@ export async function POST(req: Request) {
     maxAge: maxAgeSeconds,
   });
 
-  // Don't retain the Supabase session — our own cookie is the source of truth.
-  await supabase.auth.signOut().catch(() => {});
-
-  await logAudit("admin.login", { email: data.user.email }, data.user.id);
+  await logAudit("admin.login", { email: serverEnv.adminEmail }, null);
 
   return json({ ok: true });
 }

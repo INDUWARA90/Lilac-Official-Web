@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { StepIndicator, type FlowStep } from "@/components/ui/StepIndicator";
 import { AdStep } from "@/components/flow/AdStep";
 import { EntryForm } from "@/components/flow/EntryForm";
-import { CheckEmailStep } from "@/components/flow/CheckEmailStep";
+import { SuccessCelebration } from "@/components/flow/SuccessCelebration";
 import { track } from "@/components/flow/track";
 import type { VideoConfig } from "@/lib/video-shared";
 
@@ -12,23 +12,23 @@ import type { VideoConfig } from "@/lib/video-shared";
  * Client orchestrator for the public flow on `/`:
  *   watch  → the ad (records when it was finished/skipped)
  *   enter  → the entry form
- *   sent   → "confirm your entry" holding screen
+ *   done   → the success screen (confetti)
  *
- * The final "Confirm" step happens on /verify (from the emailed link), so it's
- * not a state here — but the step indicator reflects where the user is.
+ * There is no email-confirmation step — an entry counts the moment it's
+ * submitted. Winners are notified by email after a draw.
  */
-type Phase = "watch" | "enter" | "sent";
+type Phase = "watch" | "enter" | "done";
 
 const STEP_FOR_PHASE: Record<Phase, FlowStep> = {
   watch: "Watch",
   enter: "Enter",
-  sent: "Confirm",
+  done: "Confirm",
 };
 
 export function EntryExperience({ video }: { video: VideoConfig }) {
   const [phase, setPhase] = useState<Phase>("watch");
   const [adWatchedAt, setAdWatchedAt] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("there");
 
   // Funnel: landing on the flow counts as an ad view.
   useEffect(() => track("ad_view"), []);
@@ -51,14 +51,14 @@ export function EntryExperience({ video }: { video: VideoConfig }) {
       {phase === "enter" && (
         <EntryForm
           adWatchedAt={adWatchedAt}
-          onSubmitted={(submittedEmail) => {
-            setEmail(submittedEmail);
-            setPhase("sent");
+          onSubmitted={(r) => {
+            setFirstName(r.firstName);
+            setPhase("done");
           }}
         />
       )}
 
-      {phase === "sent" && <CheckEmailStep email={email} />}
+      {phase === "done" && <SuccessCelebration firstName={firstName} />}
     </div>
   );
 }

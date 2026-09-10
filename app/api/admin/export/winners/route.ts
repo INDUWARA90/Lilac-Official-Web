@@ -25,23 +25,23 @@ export async function GET() {
   const entryIds = [...new Set((winners ?? []).map((w) => w.entry_id))];
   const { data: entries } = await db
     .from("entries")
-    .select("id, ticket_code, name, email, phone, district")
+    .select("id, name, email, phone, district")
     .in("id", entryIds.length ? entryIds : ["00000000-0000-0000-0000-000000000000"]);
   const byId = new Map((entries ?? []).map((e) => [e.id, e]));
 
   const headers = [
-    "ticket_code", "name", "email", "phone", "district",
+    "name", "email", "phone", "district",
     "draw_id", "email_status", "email_sent_at", "won_at",
   ];
   const rows = (winners ?? []).map((w) => {
     const e = byId.get(w.entry_id);
     return [
-      e?.ticket_code, e?.name, e?.email, e?.phone, e?.district,
+      e?.name, e?.email, e?.phone, e?.district,
       w.draw_id, w.email_status, w.email_sent_at, w.created_at,
     ];
   });
 
-  await logAudit("export.winners", { count: rows.length }, session.sub);
+  await logAudit("export.winners", { count: rows.length, by: session.email }, null);
 
   const stamp = new Date().toISOString().slice(0, 10);
   return csvResponse(`lilac-winners-${stamp}.csv`, toCsv(headers, rows));

@@ -1,20 +1,35 @@
 import "server-only";
-import { serverEnv } from "@/lib/env";
+import { publicEnv, serverEnv } from "@/lib/env";
 
 /**
- * Resend — used ONLY for winner-confirmation emails and admin alerts, kept
- * separate from Brevo (verification email) so verification volume can never
- * exhaust the winner-email quota. https://resend.com/docs/api-reference/emails
+ * Resend — the single transactional-email provider for the site.
+ *   - contact-form forwarding        (sendContactMessage)
+ *   - winner-confirmation emails      (sendWinnerEmail)
+ *   - admin failure alerts           (sendAdminAlert)
+ *
+ * We call Resend's HTTP API directly (no SDK) to keep the dependency surface
+ * small. https://resend.com/docs/api-reference/emails/send-email
  */
 const RESEND_URL = "https://api.resend.com/emails";
 
 export interface SendResult {
   ok: boolean;
+  /** Provider message id when available — handy for the audit trail. */
   id?: string;
   reason?: string;
 }
 
-async function send(to: string, subject: string, html: string, text: string): Promise<SendResult> {
+interface SendArgs {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  /** Optional Reply-To — used so the admin can reply straight to a contact sender. */
+  replyTo?: { email: string; name?: string };
+}
+
+/** Low-level send. Callers handle the "not configured" case themselves. */
+async function send({ to, subject, html, text, replyTo }: SendArgs): Promise<SendResult> {
   const { apiKey, senderEmail, senderName } = serverEnv.resend;
 
   if (!apiKey || !senderEmail) {
@@ -25,6 +40,17 @@ async function send(to: string, subject: string, html: string, text: string): Pr
     return { ok: false, reason: "resend-not-configured" };
   }
 
+  const body: Record<string, unknown> = {
+    from: `${senderName} <${senderEmail}>`,
+    to: [to],
+    subject,
+    html,
+    text,
+  };
+  if (replyTo) {
+    body.reply_to = replyTo.name ? `${replyTo.name} <${replyTo.email}>` : replyTo.email;
+  }
+
   try {
     const res = await fetch(RESEND_URL, {
       method: "POST",
@@ -32,15 +58,10 @@ async function send(to: string, subject: string, html: string, text: string): Pr
         authorization: `Bearer ${apiKey}`,
         "content-type": "application/json",
       },
-      body: JSON.stringify({
-        from: `${senderName} <${senderEmail}>`,
-        to: [to],
-        subject,
-        html,
-        text,
-      }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
+      // Log status only — never the recipient or payload (PII).
       console.error(`Resend send failed: HTTP ${res.status}`);
       return { ok: false, reason: `http-${res.status}` };
     }
@@ -52,44 +73,105 @@ async function send(to: string, subject: string, html: string, text: string): Pr
   }
 }
 
+/**
+ * Forward a contact-form message to the admin inbox. `replyTo` is the sender so
+ * the admin can reply directly.
+ */
+export async function sendContactMessage(args: {
+  name: string;
+  email: string;
+  message: string;
+}): Promise<SendResult> {
+  const { apiKey, senderEmail } = serverEnv.resend;
+  const to = serverEnv.adminNotifyEmail;
+
+  if (!apiKey || !senderEmail || !to) {
+    if (process.env.NODE_ENV !== "production") {
+      console.info(`[dev] contact message from ${args.email} (email not configured)`);
+      return { ok: true, reason: "dev-no-provider" };
+    }
+    return { ok: false, reason: "resend-not-configured" };
+  }
+
+  const text =
+    `New contact message\n\n` +
+    `Name: ${args.name}\nEmail: ${args.email}\n\n${args.message}`;
+
+  return send({
+    to,
+    replyTo: { email: args.email, name: args.name },
+    subject: `Contact form: ${args.name}`,
+    text,
+    html: `<pre style="font-family:Arial,Helvetica,sans-serif;font-size:14px;white-space:pre-wrap;">${escapeHtml(
+      text,
+    )}</pre>`,
+  });
+}
+
 export function sendWinnerEmail(args: {
   to: string;
   name: string;
-  ticketCode: string;
 }): Promise<SendResult> {
   const first = args.name.split(" ")[0] || "there";
+
   const text =
-    `Dear ${first},\n\n` +
-    `We are pleased to inform you that your entry (ticket ${args.ticketCode}) has ` +
-    `been selected as a winner in the Lilac draw.\n\n` +
-    `A member of the Lilac team will be in touch shortly with details. Your full ` +
-    `name and ticket code now appear on the public results page, as disclosed at ` +
-    `the time of entry.\n\nRegards,\nThe Lilac Team`;
+    `${first}, you won! 🎉\n\n` +
+    `Out of everyone who entered the Lilac draw, your name came out of the hat. ` +
+    `Congratulations — this really is you.\n\n` +
+    `What happens next: someone from the Lilac team will email you very soon with ` +
+    `all the details and how to claim your prize. Keep an eye on this inbox.\n\n` +
+    `Your name is also up on the winners page now — go and see it: ` +
+    `${publicEnv.siteUrl}/results\n\n` +
+    `So glad it's you.\n\nThe Lilac Team`;
 
-  const html = `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#211b26;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;padding:32px 24px;">
-<tr><td style="font-size:20px;font-weight:bold;color:#45329f;padding-bottom:24px;">Lilac</td></tr>
-<tr><td style="font-size:16px;line-height:1.6;padding-bottom:16px;">Dear ${escapeHtml(first)},</td></tr>
-<tr><td style="font-size:16px;line-height:1.6;padding-bottom:16px;">We are pleased to inform you that your entry
-(ticket <strong>${escapeHtml(args.ticketCode)}</strong>) has been selected as a winner in the Lilac draw.</td></tr>
-<tr><td style="font-size:16px;line-height:1.6;padding-bottom:16px;">A member of the Lilac team will be in touch shortly.
-Your full name and ticket code now appear on the public results page, as disclosed at the time of entry.</td></tr>
-<tr><td style="font-size:14px;line-height:1.6;padding-top:8px;">Regards,<br>The Lilac Team</td></tr>
-</table></body></html>`;
+  const html = `<!doctype html><html><body style="margin:0;background:#f6f4fd;font-family:Arial,Helvetica,sans-serif;color:#211b26;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f4fd;padding:32px 16px;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(69,50,159,0.12);">
+<tr><td style="background:linear-gradient(135deg,#5a45d6,#45329f);padding:36px 32px 30px;text-align:center;">
+<div style="font-size:14px;font-weight:bold;letter-spacing:2px;color:#d9d2f7;text-transform:uppercase;">Lilac</div>
+<div style="font-size:40px;line-height:1;padding:14px 0 6px;">🎉</div>
+<div style="font-size:24px;font-weight:bold;color:#ffffff;">${escapeHtml(first)}, you won!</div>
+</td></tr>
+<tr><td style="padding:30px 32px 8px;font-size:16px;line-height:1.65;">
+Out of everyone who entered the Lilac draw, your name came out of the hat.
+<strong>Congratulations</strong> — this really is you.
+</td></tr>
+<tr><td style="padding:8px 32px;font-size:16px;line-height:1.65;">
+Someone from the Lilac team will email you very soon with all the details and how
+to claim your prize. Keep an eye on this inbox.
+</td></tr>
+<tr><td style="padding:16px 32px 8px;text-align:center;">
+<a href="${escapeHtml(publicEnv.siteUrl)}/results"
+   style="display:inline-block;padding:13px 30px;background:#5a45d6;border-radius:9999px;color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;">
+  See your name on the winners page
+</a>
+</td></tr>
+<tr><td style="padding:20px 32px 34px;font-size:15px;line-height:1.6;color:#6c6577;">
+So glad it&rsquo;s you.<br><span style="color:#211b26;font-weight:bold;">The Lilac Team</span>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>`;
 
-  return send(args.to, "You have won the Lilac draw", html, text);
+  return send({ to: args.to, subject: `${first}, you won the Lilac draw! 🎉`, html, text });
 }
 
 export function sendAdminAlert(subject: string, text: string): Promise<SendResult> {
   if (!serverEnv.adminNotifyEmail) return Promise.resolve({ ok: false, reason: "no-admin-email" });
-  return send(
-    serverEnv.adminNotifyEmail,
-    `[Lilac admin] ${subject}`,
-    `<pre style="font-family:Arial,Helvetica,sans-serif;font-size:14px;white-space:pre-wrap;">${escapeHtml(text)}</pre>`,
+  return send({
+    to: serverEnv.adminNotifyEmail,
+    subject: `[Lilac admin] ${subject}`,
+    html: `<pre style="font-family:Arial,Helvetica,sans-serif;font-size:14px;white-space:pre-wrap;">${escapeHtml(text)}</pre>`,
     text,
-  );
+  });
 }
 
 function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }

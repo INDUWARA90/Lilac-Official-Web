@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { SelectField } from "@/components/ui/SelectField";
 import { Checkbox } from "@/components/ui/Checkbox";
-import { Turnstile } from "@/components/flow/Turnstile";
 import {
   AGE_RANGES,
   GENDER_OPTIONS,
@@ -39,16 +38,13 @@ export function EntryForm({
   onSubmitted,
 }: {
   adWatchedAt: string | null;
-  onSubmitted: (email: string) => void;
+  onSubmitted: (result: { firstName: string }) => void;
 }) {
   const [values, setValues] = useState(EMPTY);
   const [consent, setConsent] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  const handleToken = useCallback((t: string) => setTurnstileToken(t), []);
 
   function set<K extends keyof typeof EMPTY>(key: K, value: string) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -64,7 +60,6 @@ export function EntryForm({
       occupation: values.occupation || undefined,
       consent,
       adWatchedAt: adWatchedAt ?? undefined,
-      turnstileToken: turnstileToken ?? "",
     };
 
     // Client-side pass with the shared schema.
@@ -72,11 +67,6 @@ export function EntryForm({
     if (!parsed.success) {
       const flat = z.flattenError(parsed.error).fieldErrors;
       setErrors(mapFirst(flat));
-      return;
-    }
-
-    if (turnstileToken === null) {
-      setFormError("Please complete the bot check before submitting.");
       return;
     }
 
@@ -91,10 +81,13 @@ export function EntryForm({
         ok: boolean;
         error?: string;
         fieldErrors?: Record<string, string[]>;
+        firstName?: string;
       };
 
       if (res.ok && data.ok) {
-        onSubmitted(parsed.data.email);
+        onSubmitted({
+          firstName: data.firstName ?? parsed.data.name.split(" ")[0] ?? "there",
+        });
         return;
       }
       if (data.fieldErrors) setErrors(mapFirst(data.fieldErrors));
@@ -111,7 +104,7 @@ export function EntryForm({
       <div className="space-y-2 text-center">
         <h1 className="text-3xl text-ink">Enter the draw</h1>
         <p className="mx-auto max-w-sm font-sans text-sm leading-relaxed text-ink-muted">
-          One entry per person. We&rsquo;ll email you a link to confirm your entry.
+          One entry per person. Your entry is counted as soon as you submit.
         </p>
       </div>
 
@@ -219,8 +212,6 @@ export function EntryForm({
         </Checkbox>
 
         <div className="flex flex-col gap-4">
-          <Turnstile onToken={handleToken} />
-
           {formError && (
             <p
               role="alert"

@@ -6,8 +6,8 @@
  * delete anything.
  *
  * In practice the public form POSTs to /api/entry (server-side zod validation,
- * Turnstile, IP rate-limiting); that route uses this client for the actual
- * insert, so the write stays constrained by RLS even if the route has a bug.
+ * per-IP rate-limiting); that route uses this client for the actual insert, so
+ * the write stays constrained by RLS even if the route has a bug.
  */
 import { createClient } from "@supabase/supabase-js";
 import { requirePublic } from "@/lib/env";

@@ -13,7 +13,7 @@ export async function GET() {
   const { data, error } = await createAdminClient()
     .from("entries")
     .select(
-      "ticket_code, name, email, phone, address, age_range, gender, occupation, district, verified, verified_at, ad_watched_at, consent_at, created_at",
+      "name, email, phone, address, age_range, gender, occupation, district, ad_watched_at, consent_at, created_at",
     )
     .order("created_at", { ascending: true });
 
@@ -22,17 +22,15 @@ export async function GET() {
   }
 
   const headers = [
-    "ticket_code", "name", "email", "phone", "address", "age_range", "gender",
-    "occupation", "district", "verified", "verified_at", "ad_watched_at",
-    "consent_at", "created_at",
+    "name", "email", "phone", "address", "age_range", "gender",
+    "occupation", "district", "ad_watched_at", "consent_at", "created_at",
   ];
   const rows = (data ?? []).map((e) => [
-    e.ticket_code, e.name, e.email, e.phone, e.address, e.age_range, e.gender,
-    e.occupation, e.district, e.verified, e.verified_at, e.ad_watched_at,
-    e.consent_at, e.created_at,
+    e.name, e.email, e.phone, e.address, e.age_range, e.gender,
+    e.occupation, e.district, e.ad_watched_at, e.consent_at, e.created_at,
   ]);
 
-  await logAudit("export.entries", { count: rows.length }, session.sub);
+  await logAudit("export.entries", { count: rows.length, by: session.email }, null);
 
   const stamp = new Date().toISOString().slice(0, 10);
   return csvResponse(`lilac-entries-${stamp}.csv`, toCsv(headers, rows));

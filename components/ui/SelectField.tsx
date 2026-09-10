@@ -16,11 +16,17 @@ interface SelectFieldProps
 
 export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
   function SelectField(
-    { label, hint, error, placeholder, options, className = "", required, defaultValue, ...rest },
+    { label, hint, error, placeholder, options, className = "", required, defaultValue, value, onChange, ...rest },
     ref,
   ) {
     const id = useId();
     const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+
+    // A <select> is controlled OR uncontrolled, never both. When the caller
+    // passes `value`, wire it up controlled; otherwise fall back to an empty
+    // default so the disabled placeholder shows first.
+    const selectionProps =
+      value !== undefined ? { value, onChange } : { defaultValue: defaultValue ?? "" };
 
     return (
       <div className={`flex flex-col gap-1.5 ${className}`}>
@@ -32,7 +38,7 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
           ref={ref}
           id={id}
           required={required}
-          defaultValue={defaultValue ?? ""}
+          {...selectionProps}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
           className={

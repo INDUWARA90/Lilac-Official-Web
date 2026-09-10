@@ -107,9 +107,6 @@ export const entryInputSchema = z.object({
   // Client-captured moment the ad finished / was skipped. Optional; clamped
   // server-side to "not in the future".
   adWatchedAt: z.iso.datetime().optional(),
-
-  // Cloudflare Turnstile token from the widget (verified separately).
-  turnstileToken: z.string().optional().default(""),
 });
 
 export type EntryInput = z.infer<typeof entryInputSchema>;

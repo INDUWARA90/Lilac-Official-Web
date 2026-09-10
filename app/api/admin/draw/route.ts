@@ -62,7 +62,7 @@ export async function POST(req: Request) {
   // 3. Record the draw, then the winners.
   const { data: draw, error: drawErr } = await db
     .from("draws")
-    .insert({ admin_id: session.sub, winner_count: winnerCount })
+    .insert({ admin_id: null, winner_count: winnerCount })
     .select("id")
     .single();
 
@@ -83,8 +83,8 @@ export async function POST(req: Request) {
 
   await logAudit(
     "draw.run",
-    { draw_id: draw.id, winner_count: winnerCount, winner_entry_ids: winnerEntryIds },
-    session.sub,
+    { draw_id: draw.id, winner_count: winnerCount, winner_entry_ids: winnerEntryIds, by: session.email },
+    null,
   );
 
   // 4. Hand winner emails to the background processor (runs after this response).

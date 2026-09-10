@@ -1,9 +1,8 @@
 import { z } from "zod";
 import { contactInputSchema } from "@/lib/validation/contact";
-import { verifyTurnstile } from "@/lib/turnstile";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
-import { sendContactMessage } from "@/lib/email/brevo";
+import { sendContactMessage } from "@/lib/email/resend";
 
 /**
  * POST /api/contact — forward a contact-form message to the admin inbox.
@@ -31,11 +30,6 @@ export async function POST(req: Request) {
     );
   }
   const input = parsed.data;
-
-  const turnstile = await verifyTurnstile(input.turnstileToken, ip);
-  if (!turnstile.ok) {
-    return json({ ok: false, error: "Bot check failed. Please refresh and try again." }, 400);
-  }
 
   const sent = await sendContactMessage({
     name: input.name,

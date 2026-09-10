@@ -1,3 +1,9 @@
+-- ============================================================
+-- Lilac — full schema (migrations 0001–0004 combined)
+-- Paste into Supabase dashboard → SQL Editor → Run. Idempotent.
+-- ============================================================
+
+-- >>> supabase/migrations/0001_init.sql
 -- ============================================================================
 -- Lilac Official Web — initial schema + Row Level Security
 -- Apply this to the STAGING Supabase project first (SQL Editor → paste → Run),
@@ -197,3 +203,92 @@ create policy "entries_anon_insert"
 
 -- No other policies. draws / winners / audit_log have RLS on and zero policies,
 -- which means: no access for anon or authenticated, full access for service-role.
+
+
+-- >>> supabase/migrations/0002_events.sql
+-- ============================================================================
+-- Lilac — funnel events (Stage 6)
+-- Apply after 0001_init.sql. One row per tracked moment; the admin dashboard
+-- counts them for the funnel:  ad views → ad completed → verified entries.
+-- (The "verified entries" number comes from public.entries, not from here.)
+-- ============================================================================
+
+create table if not exists public.events (
+  id         uuid primary key default gen_random_uuid(),
+  type       text not null check (type in ('ad_view', 'ad_complete')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists events_type_idx on public.events (type);
+
+-- Same RLS model as `entries`: the public (anon) may only INSERT. All reads are
+-- server-side through the service-role key.
+alter table public.events enable row level security;
+
+drop policy if exists "events_anon_insert" on public.events;
+create policy "events_anon_insert"
+  on public.events
+  for insert
+  to anon, authenticated
+  with check (true);
+
+
+-- >>> supabase/migrations/0003_video.sql
+-- ============================================================================
+-- Lilac — ad video configuration (Stage 8)
+-- Apply after 0002_events.sql. A single row holds the current ad video: either
+-- a YouTube video id, or a path to a file in the `event-video` Storage bucket
+-- (the bucket is created automatically on first upload from the admin panel).
+-- ============================================================================
+
+create table if not exists public.video_config (
+  id           text primary key default 'default' check (id = 'default'),
+  kind         text not null default 'youtube' check (kind in ('youtube', 'file')),
+  youtube_id   text,
+  storage_path text,
+  title        text not null default 'Lilac — this year''s film',
+  updated_at   timestamptz not null default now(),
+  updated_by   uuid references auth.users (id)
+);
+
+-- Seed the single row.
+insert into public.video_config (id) values ('default')
+on conflict (id) do nothing;
+
+-- Service-role only: RLS on, no policies. The public flow reads this through a
+-- server component using the service-role key.
+alter table public.video_config enable row level security;
+
+
+-- >>> supabase/migrations/0004_no_verify_no_ticket.sql
+-- ============================================================================
+-- Lilac — drop the email-verification step and the public ticket code.
+-- Apply after 0001–0003 (SQL Editor → paste → Run). Idempotent.
+--
+-- After this: an entry counts as soon as it's submitted (the API flips
+-- `verified` to true straight away), and there is no per-entry ticket code.
+-- ============================================================================
+
+-- 1. Trigger no longer generates a ticket code; it just marks the row verified.
+create or replace function public.set_entry_defaults()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.verified    := true;
+  new.verified_at := now();
+  new.created_at  := now();
+  return new;
+end $$;
+
+-- 2. Drop the ticket-code column, its index and generator function.
+drop index if exists public.entries_ticket_code_key;
+alter table public.entries drop column if exists ticket_code;
+drop function if exists public.generate_ticket_code();
+
+-- 3. Drop the now-unused verification-token columns and index.
+drop index if exists public.entries_verification_token_idx;
+alter table public.entries drop column if exists verification_token;
+alter table public.entries drop column if exists verification_sent_at;
+
+

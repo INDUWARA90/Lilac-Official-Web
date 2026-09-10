@@ -62,7 +62,7 @@ export async function POST(req: Request) {
 
   const { error } = await db
     .from("video_config")
-    .update({ ...row, updated_at: new Date().toISOString(), updated_by: session.sub })
+    .update({ ...row, updated_at: new Date().toISOString(), updated_by: null })
     .eq("id", "default");
 
   if (error) {
@@ -72,8 +72,8 @@ export async function POST(req: Request) {
 
   await logAudit(
     "video.update",
-    { kind: row.kind, youtube_id: row.youtube_id, storage_path: row.storage_path },
-    session.sub,
+    { kind: row.kind, youtube_id: row.youtube_id, storage_path: row.storage_path, by: session.email },
+    null,
   );
 
   return json({ ok: true });

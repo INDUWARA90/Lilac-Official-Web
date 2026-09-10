@@ -34,7 +34,7 @@ export async function POST(req: Request) {
 
   const { data: entry } = await db
     .from("entries")
-    .select("name, email, ticket_code")
+    .select("name, email")
     .eq("id", winner.entry_id)
     .single();
 
@@ -43,7 +43,6 @@ export async function POST(req: Request) {
   const result = await sendWinnerEmail({
     to: entry.email,
     name: entry.name,
-    ticketCode: entry.ticket_code,
   });
 
   await db
@@ -56,8 +55,8 @@ export async function POST(req: Request) {
 
   await logAudit(
     "winner.email_resend",
-    { winner_id: winner.id, ticket_code: entry.ticket_code, ok: result.ok },
-    session.sub,
+    { winner_id: winner.id, entry_id: winner.entry_id, ok: result.ok, by: session.email },
+    null,
   );
 
   return result.ok
