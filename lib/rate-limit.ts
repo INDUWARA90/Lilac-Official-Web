@@ -1,24 +1,40 @@
 import "server-only";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * Small in-memory rate limiter (fixed window).
+ * Durable fixed-window rate limiter, backed by the `rate_limits` table through
+ * the `rl_hit` RPC — so a limit holds across serverless instances (the old
+ * in-memory Map did not).
  *
- * Note: serverless instances don't share memory, so this limits per instance,
- * not globally — enough to blunt casual abuse of the public forms. Swap the Map
- * for Vercel KV / Upstash later if a global limit is needed — same
- * `checkRateLimit` signature.
+ * Fails OPEN: if the DB call errors we allow the request rather than lock
+ * legitimate entrants out during an infra blip. The signature checks and the
+ * one-entry-per-person constraint are the hard guarantees; this is throttling.
  */
-const hits = new Map<string, { count: number; resetAt: number }>();
-
-export function checkRateLimit(key: string, limit: number, windowMs: number) {
-  const now = Date.now();
-  const entry = hits.get(key);
-
-  if (!entry || entry.resetAt <= now) {
-    hits.set(key, { count: 1, resetAt: now + windowMs });
+export async function checkRateLimit(
+  key: string,
+  limit: number,
+  windowMs: number,
+): Promise<{ ok: boolean }> {
+  try {
+    const { data, error } = await createAdminClient().rpc("rl_hit", {
+      p_key: key,
+      p_limit: limit,
+      p_window_ms: windowMs,
+    });
+    if (error) {
+      console.error(`rate-limit rl_hit failed: ${error.code ?? "unknown"}`);
+      return { ok: true };
+    }
+    return { ok: data === true };
+  } catch {
     return { ok: true };
   }
+}
 
-  entry.count += 1;
-  return { ok: entry.count <= limit };
+/**
+ * Consume a single-use nonce: true the first time within `ttlMs`, false on
+ * every repeat. Same fail-open behaviour as `checkRateLimit`.
+ */
+export async function consumeNonce(nonce: string, ttlMs: number): Promise<boolean> {
+  return (await checkRateLimit(`nonce:${nonce}`, 1, ttlMs)).ok;
 }

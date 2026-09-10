@@ -40,6 +40,12 @@ export const serverEnv = {
   adminEmail: clean(process.env.ADMIN_EMAIL).toLowerCase(),
   adminPassword: clean(process.env.ADMIN_PASSWORD),
   adminSessionSecret: clean(process.env.ADMIN_SESSION_SECRET),
+
+  // Signs the ad-watch session token (proves the sponsor ads were served and
+  // that enough time elapsed before an entry). Falls back to the admin secret
+  // so no new env var is strictly required.
+  adSessionSecret:
+    clean(process.env.AD_SESSION_SECRET) || clean(process.env.ADMIN_SESSION_SECRET),
 };
 
 export function requirePublic<K extends keyof typeof publicEnv>(

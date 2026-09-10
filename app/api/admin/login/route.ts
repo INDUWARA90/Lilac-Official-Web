@@ -25,7 +25,7 @@ const json = (body: unknown, status = 200) => Response.json(body, { status });
 
 export async function POST(req: Request) {
   const ip = getClientIp(req.headers);
-  if (!checkRateLimit(`admin-login:${ip}`, 10, 10 * 60_000).ok) {
+  if (!(await checkRateLimit(`admin-login:${ip}`, 10, 10 * 60_000)).ok) {
     return json({ ok: false, error: "Too many attempts. Please wait a few minutes." }, 429);
   }
 

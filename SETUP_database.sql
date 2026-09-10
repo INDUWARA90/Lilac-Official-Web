@@ -1,6 +1,12 @@
 -- ============================================================
--- Lilac — full schema (migrations 0001–0004 combined)
--- Paste into Supabase dashboard → SQL Editor → Run. Idempotent.
+-- Lilac — full schema (migrations 0001–0006 combined)
+-- Paste into Supabase dashboard → SQL Editor → Run.
+--
+-- FOR A FRESH DATABASE ONLY. This runs 0001→0005 in sequence, so it recreates
+-- objects (generate_ticket_code(), the ticket_code / verification_token
+-- indexes) that 0004 then drops — fine on an empty project, but it ERRORS if
+-- those columns are already gone. On a database that already has 0001–0004,
+-- run only supabase/migrations/0005_ads.sql instead.
 -- ============================================================
 
 -- >>> supabase/migrations/0001_init.sql
@@ -163,7 +169,7 @@ create unique index if not exists winners_entry_id_key on public.winners (entry_
 create index if not exists winners_draw_id_idx on public.winners (draw_id);
 
 -- ----------------------------------------------------------------------------
--- audit_log — admin logins, video changes, draws
+-- audit_log — admin logins, ad changes, draws
 -- ----------------------------------------------------------------------------
 create table if not exists public.audit_log (
   id          uuid primary key default gen_random_uuid(),
@@ -290,5 +296,104 @@ drop function if exists public.generate_ticket_code();
 drop index if exists public.entries_verification_token_idx;
 alter table public.entries drop column if exists verification_token;
 alter table public.entries drop column if exists verification_sent_at;
+
+
+-- >>> supabase/migrations/0005_ads.sql
+-- ============================================================================
+-- Lilac — sponsor ads become an ordered list (was: a single `video_config` row).
+-- Each ad is a YouTube video, an uploaded video file, or an uploaded image
+-- ("post"). The public flow shows them in `sort_order` and gates progress:
+-- videos require 5s of actual playback, images auto-advance after a 5s delay.
+-- Only once every ad in the list has been shown does the visitor reach the
+-- entry form.
+-- ============================================================================
+
+create table if not exists public.ads (
+  id           uuid primary key default gen_random_uuid(),
+  kind         text not null check (kind in ('youtube', 'video_file', 'image')),
+  youtube_id   text,
+  storage_path text,
+  title        text not null default 'Sponsor message',
+  sort_order   integer not null default 0,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now(),
+  updated_by   uuid references auth.users (id)
+);
+
+create index if not exists ads_sort_order_idx on public.ads (sort_order);
+
+-- Carry the old single video over as the first ad (only if the old table is
+-- still around and this hasn't already run), then drop it.
+do $$
+begin
+  if to_regclass('public.video_config') is not null then
+    insert into public.ads (kind, youtube_id, storage_path, title, sort_order)
+    select
+      case when kind = 'file' then 'video_file' else 'youtube' end,
+      youtube_id,
+      storage_path,
+      title,
+      0
+    from public.video_config
+    where id = 'default'
+      and (youtube_id is not null or storage_path is not null)
+      and not exists (select 1 from public.ads);
+
+    drop table public.video_config;
+  end if;
+end $$;
+
+-- Service-role only: RLS on, no policies. The public flow reads this through a
+-- server component using the service-role key.
+alter table public.ads enable row level security;
+
+
+-- >>> supabase/migrations/0006_security.sql
+-- ============================================================================
+-- Lilac — security hardening. rate_limits + rl_hit(): a durable, cross-instance
+-- fixed-window rate limiter (the in-memory one didn't survive serverless),
+-- doubling as a single-use nonce store for the ad-watch session token.
+-- ============================================================================
+
+create table if not exists public.rate_limits (
+  key        text primary key,
+  count      integer not null default 0,
+  reset_at   timestamptz not null,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists rate_limits_reset_at_idx on public.rate_limits (reset_at);
+
+create or replace function public.rl_hit(p_key text, p_limit integer, p_window_ms bigint)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_now   timestamptz := now();
+  v_count integer;
+begin
+  insert into public.rate_limits as rl (key, count, reset_at, updated_at)
+  values (p_key, 1, v_now + make_interval(secs => p_window_ms / 1000.0), v_now)
+  on conflict (key) do update
+    set count      = case when rl.reset_at <= v_now then 1 else rl.count + 1 end,
+        reset_at   = case when rl.reset_at <= v_now
+                          then v_now + make_interval(secs => p_window_ms / 1000.0)
+                          else rl.reset_at end,
+        updated_at = v_now
+  returning count into v_count;
+
+  if random() < 0.02 then
+    delete from public.rate_limits where reset_at < v_now - interval '1 day';
+  end if;
+
+  return v_count <= p_limit;
+end $$;
+
+alter table public.rate_limits enable row level security;
+
+revoke all on function public.rl_hit(text, integer, bigint) from public;
+grant execute on function public.rl_hit(text, integer, bigint) to anon, authenticated, service_role;
 
 

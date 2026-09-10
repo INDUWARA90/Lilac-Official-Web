@@ -1,27 +1,38 @@
 /**
- * Ad-video values shared between server and client code (no imports, no
- * server-only deps). The server-only loader lives in `lib/video.ts`.
+ * Ad values shared between server and client code (no imports, no server-only
+ * deps). The server-only loader lives in `lib/ads.ts`.
  */
 
-export type VideoConfig =
-  | { kind: "youtube"; youtubeId: string; title: string }
-  | { kind: "file"; url: string; title: string };
+export type AdMedia =
+  | { kind: "youtube"; youtubeId: string }
+  | { kind: "video_file"; url: string }
+  | { kind: "image"; url: string };
 
-/** Seconds before the Skip control appears (brief: "not fully locked"). */
-export const SKIP_AFTER_SECONDS = 5;
+export type Ad = { id: string; title: string } & AdMedia;
 
-/** Supabase Storage bucket for uploaded ad videos. */
+/** Minimum seconds of *actual playback* before a video ad's Next unlocks. */
+export const VIDEO_MIN_WATCH_SECONDS = 5;
+
+/** Seconds an image ad ("post") stays up before auto-advancing. */
+export const IMAGE_AUTO_ADVANCE_SECONDS = 5;
+
+/** Supabase Storage buckets for uploaded ad assets. */
 export const VIDEO_BUCKET = "event-video";
+export const IMAGE_BUCKET = "event-ad-images";
 
-/** Cap uploads at ~20MB to stay clear of Supabase's free bandwidth limits. */
+/** Upload caps, kept clear of Supabase's free bandwidth limits. */
 export const MAX_VIDEO_BYTES = 20 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 /** Fallback used before an admin has configured anything. */
-export const DEFAULT_VIDEO: VideoConfig = {
-  kind: "youtube",
-  youtubeId: "aqz-KE-bpKQ",
-  title: "Lilac — this year's film",
-};
+export const DEFAULT_ADS: Ad[] = [
+  {
+    id: "default",
+    title: "Lilac — this year's film",
+    kind: "youtube",
+    youtubeId: "aqz-KE-bpKQ",
+  },
+];
 
 /**
  * Extract a YouTube video id from the common URL shapes

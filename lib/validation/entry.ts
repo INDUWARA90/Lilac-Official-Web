@@ -104,9 +104,9 @@ export const entryInputSchema = z.object({
     error: "You must agree before entering.",
   }),
 
-  // Client-captured moment the ad finished / was skipped. Optional; clamped
-  // server-side to "not in the future".
-  adWatchedAt: z.iso.datetime().optional(),
+  // Signed proof that the sponsor ads were served and watched — issued by
+  // `/enter`, verified in `/api/entry`. No entry without it.
+  adSession: z.string().min(1, "Please watch the ads, then submit.").max(400),
 });
 
 export type EntryInput = z.infer<typeof entryInputSchema>;

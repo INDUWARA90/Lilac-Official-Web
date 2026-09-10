@@ -80,14 +80,16 @@ export type EventRow = {
   created_at: string;
 };
 
-export type VideoKind = "youtube" | "file";
+export type AdKind = "youtube" | "video_file" | "image";
 
-export type VideoConfigRow = {
+export type AdRow = {
   id: string;
-  kind: VideoKind;
+  kind: AdKind;
   youtube_id: string | null;
   storage_path: string | null;
   title: string;
+  sort_order: number;
+  created_at: string;
   updated_at: string;
   updated_by: string | null;
 };
@@ -125,14 +127,20 @@ export type Database = {
         Pick<EventRow, "type"> & Partial<Omit<EventRow, "type">>,
         Partial<EventRow>
       >;
-      video_config: TableShape<
-        VideoConfigRow,
-        Partial<VideoConfigRow>,
-        Partial<VideoConfigRow>
+      ads: TableShape<
+        AdRow,
+        Omit<AdRow, "id" | "created_at" | "updated_at"> &
+          Partial<Pick<AdRow, "id" | "created_at" | "updated_at">>,
+        Partial<AdRow>
       >;
     };
     Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Functions: {
+      rl_hit: {
+        Args: { p_key: string; p_limit: number; p_window_ms: number };
+        Returns: boolean;
+      };
+    };
     Enums: {
       email_status: EmailStatus;
     };

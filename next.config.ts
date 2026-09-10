@@ -7,7 +7,9 @@ const isDev = process.env.NODE_ENV === "development";
  *
  * Allowlist rationale:
  *  - Supabase       — the browser anon client (entry insert, funnel tracking)
- *  - YouTube        — the ad embed (nocookie domain) + its thumbnails
+ *  - YouTube        — the ad embed (nocookie domain) + its thumbnails, and the
+ *                     IFrame Player API script (`youtube.com`, `s.ytimg.com`)
+ *                     used to gate video ads on real watch time
  *
  * `script-src` keeps `'unsafe-inline'`: the Next.js App Router injects inline
  * bootstrap/streaming scripts and we don't run a nonce middleware (kept simple).
@@ -16,10 +18,12 @@ const isDev = process.env.NODE_ENV === "development";
  */
 const csp = [
   `default-src 'self'`,
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com${isDev ? " 'unsafe-eval'" : ""}`,
   `style-src 'self' 'unsafe-inline'`,
   `img-src 'self' data: https:`,
   `media-src 'self' blob: https://*.supabase.co`,
+  // The YouTube IFrame player spins up a same-origin blob worker for playback.
+  `worker-src 'self' blob:`,
   `font-src 'self'`,
   `connect-src 'self' https://*.supabase.co`,
   `frame-src https://www.youtube-nocookie.com https://www.youtube.com`,

@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { StepIndicator, type FlowStep } from "@/components/ui/StepIndicator";
-import { AdStep } from "@/components/flow/AdStep";
+import { AdsStep } from "@/components/flow/AdsStep";
 import { EntryForm } from "@/components/flow/EntryForm";
 import { SuccessCelebration } from "@/components/flow/SuccessCelebration";
 import { track } from "@/components/flow/track";
-import type { VideoConfig } from "@/lib/video-shared";
+import type { Ad } from "@/lib/ads-shared";
 
 /**
- * Client orchestrator for the public flow on `/`:
- *   watch  → the ad (records when it was finished/skipped)
- *   enter  → the entry form
+ * Client orchestrator for the raffle flow on `/enter`:
+ *   watch  → every sponsor ad in order
+ *   enter  → the entry form (submits the server-issued ad-session token)
  *   done   → the success screen (confetti)
  *
  * There is no email-confirmation step — an entry counts the moment it's
@@ -25,9 +25,14 @@ const STEP_FOR_PHASE: Record<Phase, FlowStep> = {
   done: "Confirm",
 };
 
-export function EntryExperience({ video }: { video: VideoConfig }) {
+export function EntryExperience({
+  ads,
+  adSession,
+}: {
+  ads: Ad[];
+  adSession: string;
+}) {
   const [phase, setPhase] = useState<Phase>("watch");
-  const [adWatchedAt, setAdWatchedAt] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("there");
 
   // Funnel: landing on the flow counts as an ad view.
@@ -38,11 +43,10 @@ export function EntryExperience({ video }: { video: VideoConfig }) {
       <StepIndicator current={STEP_FOR_PHASE[phase]} />
 
       {phase === "watch" && (
-        <AdStep
-          video={video}
-          onDone={(watchedAt) => {
+        <AdsStep
+          ads={ads}
+          onDone={() => {
             track("ad_complete");
-            setAdWatchedAt(watchedAt);
             setPhase("enter");
           }}
         />
@@ -50,7 +54,7 @@ export function EntryExperience({ video }: { video: VideoConfig }) {
 
       {phase === "enter" && (
         <EntryForm
-          adWatchedAt={adWatchedAt}
+          adSession={adSession}
           onSubmitted={(r) => {
             setFirstName(r.firstName);
             setPhase("done");

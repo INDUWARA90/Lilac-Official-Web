@@ -14,7 +14,7 @@ const json = (b: unknown, s = 200) => Response.json(b, { status: s });
 
 export async function POST(req: Request) {
   const ip = getClientIp(req.headers);
-  if (!checkRateLimit(`contact:${ip}`, 5, 10 * 60_000).ok) {
+  if (!(await checkRateLimit(`contact:${ip}`, 5, 10 * 60_000)).ok) {
     return json({ ok: false, error: "Too many messages. Please try again later." }, 429);
   }
 

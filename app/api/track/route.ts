@@ -15,7 +15,7 @@ const schema = z.object({ type: z.enum(["ad_view", "ad_complete"]) });
 export async function POST(req: Request) {
   const ip = getClientIp(req.headers);
   // Generous cap — just enough to stop a script from flooding the table.
-  if (!checkRateLimit(`track:${ip}`, 30, 60_000).ok) {
+  if (!(await checkRateLimit(`track:${ip}`, 30, 60_000)).ok) {
     return Response.json({ ok: false }, { status: 429 });
   }
 

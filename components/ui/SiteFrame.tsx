@@ -1,28 +1,16 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Logo } from "@/components/ui/Logo";
+import { SiteNav } from "@/components/ui/SiteNav";
 
 /**
  * Shared public shell: centered single column, generous whitespace, content
- * capped at ~560px (brief layout spec). Header + footer are intentionally
- * sparse on the public flow.
+ * capped at ~560px (brief layout spec). The public nav bar lives in the header;
+ * the footer carries the legal links.
  */
 export function SiteFrame({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="flex justify-center px-6 py-7">
-        <div className="flex w-full max-w-[560px] items-center justify-between">
-          <Link href="/" aria-label="Lilac — home">
-            <Logo />
-          </Link>
-          <Link
-            href="/results"
-            className="font-sans text-sm font-medium text-ink-muted transition-colors hover:text-accent-strong"
-          >
-            Results
-          </Link>
-        </div>
-      </header>
+      <SiteNav />
 
       <main className="flex flex-1 justify-center px-6 pb-20">
         <div className="w-full max-w-[560px]">{children}</div>

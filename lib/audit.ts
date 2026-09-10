@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Append a row to `audit_log`. Best-effort: a logging failure must never break
- * the action being logged. Brief scope: admin logins, video changes, draws.
+ * the action being logged. Brief scope: admin logins, ad changes, draws.
  */
 export async function logAudit(
   action: string,

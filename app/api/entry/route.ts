@@ -3,6 +3,7 @@ import { entryInputSchema } from "@/lib/validation/entry";
 import { createAnonClient } from "@/lib/supabase/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { verifyAdSession } from "@/lib/ad-session";
 import { getClientIp } from "@/lib/http";
 
 /**
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
   const ip = getClientIp(req.headers);
 
   // ---- 1a. Rate limit: 8 submissions per IP per 10 minutes --------------
-  if (!checkRateLimit(`entry:${ip}`, 8, 10 * 60_000).ok) {
+  if (!(await checkRateLimit(`entry:${ip}`, 8, 10 * 60_000)).ok) {
     return json(
       { ok: false, error: "Too many attempts. Please wait a few minutes and try again." } satisfies ErrorBody,
       429,
@@ -60,14 +61,21 @@ export async function POST(req: Request) {
   }
   const input = parsed.data;
 
-  // adWatchedAt: accept only a sane, non-future timestamp.
-  let adWatchedAt: string | null = null;
-  if (input.adWatchedAt) {
-    const t = new Date(input.adWatchedAt);
-    if (!Number.isNaN(t.getTime()) && t.getTime() <= Date.now() + 60_000) {
-      adWatchedAt = t.toISOString();
-    }
+  // ---- 1c. Ad-watch gate: a valid, unused, old-enough session token -----
+  const adCheck = await verifyAdSession(input.adSession);
+  if (!adCheck.ok) {
+    const softFail = adCheck.reason === "too-fast" || adCheck.reason === "already-used";
+    return json(
+      {
+        ok: false,
+        error: softFail
+          ? "Please watch the ads on the entry page before submitting."
+          : "Your entry session expired. Reload the page and watch the ads again.",
+      } satisfies ErrorBody,
+      403,
+    );
   }
+  const adWatchedAt = new Date().toISOString();
 
   // ---- 2. Insert the entry (anon client, constrained by RLS) -----------
   const supabase = createAnonClient();

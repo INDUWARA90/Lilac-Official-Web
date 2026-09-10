@@ -15,7 +15,10 @@ const ACTION_LABEL: Record<string, string> = {
   "winner.email_resend": "Winner email resent",
   "export.entries": "Entries exported",
   "export.winners": "Winners exported",
-  "video.update": "Video updated",
+  "ad.create": "Ad added",
+  "ad.update_title": "Ad renamed",
+  "ad.delete": "Ad removed",
+  "ad.reorder": "Ads reordered",
 };
 
 export default async function AuditPage({
@@ -40,7 +43,7 @@ export default async function AuditPage({
     <AdminShell email={session.email}>
       <h1 className="text-2xl text-ink">Audit log</h1>
       <p className="mt-1 font-sans text-sm text-ink-muted">
-        Admin sign-ins, draws, winner-email resends, exports, and video changes.
+        Admin sign-ins, draws, winner-email resends, exports, and ad changes.
       </p>
       <p className="mt-4 font-sans text-xs text-ink-muted">
         {total.toLocaleString()} event{total === 1 ? "" : "s"} · page {page} of {lastPage}

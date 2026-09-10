@@ -34,10 +34,10 @@ const EMPTY = {
  * merged back into the inline error map.
  */
 export function EntryForm({
-  adWatchedAt,
+  adSession,
   onSubmitted,
 }: {
-  adWatchedAt: string | null;
+  adSession: string;
   onSubmitted: (result: { firstName: string }) => void;
 }) {
   const [values, setValues] = useState(EMPTY);
@@ -59,7 +59,7 @@ export function EntryForm({
       ...values,
       occupation: values.occupation || undefined,
       consent,
-      adWatchedAt: adWatchedAt ?? undefined,
+      adSession,
     };
 
     // Client-side pass with the shared schema.
@@ -123,7 +123,7 @@ export function EntryForm({
           type="email"
           inputMode="email"
           autoComplete="email"
-          hint="Your confirmation link is sent here."
+          hint="Winners are notified at this address."
           value={values.email}
           onChange={(e) => set("email", e.target.value)}
           error={errors.email}
