@@ -3,6 +3,8 @@ import { hasCheckinSession } from "@/lib/checkin-auth";
 import { getAdminSession } from "@/lib/auth";
 import { checkInTicket } from "@/lib/tickets";
 import { logAudit } from "@/lib/audit";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/http";
 
 /**
  * POST /api/checkin/[token] — door action for one ticket.
@@ -19,6 +21,11 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ token: string }> },
 ) {
+  // Generous cap — never trips real door traffic, blunts a runaway script.
+  if (!(await checkRateLimit(`checkin-action:${getClientIp(req.headers)}`, 240, 60_000)).ok) {
+    return json({ ok: false, error: "Too many requests." }, 429);
+  }
+
   const [checkinOk, adminSession] = await Promise.all([hasCheckinSession(), getAdminSession()]);
   if (!checkinOk && !adminSession) return json({ ok: false, error: "Not authorised." }, 401);
   const by = adminSession?.email ?? "door-staff";

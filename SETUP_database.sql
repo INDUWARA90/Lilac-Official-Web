@@ -1,5 +1,5 @@
 -- ============================================================
--- Lilac — full schema (migrations 0001–0008 combined)
+-- Lilac — full schema (migrations 0001–0009 combined)
 -- Paste into Supabase dashboard → SQL Editor → Run.
 --
 -- FOR A FRESH DATABASE ONLY. This runs 0001→0005 in sequence, so it recreates
@@ -523,3 +523,21 @@ alter table public.tickets          enable row level security;
 revoke all on function public.create_ticket_purchase(text, text, text, integer, text, text) from public;
 grant execute on function public.create_ticket_purchase(text, text, text, integer, text, text)
   to anon, authenticated, service_role;
+
+
+-- >>> supabase/migrations/0009_lock_rpc_grants.sql
+-- ============================================================================
+-- Lilac — tighten function grants. Apply after 0001–0008. Safe to re-run.
+--
+-- `rl_hit` and `create_ticket_purchase` are only ever called server-side
+-- through the service-role client (lib/rate-limit.ts, lib/tickets.ts). They
+-- were granted to anon/authenticated for flexibility; revoke that so the only
+-- way to reach them is our API routes. Capacity, rate-limit and nonce logic
+-- can no longer be poked directly with the public anon key.
+-- ============================================================================
+
+revoke execute on function public.rl_hit(text, integer, bigint)
+  from anon, authenticated;
+
+revoke execute on function public.create_ticket_purchase(text, text, text, integer, text, text)
+  from anon, authenticated;

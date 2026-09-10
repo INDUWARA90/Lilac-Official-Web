@@ -17,6 +17,8 @@ const ACTION_LABEL: Record<string, string> = {
   "winner.email_resend": "Winner email resent",
   "export.entries": "Entries exported",
   "export.winners": "Winners exported",
+  "export.tickets": "Ticket purchases exported",
+  "export.checkins": "Check-in list exported",
   "ad.create": "Ad added",
   "ad.update_title": "Ad renamed",
   "ad.delete": "Ad removed",
