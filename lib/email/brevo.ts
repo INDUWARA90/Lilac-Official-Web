@@ -222,15 +222,29 @@ function shell(inner: string, emoji?: string): string {
   return `<!doctype html><html><body style="margin:0;background:#efeaf9;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:#211b26;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#efeaf9;padding:40px 16px;"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 8px 24px rgba(69,50,159,0.14);">
-<tr><td style="background:linear-gradient(135deg,#6a53e8,#45329f);padding:${emoji ? "30px 32px 24px" : "26px 32px"};text-align:center;">
-<div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:bold;letter-spacing:1px;color:#ffffff;">Lilac</div>
-${emoji ? `<div style="font-size:38px;line-height:1;padding-top:12px;">${emoji}</div>` : ""}
+<tr><td style="background:linear-gradient(135deg,#6a53e8,#45329f);padding:${emoji ? "26px 32px 22px" : "22px 32px"};text-align:center;">
+<div style="display:inline-block;background:#ffffff;border-radius:14px;padding:10px 20px;line-height:0;">
+${logoImg(120)}
+</div>
+${emoji ? `<div style="font-size:38px;line-height:1;padding-top:14px;">${emoji}</div>` : ""}
 </td></tr>
 ${inner}
 ${footer()}
 </table>
 <div style="padding:18px 12px 0;font-size:12px;color:#9089a8;">You&rsquo;re receiving this because of an action on ${escapeHtml(publicEnv.siteUrl.replace(/^https?:\/\//, ""))}.</div>
 </td></tr></table></body></html>`;
+}
+
+/**
+ * The brand mark itself — `public/Lailac.png` (1434×711, transparent),
+ * hosted at the live site and referenced by URL. Brevo has no inline/cid
+ * attachment support, so a real logo in the body has to be a normal `<img>`
+ * pointing at a public HTTPS URL (the standard approach every transactional-
+ * email provider expects) rather than an email attachment.
+ */
+function logoImg(width: number): string {
+  const height = Math.round((width * 711) / 1434);
+  return `<img src="${escapeHtml(publicEnv.siteUrl)}/Lailac.png" width="${width}" height="${height}" alt="Lilac" style="display:block;width:${width}px;height:${height}px;max-width:100%;border:0;outline:none;text-decoration:none;">`;
 }
 
 /** Filled pill CTA — the one visual language for every "go do something" link. */
@@ -258,9 +272,9 @@ function infoCard(rows: { label: string; value: string; accent?: boolean }[]): s
 
 /** Consistent sign-off, every email — brand strip + a home-page link back. */
 function footer(): string {
-  return `<tr><td style="padding:22px 32px 28px;border-top:1px solid #f0edf9;text-align:center;">
-<a href="${escapeHtml(publicEnv.siteUrl)}" style="font-family:Georgia,'Times New Roman',serif;font-size:14px;font-weight:bold;color:#6a53e8;text-decoration:none;letter-spacing:0.5px;">Lilac</a>
-<div style="margin-top:4px;font-size:12px;color:#a39cc4;">The Lilac Team</div>
+  return `<tr><td style="padding:20px 32px 26px;border-top:1px solid #f0edf9;text-align:center;">
+<a href="${escapeHtml(publicEnv.siteUrl)}" style="display:inline-block;line-height:0;">${logoImg(76)}</a>
+<div style="margin-top:8px;font-size:12px;color:#a39cc4;">The Lilac Team</div>
 </td></tr>`;
 }
 
