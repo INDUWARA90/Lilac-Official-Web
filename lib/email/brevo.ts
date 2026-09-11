@@ -2,15 +2,21 @@ import "server-only";
 import { publicEnv, serverEnv } from "@/lib/env";
 
 /**
- * Resend — the single transactional-email provider for the site.
+ * Brevo — the single transactional-email provider for the site.
  *   - contact-form forwarding        (sendContactMessage)
  *   - winner-confirmation emails      (sendWinnerEmail)
  *   - admin failure alerts           (sendAdminAlert)
+ *   - ticket pending/approved/rejected (sendTicketPending/Approved/Rejected)
  *
- * We call Resend's HTTP API directly (no SDK) to keep the dependency surface
- * small. https://resend.com/docs/api-reference/emails/send-email
+ * We call Brevo's HTTP API directly (no SDK) to keep the dependency surface
+ * small. https://developers.brevo.com/reference/sendtransacemail
+ *
+ * Was Resend — switched because Resend's unverified/no-domain tier only ever
+ * sends to the account's own signup address. Brevo's free tier lets you
+ * verify a single sender email (a confirmation-link click, no DNS/domain
+ * needed) and send to any recipient from there — the actual requirement here.
  */
-const RESEND_URL = "https://api.resend.com/emails";
+const BREVO_URL = "https://api.brevo.com/v3/smtp/email";
 
 export interface SendResult {
   ok: boolean;
@@ -19,12 +25,12 @@ export interface SendResult {
   reason?: string;
 }
 
-/** An email attachment — `content` is base64. `contentId` makes it inline (`cid:`). */
+/** An email attachment — `content` is base64. Brevo has no inline/cid
+ * mechanism (confirmed against their API docs), so attachments are always
+ * plain downloadable files, never embedded in the HTML body. */
 export interface EmailAttachment {
   filename: string;
   content: string;
-  contentType?: string;
-  contentId?: string;
 }
 
 interface SendArgs {
@@ -46,53 +52,49 @@ async function send({
   replyTo,
   attachments,
 }: SendArgs): Promise<SendResult> {
-  const { apiKey, senderEmail, senderName } = serverEnv.resend;
+  const { apiKey, senderEmail, senderName } = serverEnv.brevo;
 
   if (!apiKey || !senderEmail) {
     if (process.env.NODE_ENV !== "production") {
-      console.info(`[dev] Resend not configured — would email "${subject}" to a recipient`);
+      console.info(`[dev] Brevo not configured — would email "${subject}" to a recipient`);
       return { ok: true, reason: "dev-no-provider" };
     }
-    return { ok: false, reason: "resend-not-configured" };
+    return { ok: false, reason: "brevo-not-configured" };
   }
 
   const body: Record<string, unknown> = {
-    from: `${senderName} <${senderEmail}>`,
-    to: [to],
+    sender: { name: senderName, email: senderEmail },
+    to: [{ email: to }],
     subject,
-    html,
-    text,
+    htmlContent: html,
+    textContent: text,
   };
   if (replyTo) {
-    body.reply_to = replyTo.name ? `${replyTo.name} <${replyTo.email}>` : replyTo.email;
+    body.replyTo = replyTo.name ? { email: replyTo.email, name: replyTo.name } : { email: replyTo.email };
   }
   if (attachments?.length) {
-    body.attachments = attachments.map((a) => ({
-      filename: a.filename,
-      content: a.content,
-      ...(a.contentType ? { content_type: a.contentType } : {}),
-      ...(a.contentId ? { content_id: a.contentId } : {}),
-    }));
+    body.attachment = attachments.map((a) => ({ name: a.filename, content: a.content }));
   }
 
   try {
-    const res = await fetch(RESEND_URL, {
+    const res = await fetch(BREVO_URL, {
       method: "POST",
       headers: {
-        authorization: `Bearer ${apiKey}`,
+        "api-key": apiKey,
         "content-type": "application/json",
+        accept: "application/json",
       },
       body: JSON.stringify(body),
     });
     if (!res.ok) {
       // Log status only — never the recipient or payload (PII).
-      console.error(`Resend send failed: HTTP ${res.status}`);
+      console.error(`Brevo send failed: HTTP ${res.status}`);
       return { ok: false, reason: `http-${res.status}` };
     }
-    const data = (await res.json().catch(() => ({}))) as { id?: string };
-    return { ok: true, id: data.id };
+    const data = (await res.json().catch(() => ({}))) as { messageId?: string };
+    return { ok: true, id: data.messageId };
   } catch {
-    console.error("Resend send failed: request error");
+    console.error("Brevo send failed: request error");
     return { ok: false, reason: "request-error" };
   }
 }
@@ -106,7 +108,7 @@ export async function sendContactMessage(args: {
   email: string;
   message: string;
 }): Promise<SendResult> {
-  const { apiKey, senderEmail } = serverEnv.resend;
+  const { apiKey, senderEmail } = serverEnv.brevo;
   const to = serverEnv.adminNotifyEmail;
 
   if (!apiKey || !senderEmail || !to) {
@@ -114,7 +116,7 @@ export async function sendContactMessage(args: {
       console.info(`[dev] contact message from ${args.email} (email not configured)`);
       return { ok: true, reason: "dev-no-provider" };
     }
-    return { ok: false, reason: "resend-not-configured" };
+    return { ok: false, reason: "brevo-not-configured" };
   }
 
   const text =
@@ -328,15 +330,20 @@ export function sendTicketApproved(args: {
     `We can't wait to see you there.\n\n` +
     `Reference: ${args.reference}\n\n` +
     args.tickets.map((t) => `${t.seatLabel}: ${t.url}`).join("\n") +
-    `\n\nJust show the QR code at the door — that's it, you're through.\n\nThe Lilac Team`;
+    `\n\nYour QR code${isOne ? " is" : "s are"} attached to this email, and also on the ticket ` +
+    `page above — show it at the door, that's it, you're through.\n\nThe Lilac Team`;
 
+  // Brevo has no inline/cid attachment mechanism (unlike Resend), so the QR
+  // can't be embedded in the HTML body — it's a plain downloadable attachment
+  // (see `attachments` below) and the "Open this ticket" button, which shows
+  // the same QR live on the ticket page, is the primary way to view it.
   const rows = args.tickets
     .map(
-      (t, i) => `<tr><td style="padding:10px 32px;">
+      (t) => `<tr><td style="padding:10px 32px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #ece7fa;border-radius:16px;overflow:hidden;">
 <tr><td style="background:#f8f6fd;padding:11px 20px;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#5a45d6;">🎫 ${escapeHtml(t.seatLabel)}</td></tr>
 <tr><td style="padding:22px 20px;text-align:center;border-top:1px dashed #ddd5f5;">
-<img src="cid:qr-${i}" width="180" height="180" alt="Ticket QR code" style="display:block;margin:0 auto 16px;border-radius:10px;" />
+<p style="margin:0 0 16px;font-size:13px;color:#6c6577;">Your QR code is attached to this email as an image — or view it anytime below.</p>
 ${button(t.url, "Open this ticket")}
 </td></tr>
 </table>

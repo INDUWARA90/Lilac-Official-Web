@@ -2,7 +2,7 @@ import { z } from "zod";
 import { contactInputSchema } from "@/lib/validation/contact";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
-import { sendContactMessage } from "@/lib/email/resend";
+import { sendContactMessage } from "@/lib/email/brevo";
 
 /**
  * POST /api/contact — forward a contact-form message to the admin inbox.

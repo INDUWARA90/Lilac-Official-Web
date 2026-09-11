@@ -28,10 +28,10 @@ export const publicEnv = {
 /** SERVER ONLY. */
 export const serverEnv = {
   supabaseServiceRoleKey: clean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-  resend: {
-    apiKey: clean(process.env.RESEND_API_KEY),
-    senderEmail: clean(process.env.RESEND_SENDER_EMAIL),
-    senderName: clean(process.env.RESEND_SENDER_NAME) || "Lilac",
+  brevo: {
+    apiKey: clean(process.env.BREVO_API_KEY),
+    senderEmail: clean(process.env.BREVO_SENDER_EMAIL),
+    senderName: clean(process.env.BREVO_SENDER_NAME) || "Lilac",
   },
   adminNotifyEmail: clean(process.env.ADMIN_NOTIFY_EMAIL),
 

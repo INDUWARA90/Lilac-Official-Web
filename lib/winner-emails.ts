@@ -1,7 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { serverEnv } from "@/lib/env";
-import { sendWinnerEmail, sendAdminAlert } from "@/lib/email/resend";
+import { sendWinnerEmail, sendAdminAlert } from "@/lib/email/brevo";
 
 /**
  * Winner-confirmation emails run as a background job, not inside the draw

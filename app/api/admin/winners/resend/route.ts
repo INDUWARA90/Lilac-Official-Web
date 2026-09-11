@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getAdminSession } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
-import { sendWinnerEmail } from "@/lib/email/resend";
+import { sendWinnerEmail } from "@/lib/email/brevo";
 
 /**
  * POST /api/admin/winners/resend — manually (re)send one winner's confirmation

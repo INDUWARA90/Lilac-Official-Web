@@ -10,7 +10,7 @@ import {
   sendTicketApproved,
   sendTicketPending,
   sendTicketRejected,
-} from "@/lib/email/resend";
+} from "@/lib/email/brevo";
 import {
   TICKET_SLIP_BUCKET,
   type TicketAvailability,
@@ -249,8 +249,6 @@ export async function approvePurchase(
       content: (
         await QRCode.toBuffer(checkinUrl(t.token), { width: 512, margin: 1 })
       ).toString("base64"),
-      contentType: "image/png",
-      contentId: `qr-${i}`,
     })),
   );
   const sent = await sendTicketApproved({
