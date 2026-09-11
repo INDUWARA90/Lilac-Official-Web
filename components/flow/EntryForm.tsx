@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { SelectField } from "@/components/ui/SelectField";
@@ -26,6 +26,48 @@ const EMPTY = {
   district: "",
 };
 
+const DRAFT_KEY = "lilac-entry-draft";
+const DRAFT_MAX_AGE_MS = 30 * 60 * 1000; // ignore a draft older than this
+
+/**
+ * A refresh mid-form (flaky mobile signal, lock screen, accidental back)
+ * shouldn't force retyping everything from scratch. The ad-watch requirement
+ * still resets on a refresh — that's intentional, see AdsStep — but the typed
+ * fields don't have to. Kept in sessionStorage (this tab only, gone when it
+ * closes) and capped at 30 minutes so a shared/kiosk device won't prefill a
+ * stranger's stale details.
+ */
+function loadDraft(): { values: typeof EMPTY; consent: boolean } | null {
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { values?: Partial<typeof EMPTY>; consent?: boolean; savedAt?: number };
+    if (typeof parsed.savedAt !== "number" || Date.now() - parsed.savedAt > DRAFT_MAX_AGE_MS) {
+      return null;
+    }
+    return { values: { ...EMPTY, ...parsed.values }, consent: Boolean(parsed.consent) };
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(values: typeof EMPTY, consent: boolean) {
+  try {
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ values, consent, savedAt: Date.now() }));
+  } catch {
+    // sessionStorage unavailable (private mode, quota) — the form still works,
+    // just without refresh-resilience.
+  }
+}
+
+function clearDraft() {
+  try {
+    sessionStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 /**
  * Step 2 — the entry form.
  *
@@ -40,11 +82,16 @@ export function EntryForm({
   adSession: string;
   onSubmitted: (result: { firstName: string }) => void;
 }) {
-  const [values, setValues] = useState(EMPTY);
-  const [consent, setConsent] = useState(false);
+  const [values, setValues] = useState(() => loadDraft()?.values ?? EMPTY);
+  const [consent, setConsent] = useState(() => loadDraft()?.consent ?? false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Persist on every change so a refresh can restore it (see loadDraft above).
+  useEffect(() => {
+    saveDraft(values, consent);
+  }, [values, consent]);
 
   function set<K extends keyof typeof EMPTY>(key: K, value: string) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -85,6 +132,7 @@ export function EntryForm({
       };
 
       if (res.ok && data.ok) {
+        clearDraft();
         onSubmitted({
           firstName: data.firstName ?? parsed.data.name.split(" ")[0] ?? "there",
         });

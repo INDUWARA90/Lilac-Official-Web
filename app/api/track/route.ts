@@ -1,12 +1,13 @@
 import { z } from "zod";
-import { createAnonClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
 
 /**
  * POST /api/track — record one funnel event (`ad_view` | `ad_complete`).
  * Fire-and-forget from the client; used only for the admin funnel numbers.
- * Inserts via the anon client (RLS: INSERT-only on `events`).
+ * Inserts via create_event(), a service-role-only RPC (see 0010_entries_rpc.sql)
+ * — the anon key can't write to `events` directly any more.
  */
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,6 @@ export async function POST(req: Request) {
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ ok: false }, { status: 400 });
 
-  await createAnonClient().from("events").insert({ type: parsed.data.type });
+  await createAdminClient().rpc("create_event", { p_type: parsed.data.type });
   return Response.json({ ok: true });
 }

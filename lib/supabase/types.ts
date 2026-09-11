@@ -226,6 +226,24 @@ export type Database = {
         };
         Returns: { purchase_id: string; purchase_reference: string }[];
       };
+      create_entry: {
+        Args: {
+          p_name: string;
+          p_email: string;
+          p_phone: string;
+          p_address: string;
+          p_age_range: string | null;
+          p_gender: string | null;
+          p_occupation: string | null;
+          p_district: string | null;
+          p_ad_watched_at: string | null;
+        };
+        Returns: string;
+      };
+      create_event: {
+        Args: { p_type: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       email_status: EmailStatus;

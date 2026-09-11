@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { entryInputSchema } from "@/lib/validation/entry";
-import { createAnonClient } from "@/lib/supabase/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { verifyAdSession } from "@/lib/ad-session";
@@ -12,8 +11,12 @@ import { getClientIp } from "@/lib/http";
  * winners are emailed (after a draw).
  *
  * Flow:
- *   1. rate-limit + zod                    (cheap rejections first)
- *   2. INSERT the row via the anon client  (RLS: INSERT-only on `entries`)
+ *   1. rate-limit + zod                     (cheap rejections first)
+ *   2. call create_entry() (service-role)   — a SECURITY DEFINER RPC, granted
+ *      to service_role only (see 0010_entries_rpc.sql). The anon key can't
+ *      reach `entries` by any path, so this route's rate limit, ad-watch-
+ *      session check, and zod validation can't be bypassed by calling
+ *      Supabase directly.
  *        - unique violation → 409 "already entered"
  *   3. mark it verified (service-role). A BEFORE INSERT trigger forces
  *      `verified=false`, so this flip is a separate statement.
@@ -77,19 +80,18 @@ export async function POST(req: Request) {
   }
   const adWatchedAt = new Date().toISOString();
 
-  // ---- 2. Insert the entry (anon client, constrained by RLS) -----------
-  const supabase = createAnonClient();
-  const { error: insertError } = await supabase.from("entries").insert({
-    name: input.name,
-    email: input.email,
-    phone: input.phone,
-    address: input.address,
-    age_range: input.ageRange,
-    gender: input.gender,
-    occupation: input.occupation ? input.occupation : null,
-    district: input.district,
-    consent_at: new Date().toISOString(),
-    ad_watched_at: adWatchedAt,
+  // ---- 2. Create the entry via the service-role-only RPC -----------------
+  const admin = createAdminClient();
+  const { error: insertError } = await admin.rpc("create_entry", {
+    p_name: input.name,
+    p_email: input.email,
+    p_phone: input.phone,
+    p_address: input.address,
+    p_age_range: input.ageRange,
+    p_gender: input.gender,
+    p_occupation: input.occupation ? input.occupation : null,
+    p_district: input.district,
+    p_ad_watched_at: adWatchedAt,
   });
 
   if (insertError) {
@@ -111,7 +113,6 @@ export async function POST(req: Request) {
   }
 
   // ---- 3. Confirm it (service-role — the trigger forced verified=false) ----
-  const admin = createAdminClient();
   const { error: confirmError } = await admin
     .from("entries")
     .update({ verified: true, verified_at: new Date().toISOString() })
