@@ -126,9 +126,24 @@ export async function sendContactMessage(args: {
     replyTo: { email: args.email, name: args.name },
     subject: `Contact form: ${args.name}`,
     text,
-    html: `<pre style="font-family:Arial,Helvetica,sans-serif;font-size:14px;white-space:pre-wrap;">${escapeHtml(
-      text,
-    )}</pre>`,
+    html: shell(
+      `<tr><td style="padding:30px 32px 4px;font-size:16px;line-height:1.5;text-align:center;">
+<p style="margin:0;"><strong>New contact message</strong></p>
+</td></tr>
+<tr><td style="padding:16px 32px 8px;">
+${infoCard([
+  { label: "Name", value: escapeHtml(args.name) },
+  { label: "Email", value: escapeHtml(args.email) },
+])}
+</td></tr>
+<tr><td style="padding:8px 32px 8px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8f6fd;border:1px solid #ece7fa;border-radius:14px;">
+<tr><td style="padding:18px 20px;font-size:14px;line-height:1.7;color:#3d3646;">${escapeHtml(args.message).replace(/\n/g, "<br>")}</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding:8px 32px 4px;font-size:13px;color:#6c6577;text-align:center;">Reply to this email to answer them directly.</td></tr>`,
+      "✉️",
+    ),
   });
 }
 
@@ -177,8 +192,21 @@ export function sendAdminAlert(subject: string, text: string): Promise<SendResul
   return send({
     to: serverEnv.adminNotifyEmail,
     subject: `[Lilac admin] ${subject}`,
-    html: `<pre style="font-family:Arial,Helvetica,sans-serif;font-size:14px;white-space:pre-wrap;">${escapeHtml(text)}</pre>`,
     text,
+    html: shell(
+      `<tr><td style="padding:30px 32px 4px;font-size:16px;line-height:1.5;text-align:center;">
+<p style="margin:0;"><strong>${escapeHtml(subject)}</strong></p>
+</td></tr>
+<tr><td style="padding:16px 32px 8px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8f6fd;border:1px solid #ece7fa;border-radius:14px;">
+<tr><td style="padding:18px 20px;font-size:14px;line-height:1.7;color:#3d3646;">${escapeHtml(text).replace(/\n/g, "<br>")}</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding:8px 32px 8px;text-align:center;">
+${button(`${publicEnv.siteUrl}/admin`, "Open admin panel")}
+</td></tr>`,
+      "🔔",
+    ),
   });
 }
 
