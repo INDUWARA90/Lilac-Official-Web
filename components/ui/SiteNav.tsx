@@ -5,22 +5,29 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
 
+// "/results" isn't listed here directly — like "/enter" (the raffle flow),
+// it's a direct-link-only page until the draw is actually unlocked. Once an
+// admin unlocks it (`showResults`, from SiteFrame -> getPublicDrawUnlocked),
+// it's appended below. Until then it's still reachable from its contextual
+// links (homepage "Winners" note, the post-entry success screen) and by URL.
 const LINKS = [
   { href: "/", label: "Home" },
   { href: "/tickets", label: "Tickets" },
   { href: "/about", label: "About us" },
   { href: "/contact", label: "Contact us" },
-  { href: "/results", label: "Results" },
 ];
+
+const RESULTS_LINK = { href: "/results", label: "Results" };
 
 /**
  * Public site navigation — shown on every non-admin page (admin has its own
  * sidebar). Inline links from `sm` up; below that a hamburger button slides in
  * a left-side drawer holding the same links.
  */
-export function SiteNav() {
+export function SiteNav({ showResults = false }: { showResults?: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const links = showResults ? [...LINKS, RESULTS_LINK] : LINKS;
 
   useEffect(() => {
     if (!open) return;
@@ -52,7 +59,7 @@ export function SiteNav() {
         </div>
 
         <nav className="hidden gap-6 sm:flex">
-          {LINKS.map((l) => (
+          {links.map((l) => (
             <Link
               key={l.href}
               href={l.href}
@@ -101,7 +108,7 @@ export function SiteNav() {
           </button>
         </div>
         <nav className="flex flex-col gap-1 px-3 py-2">
-          {LINKS.map((l) => (
+          {links.map((l) => (
             <Link
               key={l.href}
               href={l.href}

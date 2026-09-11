@@ -4,8 +4,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = { title: "Results" };
 
-// "Live" numbers — never cache this page.
-export const dynamic = "force-dynamic";
+// Was `force-dynamic` (a fresh Supabase round trip on every single visit).
+// ISR instead: prerendered, revalidated at most every 30s in the background,
+// AND revalidated on demand the moment a draw actually produces winners
+// (see revalidatePath("/results") in /api/admin/draw) — so visitors never
+// wait more than 30s stale, and never wait on a live query either.
+export const revalidate = 30;
 
 export default async function ResultsPage() {
   const db = createAdminClient();

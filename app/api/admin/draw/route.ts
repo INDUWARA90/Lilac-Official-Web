@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { after } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pickRandom } from "@/lib/draw";
@@ -110,6 +111,10 @@ export async function POST(req: Request) {
     { draw_id: draw.id, winner_count: winnerCount, winner_entry_ids: winnerEntryIds, by: session.email },
     null,
   );
+
+  // /results is ISR (see app/results/page.tsx) — push the new winners out
+  // immediately instead of waiting for the next background revalidation.
+  revalidatePath("/results");
 
   // 4. Hand winner emails to the background processor (runs after this response).
   const origin = new URL(req.url).origin;

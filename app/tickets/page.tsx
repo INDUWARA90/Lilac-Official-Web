@@ -5,7 +5,14 @@ import { formatLkr, MAX_TICKETS_PER_PURCHASE } from "@/lib/tickets-shared";
 import { TicketPurchaseForm } from "@/components/tickets/TicketPurchaseForm";
 
 export const metadata: Metadata = { title: "Tickets" };
-export const dynamic = "force-dynamic";
+
+// Was `force-dynamic`. Capacity is enforced atomically at write time by the
+// `create_ticket_purchase` RPC (see lib/tickets.ts), so this page's displayed
+// availability doesn't need to be live on every request — ISR (30s ceiling)
+// plus revalidatePath("/tickets") right after a purchase/approval/settings
+// change (see lib/tickets.ts) keeps it accurate without a Supabase round trip
+// on every idle visit.
+export const revalidate = 30;
 
 export default async function TicketsPage() {
   const [availability, settings] = await Promise.all([getAvailability(), getTicketSettings()]);

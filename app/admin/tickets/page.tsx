@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAvailability, getTicketSettings } from "@/lib/tickets";
+import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { formatLkr, PURCHASE_STATUS_LABEL } from "@/lib/tickets-shared";
 import type { TicketPurchaseStatusDb } from "@/lib/supabase/types";
@@ -47,6 +48,7 @@ export default async function AdminTicketsPage({
       getTicketSettings(),
       db.from("tickets").select("id", { count: "exact", head: true }).not("checked_in_at", "is", null),
       db.from("tickets").select("id", { count: "exact", head: true }),
+      getDrawUnlocked(), // warm the shared cache — AdminShell needs it too, see lib/app-config.ts
     ]);
 
   const total = count ?? 0;

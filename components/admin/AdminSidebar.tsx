@@ -102,7 +102,7 @@ export function AdminSidebar({
 function Brand() {
   return (
     <span className="flex items-center gap-2">
-      <Logo className="text-base" />
+      <Logo className="h-6 w-auto" />
       <span className="font-sans text-xs font-semibold uppercase tracking-wider text-ink-muted">
         Admin
       </span>

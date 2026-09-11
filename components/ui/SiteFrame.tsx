@@ -1,16 +1,18 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { SiteNav } from "@/components/ui/SiteNav";
+import { getPublicDrawUnlocked } from "@/lib/app-config";
 
 /**
  * Shared public shell: centered single column, generous whitespace, content
  * capped at ~560px (brief layout spec). The public nav bar lives in the header;
  * the footer carries the legal links.
  */
-export function SiteFrame({ children }: { children: ReactNode }) {
+export async function SiteFrame({ children }: { children: ReactNode }) {
+  const drawUnlocked = await getPublicDrawUnlocked();
   return (
     <div className="flex min-h-dvh flex-col">
-      <SiteNav />
+      <SiteNav showResults={drawUnlocked} />
 
       <main className="flex flex-1 justify-center px-6 pb-20">
         <div className="w-full max-w-[560px]">{children}</div>

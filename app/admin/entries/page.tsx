@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 
 export const metadata: Metadata = { title: "Entries", robots: { index: false } };
@@ -18,6 +19,7 @@ export default async function EntriesPage({
 }) {
   const session = await requireAdmin();
   const sp = await searchParams;
+  void getDrawUnlocked(); // warm the shared cache — AdminShell needs it too, see lib/app-config.ts
 
   // PostgREST's .or() filter treats , ( ) as syntax — strip them from the query.
   const q = (sp.q ?? "").trim().replace(/[,()*%]/g, "").slice(0, 80);

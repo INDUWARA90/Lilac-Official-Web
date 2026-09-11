@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slipDownloadUrl } from "@/lib/tickets";
 import { ticketUrl } from "@/lib/tickets";
+import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { formatLkr, PURCHASE_STATUS_LABEL } from "@/lib/tickets-shared";
 import { TicketReviewActions } from "@/components/admin/TicketReviewActions";
@@ -21,6 +22,7 @@ export default async function TicketPurchasePage({
   const session = await requireAdmin();
   const { id } = await params;
   const db = createAdminClient();
+  void getDrawUnlocked(); // warm the shared cache — AdminShell needs it too, see lib/app-config.ts
 
   const { data: purchase } = await db
     .from("ticket_purchases")

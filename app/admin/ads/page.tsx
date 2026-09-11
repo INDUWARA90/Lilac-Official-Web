@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/auth";
 import { getAds } from "@/lib/ads";
+import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdsManager } from "@/components/admin/AdsManager";
 
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdsPage() {
   const session = await requireAdmin();
-  const ads = await getAds();
+  const [ads] = await Promise.all([getAds(), getDrawUnlocked()]); // latter warms AdminShell's shared cache
 
   return (
     <AdminShell email={session.email}>

@@ -1,5 +1,6 @@
 import "server-only";
 import { randomBytes, randomInt } from "node:crypto";
+import { revalidatePath } from "next/cache";
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { publicEnv } from "@/lib/env";
@@ -101,7 +102,10 @@ export async function updateTicketSettings(
     .from("ticket_settings")
     .update(row)
     .eq("id", "default");
-  if (!error) await logAudit("ticket.settings", { fields: Object.keys(row), by }, null);
+  if (!error) {
+    await logAudit("ticket.settings", { fields: Object.keys(row), by }, null);
+    revalidatePath("/tickets"); // price/capacity/sales-open changed — see app/tickets/page.tsx (ISR)
+  }
   return !error;
 }
 
@@ -156,6 +160,7 @@ export async function createPurchase(input: {
     return { ok: false, error: "Something went wrong. Please try again." };
   }
 
+  revalidatePath("/tickets"); // seats just got taken — see app/tickets/page.tsx (ISR)
   const settings = await getTicketSettings();
 
   // Acknowledgement to the buyer's own email address.
@@ -297,6 +302,7 @@ export async function rejectPurchase(
     .eq("id", purchase.id);
   if (error) return { ok: false, error: "Could not update the purchase." };
 
+  revalidatePath("/tickets"); // rejecting frees up the seat(s) it held — see app/tickets/page.tsx (ISR)
   await logAudit(
     "ticket.reject",
     { purchase_id: purchase.id, reference: purchase.reference, by },

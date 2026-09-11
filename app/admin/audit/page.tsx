@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 
 export const metadata: Metadata = { title: "Audit log", robots: { index: false } };
@@ -38,6 +39,7 @@ export default async function AuditPage({
   const session = await requireAdmin();
   const page = Math.max(1, Number((await searchParams).page) || 1);
   const from = (page - 1) * PAGE_SIZE;
+  void getDrawUnlocked(); // warm the shared cache — AdminShell needs it too, see lib/app-config.ts
 
   const { data: rows, count } = await createAdminClient()
     .from("audit_log")

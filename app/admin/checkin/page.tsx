@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { TicketCheckinToggle } from "@/components/admin/TicketCheckinToggle";
 
@@ -27,6 +28,7 @@ export default async function AdminCheckinPage({
       .select("id, token, seat_label, holder_name, checked_in_at, checked_in_by, purchase_id")
       .order("created_at", { ascending: true }),
     db.from("ticket_purchases").select("id, reference, email, phone").eq("status", "approved"),
+    getDrawUnlocked(), // warm the shared cache — AdminShell needs it too, see lib/app-config.ts
   ]);
 
   const byId = new Map((purchases ?? []).map((p) => [p.id, p]));
