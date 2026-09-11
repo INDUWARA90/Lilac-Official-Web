@@ -148,36 +148,26 @@ export function sendWinnerEmail(args: {
     `${publicEnv.siteUrl}/results\n\n` +
     `So glad it's you.\n\nThe Lilac Team`;
 
-  const html = `<!doctype html><html><body style="margin:0;background:#f6f4fd;font-family:Arial,Helvetica,sans-serif;color:#211b26;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f4fd;padding:32px 16px;">
-<tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(69,50,159,0.12);">
-<tr><td style="background:linear-gradient(135deg,#5a45d6,#45329f);padding:36px 32px 30px;text-align:center;">
-<div style="font-size:14px;font-weight:bold;letter-spacing:2px;color:#d9d2f7;text-transform:uppercase;">Lilac</div>
-<div style="font-size:40px;line-height:1;padding:14px 0 6px;">🎉</div>
-<div style="font-size:24px;font-weight:bold;color:#ffffff;">${escapeHtml(first)}, you won!</div>
+  const html = shell(
+    `<tr><td style="padding:32px 32px 8px;font-size:16px;line-height:1.7;text-align:center;">
+<span style="font-size:22px;font-weight:bold;color:#211b26;">${escapeHtml(first)}, you won!</span>
 </td></tr>
-<tr><td style="padding:30px 32px 8px;font-size:16px;line-height:1.65;">
+<tr><td style="padding:8px 40px 4px;font-size:16px;line-height:1.7;text-align:center;color:#4a4353;">
 Out of everyone who entered the Lilac draw, your name came out of the hat.
-<strong>Congratulations</strong> — this really is you.
+<strong style="color:#211b26;">Congratulations</strong> — this really is you.
 </td></tr>
-<tr><td style="padding:8px 32px;font-size:16px;line-height:1.65;">
-Someone from the Lilac team will email you very soon with all the details and how
-to claim your prize. Keep an eye on this inbox.
+<tr><td style="padding:20px 32px 4px;">${divider()}</td></tr>
+<tr><td style="padding:16px 32px 4px;font-size:15px;line-height:1.7;text-align:center;color:#4a4353;">
+Someone from the Lilac team will email you very soon with all the details and how to claim your prize — keep an eye on this inbox.
 </td></tr>
-<tr><td style="padding:16px 32px 8px;text-align:center;">
-<a href="${escapeHtml(publicEnv.siteUrl)}/results"
-   style="display:inline-block;padding:13px 30px;background:#5a45d6;border-radius:9999px;color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;">
-  See your name on the winners page
-</a>
+<tr><td style="padding:24px 32px 12px;text-align:center;">
+${button(`${publicEnv.siteUrl}/results`, "See your name on the winners page")}
 </td></tr>
-<tr><td style="padding:20px 32px 34px;font-size:15px;line-height:1.6;color:#6c6577;">
-So glad it&rsquo;s you.<br><span style="color:#211b26;font-weight:bold;">The Lilac Team</span>
-</td></tr>
-</table>
-</td></tr>
-</table>
-</body></html>`;
+<tr><td style="padding:4px 32px 8px;font-size:14px;line-height:1.6;color:#a39cc4;text-align:center;">
+So glad it&rsquo;s you.
+</td></tr>`,
+    "🎉",
+  );
 
   return send({ to: args.to, subject: `${first}, you won the Lilac draw! 🎉`, html, text });
 }
@@ -192,20 +182,56 @@ export function sendAdminAlert(subject: string, text: string): Promise<SendResul
   });
 }
 
-/** Shared card shell. `emoji`, when given, sits under the brand bar like the
- * winner email's — a small touch that makes each email read as its own
- * moment (a request logged, a ticket confirmed, a hiccup to sort out)
- * instead of one generic notice template wearing three different subjects. */
+/**
+ * Shared card shell — brand header, rounded card, consistent footer. `emoji`,
+ * when given, sits under the brand bar; a small touch that makes each email
+ * read as its own moment (a request logged, a ticket confirmed, a hiccup to
+ * sort out) instead of one generic notice template wearing three subjects.
+ */
 function shell(inner: string, emoji?: string): string {
-  return `<!doctype html><html><body style="margin:0;background:#f6f4fd;font-family:Arial,Helvetica,sans-serif;color:#211b26;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f4fd;padding:32px 16px;"><tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(69,50,159,0.12);">
-<tr><td style="background:linear-gradient(135deg,#5a45d6,#45329f);padding:${emoji ? "28px 32px 22px" : "24px 32px"};text-align:center;">
-<div style="font-size:14px;font-weight:bold;letter-spacing:2px;color:#d9d2f7;text-transform:uppercase;">Lilac</div>
-${emoji ? `<div style="font-size:34px;line-height:1;padding-top:10px;">${emoji}</div>` : ""}
+  return `<!doctype html><html><body style="margin:0;background:#efeaf9;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:#211b26;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#efeaf9;padding:40px 16px;"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 8px 24px rgba(69,50,159,0.14);">
+<tr><td style="background:linear-gradient(135deg,#6a53e8,#45329f);padding:${emoji ? "30px 32px 24px" : "26px 32px"};text-align:center;">
+<div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:bold;letter-spacing:1px;color:#ffffff;">Lilac</div>
+${emoji ? `<div style="font-size:38px;line-height:1;padding-top:12px;">${emoji}</div>` : ""}
 </td></tr>
 ${inner}
-</table></td></tr></table></body></html>`;
+${footer()}
+</table>
+<div style="padding:18px 12px 0;font-size:12px;color:#9089a8;">You&rsquo;re receiving this because of an action on ${escapeHtml(publicEnv.siteUrl.replace(/^https?:\/\//, ""))}.</div>
+</td></tr></table></body></html>`;
+}
+
+/** Filled pill CTA — the one visual language for every "go do something" link. */
+function button(href: string, label: string): string {
+  return `<a href="${escapeHtml(href)}" style="display:inline-block;padding:13px 32px;background:linear-gradient(135deg,#6a53e8,#45329f);border-radius:9999px;color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;">${escapeHtml(label)}</a>`;
+}
+
+/** Thin brand-tinted rule used to separate a message from its details. */
+function divider(): string {
+  return `<div style="height:1px;background:linear-gradient(90deg,transparent,#e0d9f5,transparent);"></div>`;
+}
+
+/** Label/value strip used for reference/quantity/amount-style facts. */
+function infoCard(rows: { label: string; value: string; accent?: boolean }[]): string {
+  const cells = rows
+    .map(
+      (r, i) => `<tr>
+<td style="padding:13px 20px;font-size:13px;color:#6c6577;${i > 0 ? "border-top:1px solid #e6e2f7;" : ""}">${escapeHtml(r.label)}</td>
+<td style="padding:13px 20px;text-align:right;font-size:14px;font-weight:bold;color:${r.accent ? "#5a45d6" : "#211b26"};${i > 0 ? "border-top:1px solid #e6e2f7;" : ""}">${r.value}</td>
+</tr>`,
+    )
+    .join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8f6fd;border:1px solid #ece7fa;border-radius:14px;">${cells}</table>`;
+}
+
+/** Consistent sign-off, every email — brand strip + a home-page link back. */
+function footer(): string {
+  return `<tr><td style="padding:22px 32px 28px;border-top:1px solid #f0edf9;text-align:center;">
+<a href="${escapeHtml(publicEnv.siteUrl)}" style="font-family:Georgia,'Times New Roman',serif;font-size:14px;font-weight:bold;color:#6a53e8;text-decoration:none;letter-spacing:0.5px;">Lilac</a>
+<div style="margin-top:4px;font-size:12px;color:#a39cc4;">The Lilac Team</div>
+</td></tr>`;
 }
 
 /** Buyer confirmation the moment a purchase is submitted (payment not yet verified). */
@@ -234,20 +260,24 @@ export function sendTicketPending(args: {
     subject: `You're almost in — request received (${args.reference})`,
     text,
     html: shell(
-      `<tr><td style="padding:28px 32px 4px;font-size:15px;line-height:1.65;">
-<p style="margin:0 0 14px;"><strong>${escapeHtml(first)}</strong>, you&rsquo;re almost in! We&rsquo;ve got your request for ${args.quantity} Lilac ${seatWord} and the bank slip that came with it — thank you.</p>
+      `<tr><td style="padding:30px 32px 4px;font-size:16px;line-height:1.65;text-align:center;">
+<p style="margin:0;"><strong>${escapeHtml(first)}</strong>, you&rsquo;re almost in!</p>
 </td></tr>
-<tr><td style="padding:4px 32px 20px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f4fd;border-radius:12px;">
-<tr><td style="padding:16px 20px;font-size:14px;line-height:1.8;">
-<div>Reference: <strong style="color:#45329f;">${escapeHtml(args.reference)}</strong></div>
-<div>Tickets: <strong>${args.quantity}</strong></div>
-<div>Amount: <strong>Rs.&nbsp;${args.amountLkr.toLocaleString("en-LK")}</strong></div>
+<tr><td style="padding:6px 36px 22px;font-size:15px;line-height:1.65;color:#4a4353;text-align:center;">
+We&rsquo;ve got your request for ${args.quantity} Lilac ${seatWord} and the bank slip that came with it — thank you.
 </td></tr>
-</table>
+<tr><td style="padding:0 32px 8px;">
+${infoCard([
+  { label: "Reference", value: escapeHtml(args.reference), accent: true },
+  { label: "Tickets", value: String(args.quantity) },
+  { label: "Amount", value: `Rs.&nbsp;${args.amountLkr.toLocaleString("en-LK")}` },
+])}
 </td></tr>
-<tr><td style="padding:0 32px 30px;font-size:15px;line-height:1.65;color:#6c6577;">
-We&rsquo;re matching your transfer now — usually within a day or two. The moment it&rsquo;s confirmed, your e-ticket${args.quantity === 1 ? "" : "s"} (QR code${args.quantity === 1 ? "" : "s"} included) will land right back in this inbox. Nothing else to do for now — see you at Lilac.
+<tr><td style="padding:22px 32px 4px;">${divider()}</td></tr>
+<tr><td style="padding:18px 32px 28px;font-size:14px;line-height:1.7;color:#6c6577;text-align:center;">
+🔍 We&rsquo;re matching your transfer now — usually within a day or two.<br>
+The moment it&rsquo;s confirmed, your e-ticket${args.quantity === 1 ? "" : "s"} (QR code${args.quantity === 1 ? "" : "s"} included) will land right back in this inbox.<br>
+Nothing else to do for now — see you at Lilac.
 </td></tr>`,
       "🎟️",
     ),
@@ -274,10 +304,14 @@ export function sendTicketApproved(args: {
 
   const rows = args.tickets
     .map(
-      (t, i) => `<tr><td style="padding:18px 32px;border-top:1px solid #e6e2f0;text-align:center;">
-<div style="font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#6c6577;">${escapeHtml(t.seatLabel)}</div>
-<img src="cid:qr-${i}" width="200" height="200" alt="Ticket QR code" style="display:block;margin:12px auto;border-radius:8px;" />
-<a href="${escapeHtml(t.url)}" style="font-size:13px;color:#45329f;">Open this ticket</a>
+      (t, i) => `<tr><td style="padding:10px 32px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #ece7fa;border-radius:16px;overflow:hidden;">
+<tr><td style="background:#f8f6fd;padding:11px 20px;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#5a45d6;">🎫 ${escapeHtml(t.seatLabel)}</td></tr>
+<tr><td style="padding:22px 20px;text-align:center;border-top:1px dashed #ddd5f5;">
+<img src="cid:qr-${i}" width="180" height="180" alt="Ticket QR code" style="display:block;margin:0 auto 16px;border-radius:10px;" />
+${button(t.url, "Open this ticket")}
+</td></tr>
+</table>
 </td></tr>`,
     )
     .join("");
@@ -288,10 +322,18 @@ export function sendTicketApproved(args: {
     text,
     attachments: args.attachments,
     html: shell(
-      `<tr><td style="padding:24px 32px 4px;font-size:15px;line-height:1.65;">
-<p style="margin:0 0 8px;"><strong>${escapeHtml(first)}</strong>, you&rsquo;re in! Your transfer&rsquo;s confirmed and your ticket${isOne ? " is" : "s are"} ready below. We can&rsquo;t wait to see you there.</p>
-<p style="margin:0;color:#6c6577;">Reference ${escapeHtml(args.reference)} · show the QR code at the door — that&rsquo;s it, you&rsquo;re through.</p>
-</td></tr>${rows}`,
+      `<tr><td style="padding:30px 32px 4px;font-size:16px;line-height:1.65;text-align:center;">
+<p style="margin:0;"><strong>${escapeHtml(first)}</strong>, you&rsquo;re in!</p>
+</td></tr>
+<tr><td style="padding:6px 36px 24px;font-size:15px;line-height:1.65;color:#4a4353;text-align:center;">
+Your transfer&rsquo;s confirmed and your ticket${isOne ? " is" : "s are"} ready below. We can&rsquo;t wait to see you there.
+</td></tr>
+<tr><td style="padding:0 32px 6px;">
+${infoCard([{ label: "Reference", value: escapeHtml(args.reference), accent: true }])}
+</td></tr>
+<tr><td style="padding:10px 32px 20px;font-size:13px;color:#6c6577;text-align:center;">📲 Show the QR code at the door — that&rsquo;s it, you&rsquo;re through.</td></tr>
+${rows}
+<tr><td style="height:14px;"></td></tr>`,
       "🎉",
     ),
   });
@@ -315,10 +357,25 @@ export function sendTicketRejected(args: {
     subject: `Lilac tickets — let's sort this out (${args.reference})`,
     text,
     html: shell(
-      `<tr><td style="padding:28px 32px;font-size:15px;line-height:1.65;">
-<p style="margin:0 0 12px;"><strong>${escapeHtml(first)}</strong>, we hit a snag confirming your ticket request (${escapeHtml(args.reference)}).</p>
-<p style="margin:0 0 16px;">${escapeHtml(args.reason)}</p>
-<p style="margin:0;color:#6c6577;">This isn&rsquo;t necessarily the end of the road — just reply to this email and we&rsquo;ll help you sort it out.</p>
+      `<tr><td style="padding:30px 32px 4px;font-size:16px;line-height:1.65;text-align:center;">
+<p style="margin:0;"><strong>${escapeHtml(first)}</strong>, we hit a snag.</p>
+</td></tr>
+<tr><td style="padding:6px 36px 22px;font-size:15px;line-height:1.65;color:#4a4353;text-align:center;">
+We couldn&rsquo;t confirm your ticket request just yet.
+</td></tr>
+<tr><td style="padding:0 32px 8px;">
+${infoCard([{ label: "Reference", value: escapeHtml(args.reference) }])}
+</td></tr>
+<tr><td style="padding:16px 32px 4px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fdf6ee;border:1px solid #f3e6cf;border-radius:14px;">
+<tr><td style="padding:16px 20px;font-size:14px;line-height:1.6;color:#7a5c1f;">📝 ${escapeHtml(args.reason)}</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding:20px 32px 8px;font-size:14px;line-height:1.65;color:#6c6577;text-align:center;">
+This isn&rsquo;t necessarily the end of the road.
+</td></tr>
+<tr><td style="padding:6px 32px 8px;text-align:center;">
+${button(`mailto:${serverEnv.adminNotifyEmail || ""}`, "Reply and we'll sort it out")}
 </td></tr>`,
       "🤔",
     ),
