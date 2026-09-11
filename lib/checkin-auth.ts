@@ -10,15 +10,17 @@ import { requireServer, serverEnv } from "@/lib/env";
  *
  * Staff enter the shared `CHECKIN_ACCESS_CODE` once on their phone (see
  * `/checkin`); on a match we drop a `checkin_session` cookie holding
- * `{ scope: "checkin", exp }` signed with HMAC-SHA256 (reusing
- * ADMIN_SESSION_SECRET). The `scope` string keeps an admin cookie from being
- * replayed here and vice versa.
+ * `{ scope: "checkin", exp }` signed with HMAC-SHA256 using its own
+ * CHECKIN_SESSION_SECRET (falls back to ADMIN_SESSION_SECRET if unset — see
+ * lib/env.ts). A dedicated secret means a leaked check-in code/cookie can't
+ * be used to forge an admin session, and vice versa; the `scope` string is a
+ * second, cheap guard against replaying one cookie shape as the other.
  */
 export const CHECKIN_COOKIE = "checkin_session";
 const SESSION_MS = 16 * 60 * 60 * 1000; // one long event day
 
 function secret(): string {
-  return requireServer("ADMIN_SESSION_SECRET", serverEnv.adminSessionSecret);
+  return requireServer("CHECKIN_SESSION_SECRET", serverEnv.checkinSessionSecret);
 }
 
 function sign(payload: string): string {

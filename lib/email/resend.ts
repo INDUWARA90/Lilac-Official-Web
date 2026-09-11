@@ -192,12 +192,18 @@ export function sendAdminAlert(subject: string, text: string): Promise<SendResul
   });
 }
 
-function shell(inner: string): string {
+/** Shared card shell. `emoji`, when given, sits under the brand bar like the
+ * winner email's — a small touch that makes each email read as its own
+ * moment (a request logged, a ticket confirmed, a hiccup to sort out)
+ * instead of one generic notice template wearing three different subjects. */
+function shell(inner: string, emoji?: string): string {
   return `<!doctype html><html><body style="margin:0;background:#f6f4fd;font-family:Arial,Helvetica,sans-serif;color:#211b26;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f4fd;padding:32px 16px;"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(69,50,159,0.12);">
-<tr><td style="background:linear-gradient(135deg,#5a45d6,#45329f);padding:24px 32px;text-align:center;">
-<div style="font-size:14px;font-weight:bold;letter-spacing:2px;color:#d9d2f7;text-transform:uppercase;">Lilac</div></td></tr>
+<tr><td style="background:linear-gradient(135deg,#5a45d6,#45329f);padding:${emoji ? "28px 32px 22px" : "24px 32px"};text-align:center;">
+<div style="font-size:14px;font-weight:bold;letter-spacing:2px;color:#d9d2f7;text-transform:uppercase;">Lilac</div>
+${emoji ? `<div style="font-size:34px;line-height:1;padding-top:10px;">${emoji}</div>` : ""}
+</td></tr>
 ${inner}
 </table></td></tr></table></body></html>`;
 }
@@ -211,25 +217,40 @@ export function sendTicketPending(args: {
   amountLkr: number;
 }): Promise<SendResult> {
   const first = args.name.split(" ")[0] || "there";
+  const seatWord = args.quantity === 1 ? "seat" : "seats";
   const text =
-    `${first}, we've received your ticket request.\n\n` +
+    `${first}, you're almost in! 🎟️\n\n` +
+    `We've got your request for ${args.quantity} Lilac ${seatWord} and the bank slip that ` +
+    `came with it — thank you.\n\n` +
     `Reference: ${args.reference}\n` +
     `Tickets: ${args.quantity}\n` +
     `Amount: Rs. ${args.amountLkr.toLocaleString("en-LK")}\n\n` +
-    `We're verifying your bank transfer now. Once it's confirmed we'll email your ` +
-    `e-ticket${args.quantity === 1 ? "" : "s"} with the QR code${args.quantity === 1 ? "" : "s"} ` +
-    `you'll show at the entrance.\n\nThe Lilac Team`;
+    `We're matching your transfer now, usually within a day or two. The moment it's ` +
+    `confirmed, your e-ticket${args.quantity === 1 ? "" : "s"} — QR code${args.quantity === 1 ? "" : "s"} ` +
+    `and all — will land right back in this inbox. No need to do anything else for now.\n\n` +
+    `See you at Lilac.\n\nThe Lilac Team`;
   return send({
     to: args.to,
-    subject: `Lilac tickets — request received (${args.reference})`,
+    subject: `You're almost in — request received (${args.reference})`,
     text,
-    html: shell(`<tr><td style="padding:28px 32px;font-size:15px;line-height:1.65;">
-<p style="margin:0 0 14px;"><strong>${escapeHtml(first)}</strong>, we've received your ticket request.</p>
-<p style="margin:0 0 6px;">Reference: <strong>${escapeHtml(args.reference)}</strong></p>
-<p style="margin:0 0 6px;">Tickets: <strong>${args.quantity}</strong></p>
-<p style="margin:0 0 16px;">Amount: <strong>Rs.&nbsp;${args.amountLkr.toLocaleString("en-LK")}</strong></p>
-<p style="margin:0;color:#6c6577;">We're verifying your bank transfer. Once confirmed we'll email your e-ticket${args.quantity === 1 ? "" : "s"} with the QR code${args.quantity === 1 ? "" : "s"} to show at the entrance.</p>
-</td></tr>`),
+    html: shell(
+      `<tr><td style="padding:28px 32px 4px;font-size:15px;line-height:1.65;">
+<p style="margin:0 0 14px;"><strong>${escapeHtml(first)}</strong>, you&rsquo;re almost in! We&rsquo;ve got your request for ${args.quantity} Lilac ${seatWord} and the bank slip that came with it — thank you.</p>
+</td></tr>
+<tr><td style="padding:4px 32px 20px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f4fd;border-radius:12px;">
+<tr><td style="padding:16px 20px;font-size:14px;line-height:1.8;">
+<div>Reference: <strong style="color:#45329f;">${escapeHtml(args.reference)}</strong></div>
+<div>Tickets: <strong>${args.quantity}</strong></div>
+<div>Amount: <strong>Rs.&nbsp;${args.amountLkr.toLocaleString("en-LK")}</strong></div>
+</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding:0 32px 30px;font-size:15px;line-height:1.65;color:#6c6577;">
+We&rsquo;re matching your transfer now — usually within a day or two. The moment it&rsquo;s confirmed, your e-ticket${args.quantity === 1 ? "" : "s"} (QR code${args.quantity === 1 ? "" : "s"} included) will land right back in this inbox. Nothing else to do for now — see you at Lilac.
+</td></tr>`,
+      "🎟️",
+    ),
   });
 }
 
@@ -242,11 +263,14 @@ export function sendTicketApproved(args: {
   attachments: EmailAttachment[];
 }): Promise<SendResult> {
   const first = args.name.split(" ")[0] || "there";
+  const isOne = args.tickets.length === 1;
   const text =
-    `${first}, your Lilac ticket${args.tickets.length === 1 ? " is" : "s are"} confirmed.\n\n` +
+    `${first}, you're in! 🎉\n\n` +
+    `Your transfer's confirmed and your Lilac ticket${isOne ? " is" : "s are"} ready below. ` +
+    `We can't wait to see you there.\n\n` +
     `Reference: ${args.reference}\n\n` +
     args.tickets.map((t) => `${t.seatLabel}: ${t.url}`).join("\n") +
-    `\n\nShow the QR code at the entrance. See you there.\n\nThe Lilac Team`;
+    `\n\nJust show the QR code at the door — that's it, you're through.\n\nThe Lilac Team`;
 
   const rows = args.tickets
     .map(
@@ -260,13 +284,16 @@ export function sendTicketApproved(args: {
 
   return send({
     to: args.to,
-    subject: `Your Lilac ticket${args.tickets.length === 1 ? "" : "s"} (${args.reference})`,
+    subject: `🎉 You're in — your Lilac ticket${isOne ? "" : "s"} (${args.reference})`,
     text,
     attachments: args.attachments,
-    html: shell(`<tr><td style="padding:24px 32px 4px;font-size:15px;line-height:1.65;">
-<p style="margin:0 0 8px;"><strong>${escapeHtml(first)}</strong>, your ticket${args.tickets.length === 1 ? " is" : "s are"} confirmed.</p>
-<p style="margin:0;color:#6c6577;">Reference ${escapeHtml(args.reference)} · show the QR code at the entrance.</p>
-</td></tr>${rows}`),
+    html: shell(
+      `<tr><td style="padding:24px 32px 4px;font-size:15px;line-height:1.65;">
+<p style="margin:0 0 8px;"><strong>${escapeHtml(first)}</strong>, you&rsquo;re in! Your transfer&rsquo;s confirmed and your ticket${isOne ? " is" : "s are"} ready below. We can&rsquo;t wait to see you there.</p>
+<p style="margin:0;color:#6c6577;">Reference ${escapeHtml(args.reference)} · show the QR code at the door — that&rsquo;s it, you&rsquo;re through.</p>
+</td></tr>${rows}`,
+      "🎉",
+    ),
   });
 }
 
@@ -279,18 +306,22 @@ export function sendTicketRejected(args: {
 }): Promise<SendResult> {
   const first = args.name.split(" ")[0] || "there";
   const text =
-    `${first}, we couldn't confirm your Lilac ticket purchase (${args.reference}).\n\n` +
+    `${first}, we hit a snag with your Lilac ticket request (${args.reference}).\n\n` +
     `${args.reason}\n\n` +
-    `If you think this is a mistake, reply to this email.\n\nThe Lilac Team`;
+    `This isn't necessarily the end of the road — reply to this email and we'll help ` +
+    `you sort it out.\n\nThe Lilac Team`;
   return send({
     to: args.to,
-    subject: `Lilac tickets — could not confirm (${args.reference})`,
+    subject: `Lilac tickets — let's sort this out (${args.reference})`,
     text,
-    html: shell(`<tr><td style="padding:28px 32px;font-size:15px;line-height:1.65;">
-<p style="margin:0 0 12px;"><strong>${escapeHtml(first)}</strong>, we couldn't confirm your ticket purchase (${escapeHtml(args.reference)}).</p>
-<p style="margin:0 0 12px;">${escapeHtml(args.reason)}</p>
-<p style="margin:0;color:#6c6577;">If you think this is a mistake, reply to this email.</p>
-</td></tr>`),
+    html: shell(
+      `<tr><td style="padding:28px 32px;font-size:15px;line-height:1.65;">
+<p style="margin:0 0 12px;"><strong>${escapeHtml(first)}</strong>, we hit a snag confirming your ticket request (${escapeHtml(args.reference)}).</p>
+<p style="margin:0 0 16px;">${escapeHtml(args.reason)}</p>
+<p style="margin:0;color:#6c6577;">This isn&rsquo;t necessarily the end of the road — just reply to this email and we&rsquo;ll help you sort it out.</p>
+</td></tr>`,
+      "🤔",
+    ),
   });
 }
 

@@ -48,9 +48,17 @@ export const serverEnv = {
     clean(process.env.AD_SESSION_SECRET) || clean(process.env.ADMIN_SESSION_SECRET),
 
   // Door-staff scanner: a shared code that unlocks the check-in pages only
-  // (never the rest of the admin panel). Its cookie is signed with
-  // `adminSessionSecret`.
+  // (never the rest of the admin panel).
   checkinAccessCode: clean(process.env.CHECKIN_ACCESS_CODE),
+
+  // Signs the check-in session cookie. A separate secret from adminSessionSecret
+  // so a leak of one doesn't let an attacker forge the other's cookie — the
+  // check-in code is shared with door staff and is inherently less guarded
+  // than the admin password. Falls back to the admin secret so no new env var
+  // is strictly required, same pattern as adSessionSecret above; set
+  // CHECKIN_SESSION_SECRET in production for real isolation.
+  checkinSessionSecret:
+    clean(process.env.CHECKIN_SESSION_SECRET) || clean(process.env.ADMIN_SESSION_SECRET),
 };
 
 export function requirePublic<K extends keyof typeof publicEnv>(
