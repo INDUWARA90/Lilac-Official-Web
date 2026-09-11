@@ -69,7 +69,7 @@ export default async function AdminCheckinPage({
   };
 
   return (
-    <AdminShell email={session.email}>
+    <AdminShell email={session.email} role={session.role}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl text-ink">Check-in</h1>
         <Link

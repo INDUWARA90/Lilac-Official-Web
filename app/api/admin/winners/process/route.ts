@@ -24,7 +24,8 @@ export async function POST(req: Request) {
   const session = await getAdminSession();
   const key = req.headers.get("x-internal-key");
   const secret = serverEnv.adminSessionSecret;
-  const authed = Boolean(session) || (Boolean(secret) && key === secret);
+  const authed =
+    (Boolean(session) && session?.role === "admin") || (Boolean(secret) && key === secret);
   if (!authed) {
     return Response.json({ ok: false, error: "Not authorised." }, { status: 401 });
   }

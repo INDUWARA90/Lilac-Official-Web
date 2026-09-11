@@ -12,6 +12,9 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const session = await getAdminSession();
   if (!session) return Response.json({ ok: false, error: "Not signed in." }, { status: 401 });
+  if (session.role !== "admin") {
+    return Response.json({ ok: false, error: "Not authorised." }, { status: 403 });
+  }
 
   const db = createAdminClient();
   const [{ data: tickets, error }, { data: purchases }] = await Promise.all([

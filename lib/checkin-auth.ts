@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireServer, serverEnv } from "@/lib/env";
+import { getAdminSession } from "@/lib/auth";
 
 /**
  * Door-staff check-in session — a scoped, signed cookie that unlocks ONLY the
@@ -66,7 +67,14 @@ export async function hasCheckinSession(): Promise<boolean> {
   }
 }
 
-/** Guard for check-in PAGES. Redirects to `/checkin` when not unlocked. */
+/**
+ * Guard for check-in PAGES. Redirects to `/checkin` when not unlocked —
+ * unless the visitor is already signed in as the admin OR the ticket manager
+ * (either role can log in with their own credentials and handle check-in
+ * directly, same as /api/checkin/[token] already lets an admin session do).
+ */
 export async function requireCheckin(): Promise<void> {
-  if (!(await hasCheckinSession())) redirect("/checkin");
+  if (await hasCheckinSession()) return;
+  if (await getAdminSession()) return;
+  redirect("/checkin");
 }

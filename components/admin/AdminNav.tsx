@@ -112,6 +112,12 @@ const NAV: NavItem[] = [
   },
 ];
 
+// A ticket manager only sees ticket review + check-in — everything else
+// (dashboard, raffle entries/draw/winners, ads, export, audit) is reserved
+// for the full admin; see requireFullAdmin() in lib/auth.ts, which also
+// enforces this server-side regardless of what this nav shows.
+const TICKET_MANAGER_HREFS = new Set(["/admin/tickets", "/admin/checkin"]);
+
 /**
  * Admin nav — a vertical list of icon + label links, used in both the desktop
  * sidebar and the mobile drawer. Highlights the section matching the current
@@ -121,14 +127,18 @@ const NAV: NavItem[] = [
  * from the dashboard.
  */
 export function AdminNav({
+  role = "admin",
   drawUnlocked = true,
   onNavigate,
 }: {
+  role?: "admin" | "ticket_manager";
   drawUnlocked?: boolean;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-  const items = NAV.filter((i) => i.href !== "/admin/draw" || drawUnlocked);
+  const items = NAV.filter((i) => i.href !== "/admin/draw" || drawUnlocked).filter(
+    (i) => role === "admin" || TICKET_MANAGER_HREFS.has(i.href),
+  );
 
   return (
     <nav className="flex flex-col gap-1 px-3 py-2">

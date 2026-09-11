@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireAdmin } from "@/lib/auth";
+import { requireFullAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
@@ -16,7 +16,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default async function WinnersPage() {
-  const session = await requireAdmin();
+  const session = await requireFullAdmin();
   const db = createAdminClient();
   void getDrawUnlocked(); // warm the shared cache — AdminShell needs it too, see lib/app-config.ts
 

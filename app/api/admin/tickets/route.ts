@@ -71,6 +71,13 @@ export async function POST(req: Request) {
     return r.ok ? json({ ok: true }) : json({ ok: false, error: r.error }, 400);
   }
 
+  // update_settings changes price/capacity/bank details — full admin only.
+  // The ticket manager can review purchases and check people in, not touch
+  // the money settings.
+  if (session.role !== "admin") {
+    return json({ ok: false, error: "Not authorised." }, 403);
+  }
+
   const ok = await updateTicketSettings(
     {
       priceLkr: input.priceLkr,

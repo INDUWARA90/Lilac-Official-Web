@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/auth";
+import { requireFullAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { getAvailability, getTicketSettings } from "@/lib/tickets";
@@ -56,7 +56,7 @@ function Breakdown({ title, data }: { title: string; data: [string, number][] })
 }
 
 export default async function AdminDashboard() {
-  const session = await requireAdmin();
+  const session = await requireFullAdmin();
   const db = createAdminClient();
   const head = { count: "exact", head: true } as const;
   const nowMs = new Date().getTime();

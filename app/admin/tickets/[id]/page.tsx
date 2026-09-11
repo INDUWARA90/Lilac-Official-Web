@@ -43,7 +43,7 @@ export default async function TicketPurchasePage({
   const slipIsPdf = purchase.slip_path.toLowerCase().endsWith(".pdf");
 
   return (
-    <AdminShell email={session.email}>
+    <AdminShell email={session.email} role={session.role}>
       <Link href="/admin/tickets" className="font-sans text-sm text-accent-strong hover:underline">
         ← All tickets
       </Link>

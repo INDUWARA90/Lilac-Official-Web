@@ -10,16 +10,18 @@ import { getDrawUnlocked } from "@/lib/app-config";
  */
 export async function AdminShell({
   email,
+  role = "admin",
   children,
 }: {
   email: string;
+  role?: "admin" | "ticket_manager";
   children: ReactNode;
 }) {
   const drawUnlocked = await getDrawUnlocked();
 
   return (
     <div className="min-h-dvh bg-canvas lg:flex">
-      <AdminSidebar email={email} drawUnlocked={drawUnlocked} />
+      <AdminSidebar email={email} role={role} drawUnlocked={drawUnlocked} />
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8 lg:px-10">{children}</main>
     </div>
   );

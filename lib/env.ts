@@ -41,6 +41,13 @@ export const serverEnv = {
   adminPassword: clean(process.env.ADMIN_PASSWORD),
   adminSessionSecret: clean(process.env.ADMIN_SESSION_SECRET),
 
+  // Ticket manager: a second, more limited admin login — same session cookie
+  // and /admin/login form as the full admin, but scoped in lib/auth.ts to
+  // ticket review + check-in only (see requireFullAdmin() vs requireAdmin()).
+  // Optional: leave unset and this login simply doesn't exist.
+  ticketManagerEmail: clean(process.env.TICKET_MANAGER_EMAIL).toLowerCase(),
+  ticketManagerPassword: clean(process.env.TICKET_MANAGER_PASSWORD),
+
   // Signs the ad-watch session token (proves the sponsor ads were served and
   // that enough time elapsed before an entry). Falls back to the admin secret
   // so no new env var is strictly required.

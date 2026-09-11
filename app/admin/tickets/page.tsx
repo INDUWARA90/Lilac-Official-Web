@@ -62,15 +62,17 @@ export default async function AdminTicketsPage({
   };
 
   return (
-    <AdminShell email={session.email}>
+    <AdminShell email={session.email} role={session.role}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl text-ink">Tickets</h1>
-        <Link
-          href="/admin/tickets/settings"
-          className="rounded-field border border-hairline px-3 py-1.5 font-sans text-sm text-accent-strong hover:border-accent"
-        >
-          Settings & bank details
-        </Link>
+        {session.role === "admin" && (
+          <Link
+            href="/admin/tickets/settings"
+            className="rounded-field border border-hairline px-3 py-1.5 font-sans text-sm text-accent-strong hover:border-accent"
+          >
+            Settings & bank details
+          </Link>
+        )}
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">

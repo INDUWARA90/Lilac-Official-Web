@@ -12,9 +12,11 @@ import { AdminNav } from "@/components/admin/AdminNav";
  */
 export function AdminSidebar({
   email,
+  role,
   drawUnlocked,
 }: {
   email: string;
+  role: "admin" | "ticket_manager";
   drawUnlocked: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -34,7 +36,7 @@ export function AdminSidebar({
           <Brand />
         </div>
         <div className="flex-1 overflow-y-auto">
-          <AdminNav drawUnlocked={drawUnlocked} />
+          <AdminNav role={role} drawUnlocked={drawUnlocked} />
         </div>
         <div className="border-t border-hairline px-5 py-4">
           <AccountBlock email={email} />
@@ -89,7 +91,7 @@ export function AdminSidebar({
           </button>
         </div>
         <div className="flex-1 overflow-y-auto">
-          <AdminNav drawUnlocked={drawUnlocked} onNavigate={() => setOpen(false)} />
+          <AdminNav role={role} drawUnlocked={drawUnlocked} onNavigate={() => setOpen(false)} />
         </div>
         <div className="border-t border-hairline px-5 py-4">
           <AccountBlock email={email} />

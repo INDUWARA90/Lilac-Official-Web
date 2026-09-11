@@ -16,6 +16,7 @@ const json = (b: unknown, s = 200) => Response.json(b, { status: s });
 export async function POST(req: Request) {
   const session = await getAdminSession();
   if (!session) return json({ ok: false, error: "Not signed in." }, 401);
+  if (session.role !== "admin") return json({ ok: false, error: "Not authorised." }, 403);
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return json({ ok: false, error: "Invalid request." }, 400);

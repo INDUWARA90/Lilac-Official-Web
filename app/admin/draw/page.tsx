@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireAdmin } from "@/lib/auth";
+import { requireFullAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Draw winners", robots: { index: fals
 export const dynamic = "force-dynamic";
 
 export default async function DrawPage() {
-  const session = await requireAdmin();
+  const session = await requireFullAdmin();
   const db = createAdminClient();
 
   const [drawUnlocked, { data: verified }, { data: prevWinners }, { data: draws }] =

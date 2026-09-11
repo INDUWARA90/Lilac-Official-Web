@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/auth";
+import { requireFullAdmin } from "@/lib/auth";
 import { getTicketSettings } from "@/lib/tickets";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Ticket settings", robots: { index: f
 export const dynamic = "force-dynamic";
 
 export default async function TicketSettingsPage() {
-  const session = await requireAdmin();
+  const session = await requireFullAdmin();
   const [settings] = await Promise.all([getTicketSettings(), getDrawUnlocked()]); // latter warms AdminShell's shared cache
 
   return (

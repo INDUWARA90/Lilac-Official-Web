@@ -1,18 +1,19 @@
 import { z } from "zod";
 import { cookies } from "next/headers";
-import { ADMIN_COOKIE, createSessionValue, passwordMatches } from "@/lib/auth";
+import { ADMIN_COOKIE, createSessionValue, passwordMatches, type AdminRole } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { serverEnv } from "@/lib/env";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
 
 /**
- * POST /api/admin/login — email + password sign-in for the single admin.
+ * POST /api/admin/login — email + password sign-in, shared by two logins:
  *
  *   { email, password }  → on a match, sets the signed `admin_session` cookie.
  *
- * The allowed credentials are ADMIN_EMAIL / ADMIN_PASSWORD. There is no account
- * store — this is a one-operator panel.
+ * The submitted email decides which role it is — ADMIN_EMAIL (full access)
+ * or TICKET_MANAGER_EMAIL (ticket review + check-in only, if configured).
+ * There's no account store — this is a two-operator-at-most panel.
  */
 export const dynamic = "force-dynamic";
 
@@ -34,16 +35,27 @@ export async function POST(req: Request) {
     return json({ ok: false, error: "Enter your email and password." }, 400);
   }
 
-  const emailOk = parsed.data.email.toLowerCase() === serverEnv.adminEmail;
-  const passwordOk = passwordMatches(parsed.data.password);
+  const email = parsed.data.email.toLowerCase();
+  let role: AdminRole | null = null;
+  let expectedPassword = "";
+  if (email === serverEnv.adminEmail) {
+    role = "admin";
+    expectedPassword = serverEnv.adminPassword;
+  } else if (serverEnv.ticketManagerEmail && email === serverEnv.ticketManagerEmail) {
+    role = "ticket_manager";
+    expectedPassword = serverEnv.ticketManagerPassword;
+  }
 
-  // Same response whichever half is wrong, so this can't be used to probe.
-  if (!emailOk || !passwordOk) {
+  const passwordOk = role !== null && passwordMatches(parsed.data.password, expectedPassword);
+
+  // Same response whichever half is wrong, so this can't be used to probe
+  // which emails are valid logins.
+  if (!role || !passwordOk) {
     await logAudit("admin.login_failed", { email: parsed.data.email }, null);
     return json({ ok: false, error: "Email or password is incorrect." }, 401);
   }
 
-  const { value, maxAgeSeconds } = createSessionValue({ email: serverEnv.adminEmail });
+  const { value, maxAgeSeconds } = createSessionValue({ email, role });
   (await cookies()).set(ADMIN_COOKIE, value, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -52,7 +64,7 @@ export async function POST(req: Request) {
     maxAge: maxAgeSeconds,
   });
 
-  await logAudit("admin.login", { email: serverEnv.adminEmail }, null);
+  await logAudit("admin.login", { email, role }, null);
 
   return json({ ok: true });
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireAdmin } from "@/lib/auth";
+import { requireFullAdmin } from "@/lib/auth";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 
@@ -26,7 +26,7 @@ const GROUPS: { title: string; note: string; items: { href: string; label: strin
 ];
 
 export default async function ExportPage() {
-  const session = await requireAdmin();
+  const session = await requireFullAdmin();
   void getDrawUnlocked(); // warm the shared cache — AdminShell needs it too, see lib/app-config.ts
 
   return (
