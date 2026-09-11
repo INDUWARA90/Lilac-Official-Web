@@ -37,10 +37,22 @@ export async function POST(req: Request) {
   }
 
   const db = createAdminClient();
+  // `allowedMimeTypes` is enforced by Storage itself at upload time — unlike
+  // the zod check above, which only validates what the client *declares* it
+  // will upload. Without this, a direct PUT to the signed URL could store any
+  // file regardless of what was requested here. `updateBucket` re-applies it
+  // even if the bucket already existed from before this was added.
   await db.storage.createBucket(TICKET_SLIP_BUCKET, {
     public: false,
     fileSizeLimit: MAX_SLIP_BYTES,
+    allowedMimeTypes: [...ALLOWED_SLIP_TYPES],
   });
+  const { error: bucketErr } = await db.storage.updateBucket(TICKET_SLIP_BUCKET, {
+    public: false,
+    fileSizeLimit: MAX_SLIP_BYTES,
+    allowedMimeTypes: [...ALLOWED_SLIP_TYPES],
+  });
+  if (bucketErr) console.error(`ticket-slips bucket update failed: ${bucketErr.message}`);
 
   const ext =
     parsed.data.filename.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";

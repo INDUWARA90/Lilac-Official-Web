@@ -42,8 +42,24 @@ export async function POST(req: Request) {
   const db = createAdminClient();
 
   // Create the bucket on first use (public so <video>/<img> can load it
-  // directly). Ignore "already exists".
-  await db.storage.createBucket(bucket, { public: true, fileSizeLimit: maxBytes });
+  // directly). Ignore "already exists". `allowedMimeTypes` is enforced by
+  // Storage itself at upload time (unlike the zod regex above, which only
+  // checks what the client declares) — scoped to this bucket's own kind, even
+  // though the admin-only pre-flight check accepts either. `updateBucket`
+  // re-applies it even if the bucket already existed from before this was
+  // added.
+  const mimePattern = isVideo ? "video/*" : "image/*";
+  await db.storage.createBucket(bucket, {
+    public: true,
+    fileSizeLimit: maxBytes,
+    allowedMimeTypes: [mimePattern],
+  });
+  const { error: bucketErr } = await db.storage.updateBucket(bucket, {
+    public: true,
+    fileSizeLimit: maxBytes,
+    allowedMimeTypes: [mimePattern],
+  });
+  if (bucketErr) console.error(`${bucket} bucket update failed: ${bucketErr.message}`);
 
   const fallbackExt = isVideo ? "mp4" : "jpg";
   const ext =
