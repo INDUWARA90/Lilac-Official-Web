@@ -1,20 +1,11 @@
 import { forwardRef } from "react";
 import type { ButtonHTMLAttributes } from "react";
 
-/**
- * The one button style for the public flow (brief: "buttons are outline/ghost
- * style with purple text, not solid-filled"). Two weights:
- *  - `outline` (default): hairline-to-accent border, purple label
- *  - `ghost`: no border, purple label — for secondary actions like "Skip"
- *
- * Hand-built, no component library. No hover animation beyond a color shift
- * (brief motion spec: no hover effects on every element).
- */
+
 type Variant = "outline" | "ghost";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
-  /** Shows a spinner and disables the button. */
   loading?: boolean;
 }
 
@@ -38,8 +29,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   return (
     <button
       ref={ref}
-      // A submit button inside a form should stay type="submit"; default the
-      // rest to "button" so a stray click never submits a form.
       type={rest.type ?? "button"}
       disabled={disabled || loading}
       className={`${base} ${variants[variant]} ${className}`}

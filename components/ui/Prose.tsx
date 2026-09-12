@@ -1,10 +1,5 @@
 import type { ReactNode } from "react";
 
-/**
- * Lightweight prose styling for the static content pages — no typography
- * plugin, just element-targeted utilities. Keep the markup plain
- * (`<h2>`, `<p>`, `<ul>`) and this handles the rest.
- */
 export function Prose({ children }: { children: ReactNode }) {
   return (
     <div

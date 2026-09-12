@@ -1,11 +1,6 @@
 import { forwardRef, useId } from "react";
 import type { InputHTMLAttributes } from "react";
 
-/**
- * Minimal underline-style text input (brief: "form inputs are minimal
- * underline-style, not boxed"). Label sits above; a single hairline underline
- * that turns accent on focus; error text replaces the hint when present.
- */
 interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "id"> {
   label: string;
   /** Helper text shown under the field when there's no error. */

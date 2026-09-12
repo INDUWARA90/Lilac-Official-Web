@@ -1,10 +1,6 @@
 import { forwardRef, useId } from "react";
 import type { InputHTMLAttributes, ReactNode } from "react";
 
-/**
- * Consent checkbox. The label is `children` (a ReactNode) because the consent
- * text contains an emphasised clause about public name publication.
- */
 interface CheckboxProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "type" | "children"> {
   children: ReactNode;

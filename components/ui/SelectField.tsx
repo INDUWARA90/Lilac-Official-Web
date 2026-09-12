@@ -1,10 +1,6 @@
 import { forwardRef, useId } from "react";
 import type { SelectHTMLAttributes } from "react";
 
-/**
- * Underline-style select, matching TextField. Used for demographics
- * (age range, gender, district) where a constrained list is clearer than free text.
- */
 interface SelectFieldProps
   extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "id" | "children"> {
   label: string;

@@ -5,10 +5,6 @@ import confetti from "canvas-confetti";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
-/**
- * The one big celebratory moment on the site (brief motion spec) — fired once
- * when an entry is submitted. Respects prefers-reduced-motion.
- */
 export function SuccessCelebration({ firstName }: { firstName: string }) {
   const fired = useRef(false);
 

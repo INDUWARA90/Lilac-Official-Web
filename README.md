@@ -27,7 +27,7 @@ admin auth was built minimally alongside Stage 5).
 
 - [x] **1. Supabase schema + RLS policies** (staging) — `supabase/migrations/0001_init.sql`
 - [x] **2. Public flow** — ad step → entry form (zod, per-IP rate limit) → `/api/entry` → confetti success screen (entry counts immediately, no email step). Design tokens + hand-built UI components (`components/ui`, `components/flow`).
-- [x] **3. Static pages** — About / Privacy / Terms as marked-draft content pages (`ContentPage` + `Prose`); Contact with a working form → `/api/contact` → emails the admin via Resend (no DB table, not stored).
+- [x] **3. Static pages** — About / Privacy / Terms as marked-draft content pages (`SiteFrame` + `Prose`); Contact with a working form → `/api/contact` → emails the admin via Resend (no DB table, not stored).
 - [x] **4. Admin auth** — email + password sign-in (`ADMIN_EMAIL` / `ADMIN_PASSWORD`) + HMAC-signed 24h session cookie; `requireAdmin()` guard. AdminShell.
 - [x] **5. Draw + winners** — `/admin/draw` (crypto-random from non-winner entries); winner emails run as a **background job** (`winners.email_status` queue → `/api/admin/winners/process` drains it in self-chaining batches via `after()`, so draw size never risks the function timeout); admin alert on failure; `/admin/winners` per-row resend + "Send pending now"; two CSV exports. Audit rows for login / draw / resend / export.
 - [x] **6. Results + analytics** — public `/results` (winner names + live entry count); admin dashboard **funnel** (ad views → ad completed → entries, with conversion %); admin `/admin/entries` (paginated, searchable). `events` table + `POST /api/track` fired from the flow.
@@ -105,7 +105,7 @@ next.config.ts           security headers (CSP / HSTS / …)
 components/
   ContactForm.tsx
   ui/                    hand-built primitives: Button, TextField, Select,
-                         Checkbox, StepIndicator, Logo, SiteFrame, Prose, ContentPage
+                         Checkbox, StepIndicator, Logo, SiteFrame, Prose
   flow/                  AdStep, EntryForm, SuccessCelebration, EntryExperience
   admin/                 AdminShell, AdminLogin, DrawPanel, ResendButton
 lib/

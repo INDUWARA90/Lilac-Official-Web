@@ -1,7 +1,4 @@
-/**
- * Quiet 3-step indicator (brief: "Watch → Enter → Confirm", current step in
- * purple, others muted gray). Purely presentational — the flow owns the state.
- */
+
 const STEPS = ["Watch", "Enter", "Confirm"] as const;
 
 export type FlowStep = (typeof STEPS)[number];

@@ -5,16 +5,6 @@ import { Button } from "@/components/ui/Button";
 import { IMAGE_AUTO_ADVANCE_SECONDS, VIDEO_MIN_WATCH_SECONDS, type Ad } from "@/lib/ads-shared";
 import { loadYouTubeIframeApi } from "@/lib/youtube-iframe-api";
 
-/**
- * Step 1 — the sponsor ads. Every ad in `ads` is shown, in order; only once the
- * last one's requirement is met does `onDone` fire and the visitor reaches the
- * form. There is no skip (sponsor requirement: every ad must be watched).
- *
- *  - video (YouTube or uploaded file): "Next" stays disabled until the visitor
- *    has *actually played* VIDEO_MIN_WATCH_SECONDS of it — pausing or seeking
- *    ahead doesn't count.
- *  - image ("post"): auto-advances after IMAGE_AUTO_ADVANCE_SECONDS.
- */
 export function AdsStep({
   ads,
   onDone,

@@ -3,11 +3,6 @@ import type { ReactNode } from "react";
 import { SiteNav } from "@/components/ui/SiteNav";
 import { getPublicDrawUnlocked } from "@/lib/app-config";
 
-/**
- * Shared public shell: centered single column, generous whitespace, content
- * capped at ~560px (brief layout spec). The public nav bar lives in the header;
- * the footer carries the legal links.
- */
 export async function SiteFrame({ children }: { children: ReactNode }) {
   const drawUnlocked = await getPublicDrawUnlocked();
   return (

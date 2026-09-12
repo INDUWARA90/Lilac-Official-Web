@@ -6,10 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "db:migrate": "node scripts/migrate.mjs up",
-    "db:migrate:status": "node scripts/migrate.mjs status",
-    "db:migrate:baseline": "node scripts/migrate.mjs baseline"
+    "lint": "eslint"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

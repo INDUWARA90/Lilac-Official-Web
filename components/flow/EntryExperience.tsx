@@ -8,15 +8,6 @@ import { SuccessCelebration } from "@/components/flow/SuccessCelebration";
 import { track } from "@/components/flow/track";
 import type { Ad } from "@/lib/ads-shared";
 
-/**
- * Client orchestrator for the raffle flow on `/enter`:
- *   watch  → every sponsor ad in order
- *   enter  → the entry form (submits the server-issued ad-session token)
- *   done   → the success screen (confetti)
- *
- * There is no email-confirmation step — an entry counts the moment it's
- * submitted. Winners are notified by email after a draw.
- */
 type Phase = "watch" | "enter" | "done";
 
 const STEP_FOR_PHASE: Record<Phase, FlowStep> = {

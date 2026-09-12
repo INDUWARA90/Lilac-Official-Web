@@ -62,6 +62,7 @@ export function ContactForm() {
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-6">
+      
       <TextField
         label="Your name"
         required
@@ -70,6 +71,7 @@ export function ContactForm() {
         onChange={(e) => set("name", e.target.value)}
         error={errors.name}
       />
+
       <TextField
         label="Email address"
         required
@@ -88,7 +90,7 @@ export function ContactForm() {
         >
           Message <span className="text-accent-strong">*</span>
         </label>
-        {/* Multi-line: a light box reads better than an underline here. */}
+
         <textarea
           id="contact-message"
           required

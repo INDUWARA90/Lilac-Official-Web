@@ -5,11 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
 
-// "/results" isn't listed here directly — like "/enter" (the raffle flow),
-// it's a direct-link-only page until the draw is actually unlocked. Once an
-// admin unlocks it (`showResults`, from SiteFrame -> getPublicDrawUnlocked),
-// it's appended below. Until then it's still reachable from its contextual
-// links (homepage "Winners" note, the post-entry success screen) and by URL.
 const LINKS = [
   { href: "/", label: "Home" },
   { href: "/tickets", label: "Tickets" },
