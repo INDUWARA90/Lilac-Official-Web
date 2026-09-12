@@ -6,6 +6,7 @@ import { getAvailability, getTicketSettings } from "@/lib/tickets";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { formatLkr, PURCHASE_STATUS_LABEL } from "@/lib/tickets-shared";
+import { formatDate } from "@/lib/format";
 import type { TicketPurchaseStatusDb } from "@/lib/supabase/types";
 
 export const metadata: Metadata = { title: "Tickets", robots: { index: false } };
@@ -163,7 +164,7 @@ export default async function AdminTicketsPage({
                   <td className="py-2 pr-4">{formatLkr(r.amount_lkr)}</td>
                   <td className="py-2 pr-4">{PURCHASE_STATUS_LABEL[r.status]}</td>
                   <td className="py-2 whitespace-nowrap text-ink-muted">
-                    {new Date(r.created_at).toLocaleDateString()}
+                    {formatDate(r.created_at)}
                   </td>
                 </tr>
               ))

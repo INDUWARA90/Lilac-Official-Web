@@ -4,6 +4,7 @@ import { requireFullAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { formatDateTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Messages", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -96,7 +97,7 @@ export default async function ContactMessagesPage({
                   </a>
                 </p>
                 <p className="font-sans text-xs text-ink-muted">
-                  {new Date(m.created_at).toLocaleString()}
+                  {formatDateTime(m.created_at)}
                 </p>
               </div>
               <p className="mt-2 whitespace-pre-wrap font-sans text-sm text-ink-muted">

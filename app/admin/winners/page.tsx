@@ -3,6 +3,7 @@ import { requireFullAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { formatDateTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Winners", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -54,9 +55,7 @@ export default async function WinnersPage() {
                   <tr key={w.id} className="border-b border-hairline align-middle">
                     <td className="py-2 pr-4">{e?.name ?? "—"}</td>
                     <td className="py-2 pr-4 text-ink-muted">{e?.email ?? "—"}</td>
-                    <td className="py-2 text-ink-muted">
-                      {new Date(w.created_at).toLocaleString()}
-                    </td>
+                    <td className="py-2 text-ink-muted">{formatDateTime(w.created_at)}</td>
                   </tr>
                 );
               })}

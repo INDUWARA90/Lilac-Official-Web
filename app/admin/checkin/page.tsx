@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { TicketCheckinToggle } from "@/components/admin/TicketCheckinToggle";
+import { formatTimeAndDate } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Check-in", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -163,12 +164,7 @@ export default async function AdminCheckinPage({
                   <td className="py-2 pr-4 text-ink-muted">
                     {r.checked_in_at ? (
                       <>
-                        {new Date(r.checked_in_at).toLocaleString("en-LK", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          day: "numeric",
-                          month: "short",
-                        })}
+                        {formatTimeAndDate(r.checked_in_at)}
                         {r.checked_in_by && (
                           <span className="block text-xs">by {r.checked_in_by}</span>
                         )}

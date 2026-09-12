@@ -4,6 +4,7 @@ import { requireFullAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Entries", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -104,7 +105,7 @@ export default async function EntriesPage({
                   <td className="py-2 pr-4 text-ink-muted">{e.phone}</td>
                   <td className="py-2 pr-4 text-ink-muted">{e.district ?? "—"}</td>
                   <td className="py-2 text-ink-muted">
-                    {new Date(e.created_at).toLocaleDateString()}
+                    {formatDate(e.created_at)}
                   </td>
                 </tr>
               ))

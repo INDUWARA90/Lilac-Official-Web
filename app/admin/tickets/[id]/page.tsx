@@ -8,6 +8,7 @@ import { ticketUrl } from "@/lib/tickets";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { formatLkr, PURCHASE_STATUS_LABEL } from "@/lib/tickets-shared";
+import { formatDateTime } from "@/lib/format";
 import { TicketReviewActions } from "@/components/admin/TicketReviewActions";
 import { TicketCheckinToggle } from "@/components/admin/TicketCheckinToggle";
 
@@ -51,7 +52,7 @@ export default async function TicketPurchasePage({
       <h1 className="mt-3 text-2xl text-ink">{purchase.reference}</h1>
       <p className="mt-1 font-sans text-sm text-ink-muted">
         {PURCHASE_STATUS_LABEL[purchase.status]} ·{" "}
-        {new Date(purchase.created_at).toLocaleString()}
+        {formatDateTime(purchase.created_at)}
       </p>
 
       <div className="mt-6 grid gap-6 md:grid-cols-2">
@@ -76,9 +77,7 @@ export default async function TicketPurchasePage({
           {purchase.reviewed_by && (
             <p className="mt-2 text-xs text-ink-muted">
               Reviewed by {purchase.reviewed_by}
-              {purchase.reviewed_at
-                ? ` on ${new Date(purchase.reviewed_at).toLocaleString()}`
-                : ""}
+              {purchase.reviewed_at ? ` on ${formatDateTime(purchase.reviewed_at)}` : ""}
             </p>
           )}
         </div>
@@ -146,9 +145,7 @@ export default async function TicketPurchasePage({
                     </a>
                   </td>
                   <td className="py-2 pr-4 text-ink-muted">
-                    {t.checked_in_at
-                      ? new Date(t.checked_in_at).toLocaleString()
-                      : "—"}
+                    {t.checked_in_at ? formatDateTime(t.checked_in_at) : "—"}
                   </td>
                   <td className="py-2">
                     <TicketCheckinToggle token={t.token} checkedIn={Boolean(t.checked_in_at)} />

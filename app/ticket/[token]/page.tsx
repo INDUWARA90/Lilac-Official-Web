@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteFrame } from "@/components/ui/SiteFrame";
 import { getTicketByToken, qrDataUrl } from "@/lib/tickets";
+import { formatTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Your ticket", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -43,11 +44,7 @@ export default async function TicketPage({
             )}
             {checkedIn ? (
               <p className="mx-auto mt-5 w-fit rounded-pill bg-green-100 px-4 py-1.5 font-sans text-sm font-semibold text-green-700">
-                Checked in{" "}
-                {new Date(ticket.checked_in_at as string).toLocaleString("en-LK", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                Checked in {formatTime(ticket.checked_in_at as string)}
               </p>
             ) : (
               <p className="mt-5 font-sans text-sm text-ink-muted">

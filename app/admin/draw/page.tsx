@@ -5,6 +5,7 @@ import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { DrawPanel } from "@/components/admin/DrawPanel";
 import { DrawLock } from "@/components/admin/DrawLock";
+import { formatDateTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Draw winners", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -60,7 +61,7 @@ export default async function DrawPage() {
           <tbody>
             {(draws ?? []).map((d) => (
               <tr key={d.id} className="border-b border-hairline">
-                <td className="py-2">{new Date(d.drawn_at).toLocaleString()}</td>
+                <td className="py-2">{formatDateTime(d.drawn_at)}</td>
                 <td className="py-2">{d.winner_count}</td>
               </tr>
             ))}

@@ -4,6 +4,7 @@ import { requireFullAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { formatDateTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Audit log", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -80,7 +81,7 @@ export default async function AuditPage({
               (rows ?? []).map((r) => (
                 <tr key={r.id} className="border-b border-hairline align-top">
                   <td className="whitespace-nowrap py-2 pr-4 text-ink-muted">
-                    {new Date(r.created_at).toLocaleString()}
+                    {formatDateTime(r.created_at)}
                   </td>
                   <td className="whitespace-nowrap py-2 pr-4 text-ink">
                     {ACTION_LABEL[r.action] ?? r.action}

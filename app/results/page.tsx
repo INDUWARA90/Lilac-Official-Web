@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteFrame } from "@/components/ui/SiteFrame";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Results" };
 
@@ -51,7 +52,7 @@ export default async function ResultsPage() {
             <h2 className="text-xl text-ink">Winners</h2>
             {latestDraw?.drawn_at && (
               <p className="mt-1 font-sans text-xs text-ink-muted">
-                Drawn {new Date(latestDraw.drawn_at).toLocaleDateString()}.
+                Drawn {formatDate(latestDraw.drawn_at)}.
               </p>
             )}
             <ul className="mt-4 divide-y divide-hairline">

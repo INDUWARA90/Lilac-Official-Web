@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatTime } from "@/lib/format";
 
 type Outcome = "checked_in" | "refused" | null;
 
@@ -25,7 +26,7 @@ export function CheckinPanel({ token }: { token: string }) {
       } else {
         setError(
           data.alreadyAt
-            ? `Already checked in at ${new Date(data.alreadyAt).toLocaleTimeString()}.`
+            ? `Already checked in at ${formatTime(data.alreadyAt)}.`
             : (data.error ?? "Something went wrong."),
         );
       }
