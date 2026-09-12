@@ -17,7 +17,7 @@ export async function GET() {
 
   const { data: winners, error } = await db
     .from("winners")
-    .select("id, entry_id, draw_id, email_status, email_sent_at, created_at")
+    .select("id, entry_id, draw_id, created_at")
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -32,16 +32,10 @@ export async function GET() {
     .in("id", entryIds.length ? entryIds : ["00000000-0000-0000-0000-000000000000"]);
   const byId = new Map((entries ?? []).map((e) => [e.id, e]));
 
-  const headers = [
-    "name", "email", "phone", "district",
-    "draw_id", "email_status", "email_sent_at", "won_at",
-  ];
+  const headers = ["name", "email", "phone", "district", "draw_id", "won_at"];
   const rows = (winners ?? []).map((w) => {
     const e = byId.get(w.entry_id);
-    return [
-      e?.name, e?.email, e?.phone, e?.district,
-      w.draw_id, w.email_status, w.email_sent_at, w.created_at,
-    ];
+    return [e?.name, e?.email, e?.phone, e?.district, w.draw_id, w.created_at];
   });
 
   await logAudit("export.winners", { count: rows.length, by: session.email }, null);

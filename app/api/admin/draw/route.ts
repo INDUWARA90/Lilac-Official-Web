@@ -1,12 +1,10 @@
 import { z } from "zod";
-import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pickRandom } from "@/lib/draw";
 import { logAudit } from "@/lib/audit";
 import { getDrawUnlocked, setDrawUnlocked } from "@/lib/app-config";
-import { triggerWinnerEmailProcessor } from "@/lib/winner-emails";
 
 /**
  * POST /api/admin/draw
@@ -15,8 +13,8 @@ import { triggerWinnerEmailProcessor } from "@/lib/winner-emails";
  *   { action: "run", winnerCount } — run a draw (only when unlocked):
  *     1. eligible = verified entries that haven't already won
  *     2. pick `winnerCount` of them with crypto.randomInt
- *     3. record the draw + winners (email_status defaults to 'pending'), audit
- *     4. kick the background winner-email processor and return immediately
+ *     3. record the draw + winners, audit
+ *     4. winners appear on /results immediately — no email is sent
  */
 export const dynamic = "force-dynamic";
 
@@ -116,10 +114,6 @@ export async function POST(req: Request) {
   // /results is ISR (see app/results/page.tsx) — push the new winners out
   // immediately instead of waiting for the next background revalidation.
   revalidatePath("/results");
-
-  // 4. Hand winner emails to the background processor (runs after this response).
-  const origin = new URL(req.url).origin;
-  after(() => triggerWinnerEmailProcessor(origin));
 
   return json({
     ok: true,

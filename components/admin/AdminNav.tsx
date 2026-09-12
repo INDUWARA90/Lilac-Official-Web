@@ -91,6 +91,16 @@ const NAV: NavItem[] = [
     ),
   },
   {
+    href: "/admin/messages",
+    label: "Messages",
+    icon: (
+      <svg {...s}>
+        <path d="M4 5h16a1 1 0 011 1v11a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z" />
+        <path d="M3.5 6.5l8.5 6 8.5-6" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/export",
     label: "Export",
     icon: (

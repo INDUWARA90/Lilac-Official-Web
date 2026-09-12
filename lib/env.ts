@@ -28,12 +28,6 @@ export const publicEnv = {
 /** SERVER ONLY. */
 export const serverEnv = {
   supabaseServiceRoleKey: clean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-  brevo: {
-    apiKey: clean(process.env.BREVO_API_KEY),
-    senderEmail: clean(process.env.BREVO_SENDER_EMAIL),
-    senderName: clean(process.env.BREVO_SENDER_NAME) || "Lilac",
-  },
-  adminNotifyEmail: clean(process.env.ADMIN_NOTIFY_EMAIL),
 
   // Admin panel: the single allowed admin email + password, and the secret used
   // to sign the admin session cookie.

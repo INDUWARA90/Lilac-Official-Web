@@ -5,15 +5,11 @@ import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { publicEnv } from "@/lib/env";
 import { logAudit } from "@/lib/audit";
-import {
-  sendAdminAlert,
-  sendTicketApproved,
-  sendTicketPending,
-  sendTicketRejected,
-} from "@/lib/email/brevo";
+import { normalizeLkPhone } from "@/lib/validation/entry";
 import {
   TICKET_SLIP_BUCKET,
   type TicketAvailability,
+  type TicketPurchaseStatus,
   type TicketSettings,
 } from "@/lib/tickets-shared";
 import type { TicketRow, TicketSettingsRow } from "@/lib/supabase/types";
@@ -161,37 +157,21 @@ export async function createPurchase(input: {
   }
 
   revalidatePath("/tickets"); // seats just got taken — see app/tickets/page.tsx (ISR)
-  const settings = await getTicketSettings();
 
-  // Acknowledgement to the buyer's own email address. No admin alert here —
-  // that would be one email per purchase, which just adds noise since the
-  // admin already reviews every pending purchase from the dashboard. The
-  // only admin-facing notification on this path is the one-time "sold out"
-  // alert below, once capacity actually runs out.
-  const buyerEmail = await sendTicketPending({
-    to: input.email,
-    name: input.name,
-    reference,
-    quantity: input.quantity,
-    amountLkr: input.quantity * settings.priceLkr,
-  }).catch((): { ok: false; reason: string } => ({ ok: false, reason: "threw" }));
-
-  if (!buyerEmail.ok) {
-    console.error(`ticket pending email to buyer failed: ${buyerEmail.reason ?? "unknown"}`);
-  }
-
-  // This purchase may have been the one that used up the last seat(s) — tell
-  // the admin once, right when that happens, rather than on every purchase.
-  // Later attempts are rejected by the RPC before reaching here (SOLD_OUT),
-  // so this naturally fires exactly once.
+  // No buyer notification of any kind — buyers self-check with reference +
+  // phone/email at /tickets/status instead (see getPurchaseStatus below).
+  //
+  // This purchase may have been the one that used up the last seat(s) — log
+  // it once, right when that happens (visible on /admin/audit), rather than
+  // on every purchase. Later attempts are rejected by the RPC before reaching
+  // here (SOLD_OUT), so this naturally fires exactly once.
   const availability = await getAvailability();
   if (availability.left <= 0) {
-    await sendAdminAlert(
-      "🎟️ Tickets sold out",
-      `All ${availability.capacity} Lilac tickets are now taken.\n` +
-        `Last purchase: ${input.name} <${input.email}>, reference ${reference}.\n` +
-        `Review pending purchases: ${publicEnv.siteUrl}/admin/tickets`,
-    ).catch(() => {});
+    await logAudit(
+      "tickets.sold_out",
+      { capacity: availability.capacity, last_purchase_reference: reference },
+      null,
+    );
   }
 
   return { ok: true, reference };
@@ -202,19 +182,43 @@ export async function createPurchase(input: {
 export async function approvePurchase(
   purchaseId: string,
   by: string,
-): Promise<{ ok: boolean; error?: string; emailSent?: boolean }> {
+): Promise<{ ok: boolean; error?: string }> {
   const db = createAdminClient();
 
-  const { data: purchase } = await db
+  // Claim the purchase atomically FIRST, guarded on its current status, before
+  // issuing anything. Two admins clicking "Approve" on the same purchase at
+  // the same moment (or one double-click racing itself) both used to pass a
+  // plain SELECT-then-check and both go on to insert tickets — one real
+  // payment could mint 2x (or more) valid QR codes. Only the caller whose
+  // UPDATE actually matches `status = 'pending_review'` gets a row back; every
+  // other concurrent caller sees `null` and stops before creating anything.
+  const { data: claimed, error: claimErr } = await db
     .from("ticket_purchases")
-    .select("*")
+    .update({
+      status: "approved",
+      reviewed_by: by,
+      reviewed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", purchaseId)
+    .eq("status", "pending_review")
+    .select("*")
     .maybeSingle();
-  if (!purchase) return { ok: false, error: "Purchase not found." };
-  if (purchase.status === "approved") return { ok: true };
-  if (purchase.status !== "pending_review") {
-    return { ok: false, error: `This purchase is ${purchase.status}.` };
+  if (claimErr) return { ok: false, error: "Could not update the purchase." };
+
+  if (!claimed) {
+    const { data: current } = await db
+      .from("ticket_purchases")
+      .select("status")
+      .eq("id", purchaseId)
+      .maybeSingle();
+    if (!current) return { ok: false, error: "Purchase not found." };
+    // Already approved (by us or a concurrent caller) — idempotent success,
+    // same as the plain-SELECT version's intent, just race-safe now.
+    if (current.status === "approved") return { ok: true };
+    return { ok: false, error: `This purchase is ${current.status}.` };
   }
+  const purchase = claimed;
 
   const rows = Array.from({ length: purchase.quantity }, (_, i) => ({
     purchase_id: purchase.id,
@@ -227,21 +231,14 @@ export async function approvePurchase(
   const { data: created, error: insErr } = await db.from("tickets").insert(rows).select("*");
   if (insErr || !created) {
     console.error("approvePurchase: ticket insert failed");
+    // We already claimed the purchase as approved above — undo that so it's
+    // still reviewable (and re-approvable) rather than stuck "approved" with
+    // no tickets to show for it.
+    await db
+      .from("ticket_purchases")
+      .update({ status: "pending_review", reviewed_by: null, reviewed_at: null })
+      .eq("id", purchase.id);
     return { ok: false, error: "Could not issue the tickets. Try again." };
-  }
-
-  const { error: updErr } = await db
-    .from("ticket_purchases")
-    .update({
-      status: "approved",
-      reviewed_by: by,
-      reviewed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", purchase.id);
-  if (updErr) {
-    await db.from("tickets").delete().eq("purchase_id", purchase.id);
-    return { ok: false, error: "Could not finalise the purchase. Try again." };
   }
 
   await logAudit(
@@ -250,34 +247,10 @@ export async function approvePurchase(
     null,
   );
 
-  // E-ticket email with a QR per seat.
-  const attachments = await Promise.all(
-    created.map(async (t, i) => ({
-      filename: `lilac-ticket-${i + 1}.png`,
-      content: (
-        await QRCode.toBuffer(checkinUrl(t.token), { width: 512, margin: 1 })
-      ).toString("base64"),
-    })),
-  );
-  const sent = await sendTicketApproved({
-    to: purchase.email,
-    name: purchase.name,
-    reference: purchase.reference,
-    tickets: created.map((t) => ({ seatLabel: t.seat_label, url: ticketUrl(t.token) })),
-    attachments,
-  }).catch((): { ok: false; reason: string } => ({ ok: false, reason: "threw" }));
-
-  if (!sent.ok) {
-    console.error(`e-ticket email failed for ${purchase.reference}: ${sent.reason ?? "unknown"}`);
-    await sendAdminAlert(
-      "E-ticket email failed",
-      `Approved ${purchase.reference} for ${purchase.name} <${purchase.email}> but the e-ticket ` +
-        `email did not send (${sent.reason}). Send the ticket link(s) manually:\n` +
-        created.map((t) => `${t.seat_label}: ${ticketUrl(t.token)}`).join("\n"),
-    ).catch(() => {});
-  }
-
-  return { ok: true, emailSent: sent.ok };
+  // No push notification of any kind — the buyer finds their ticket(s)
+  // themselves at /tickets/status (reference + phone/email), which links to
+  // /ticket/[token] for the QR. Nothing to send, nothing to fail.
+  return { ok: true };
 }
 
 export async function rejectPurchase(
@@ -286,17 +259,12 @@ export async function rejectPurchase(
   note: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const db = createAdminClient();
-  const { data: purchase } = await db
-    .from("ticket_purchases")
-    .select("*")
-    .eq("id", purchaseId)
-    .maybeSingle();
-  if (!purchase) return { ok: false, error: "Purchase not found." };
-  if (purchase.status === "approved") {
-    return { ok: false, error: "This purchase is already approved — reverse it another way." };
-  }
 
-  const { error } = await db
+  // Same race as approvePurchase: guard the transition atomically on the
+  // current status so a reject racing an approve for the same purchase can't
+  // both go through (leaving tickets issued for a "rejected" purchase, or a
+  // rejection email sent for one that's actually approved).
+  const { data: purchase, error } = await db
     .from("ticket_purchases")
     .update({
       status: "rejected",
@@ -305,8 +273,24 @@ export async function rejectPurchase(
       reviewed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", purchase.id);
+    .eq("id", purchaseId)
+    .eq("status", "pending_review")
+    .select("*")
+    .maybeSingle();
   if (error) return { ok: false, error: "Could not update the purchase." };
+
+  if (!purchase) {
+    const { data: current } = await db
+      .from("ticket_purchases")
+      .select("status")
+      .eq("id", purchaseId)
+      .maybeSingle();
+    if (!current) return { ok: false, error: "Purchase not found." };
+    if (current.status === "approved") {
+      return { ok: false, error: "This purchase is already approved — reverse it another way." };
+    }
+    return { ok: false, error: `This purchase is already ${current.status}.` };
+  }
 
   revalidatePath("/tickets"); // rejecting frees up the seat(s) it held — see app/tickets/page.tsx (ISR)
   await logAudit(
@@ -314,14 +298,69 @@ export async function rejectPurchase(
     { purchase_id: purchase.id, reference: purchase.reference, by },
     null,
   );
-  await sendTicketRejected({
-    to: purchase.email,
-    name: purchase.name,
-    reference: purchase.reference,
-    reason: note || "We could not match your bank transfer.",
-  }).catch(() => {});
 
+  // No email — the buyer sees the rejection + review note themselves at
+  // /tickets/status (see getPurchaseStatus below).
   return { ok: true };
+}
+
+// ---- buyer self-service status lookup ----------------------------------
+
+export type PurchaseStatusItem = {
+  reference: string;
+  status: TicketPurchaseStatus;
+  quantity: number;
+  reviewNote: string | null;
+  /** Only populated once `status === "approved"`. */
+  tickets: { token: string; seatLabel: string }[];
+};
+
+/**
+ * Buyer self-check: just their own phone or email, no login, no reference
+ * needed. This is the whole replacement for the old "we'll email you" flow —
+ * nothing is pushed to the buyer, they come back and check whenever they
+ * like. `contact` is matched against phone (Sri Lankan formats, via
+ * normalizeLkPhone) OR email (case-insensitive) — whichever it looks like.
+ *
+ * Returns every purchase for that contact, newest first — usually one, but a
+ * rejected attempt followed by a fresh purchase would show both.
+ */
+export async function getPurchaseStatus(contact: string): Promise<PurchaseStatusItem[]> {
+  const db = createAdminClient();
+  const contactTrimmed = contact.trim();
+  const emailLower = contactTrimmed.toLowerCase();
+  const normalizedPhone = normalizeLkPhone(contactTrimmed);
+
+  const conditions = [`email.eq.${emailLower}`];
+  if (normalizedPhone) conditions.push(`phone.eq.${normalizedPhone}`);
+
+  const { data: purchases } = await db
+    .from("ticket_purchases")
+    .select("*")
+    .or(conditions.join(","))
+    .order("created_at", { ascending: false });
+  if (!purchases || purchases.length === 0) return [];
+
+  const results: PurchaseStatusItem[] = [];
+  for (const purchase of purchases) {
+    let tickets: { token: string; seatLabel: string }[] = [];
+    if (purchase.status === "approved") {
+      const { data: rows } = await db
+        .from("tickets")
+        .select("token, seat_label")
+        .eq("purchase_id", purchase.id)
+        .order("seat_label", { ascending: true });
+      tickets = (rows ?? []).map((t) => ({ token: t.token, seatLabel: t.seat_label }));
+    }
+    results.push({
+      reference: purchase.reference,
+      status: purchase.status as TicketPurchaseStatus,
+      quantity: purchase.quantity,
+      reviewNote: purchase.review_note,
+      tickets,
+    });
+  }
+  return results;
 }
 
 // ---- check-in ---------------------------------------------------------
@@ -359,12 +398,30 @@ export async function checkInTicket(
     return { ok: false, error: "Already checked in.", alreadyAt: ticket.checked_in_at };
   }
 
-  const { error } = await db
+  // `.is("checked_in_at", null)` makes the flip atomic, but Supabase reports
+  // no error when zero rows match it — so without `.select()` here, a second
+  // request that loses the race (because a first one already flipped the row
+  // between our read above and this update) would still see no error and
+  // wrongly report success. Checking the returned row is what actually makes
+  // this a guard rather than just a WHERE clause with no visible effect.
+  const { data: updated, error } = await db
     .from("tickets")
     .update({ checked_in_at: new Date().toISOString(), checked_in_by: by })
     .eq("id", ticket.id)
-    .is("checked_in_at", null); // guard against a double-scan race
+    .is("checked_in_at", null)
+    .select("checked_in_at")
+    .maybeSingle();
   if (error) return { ok: false, error: "Could not check in. Try again." };
+  if (!updated) {
+    // Lost the race: someone else's check-in landed first. Report the same
+    // way as the up-front check above, with the actual winning timestamp.
+    const { data: current } = await db
+      .from("tickets")
+      .select("checked_in_at")
+      .eq("id", ticket.id)
+      .maybeSingle();
+    return { ok: false, error: "Already checked in.", alreadyAt: current?.checked_in_at ?? undefined };
+  }
 
   await logAudit("ticket.checkin", { ticket_id: ticket.id, by }, null);
   return { ok: true };

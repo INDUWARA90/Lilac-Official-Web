@@ -45,3 +45,20 @@ export const ticketPurchaseSchema = z.object({
 });
 
 export type TicketPurchaseInput = z.infer<typeof ticketPurchaseSchema>;
+
+/**
+ * Buyer self-service status lookup — just their phone or email, no reference
+ * needed (matched against both in lib/tickets.ts, whichever the input looks
+ * like). Deliberately loose here: the real matching/normalisation happens
+ * server-side so this only rejects empty input, not "this doesn't look like
+ * an email".
+ */
+export const ticketStatusLookupSchema = z.object({
+  contact: z
+    .string()
+    .trim()
+    .min(1, "Enter the phone or email you used to buy your ticket.")
+    .max(254),
+});
+
+export type TicketStatusLookupInput = z.infer<typeof ticketStatusLookupSchema>;

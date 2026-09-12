@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
@@ -137,10 +138,15 @@ export function TicketPurchaseForm({
         <h2 className="text-lg text-ink">Request received</h2>
         <p className="mt-2 font-sans text-sm leading-relaxed text-ink-muted">
           Your reference is <strong className="text-ink">{done.reference}</strong>. We&rsquo;re
-          verifying your bank transfer and will email your e-ticket
-          {Number(values.quantity) === 1 ? "" : "s"} with the QR code
-          {Number(values.quantity) === 1 ? "" : "s"} once it&rsquo;s confirmed. Check your inbox
-          (and spam).
+          verifying your bank transfer, usually within a day or two.
+        </p>
+        <p className="mt-3 font-sans text-sm leading-relaxed text-ink-muted">
+          No email or message is sent — check your ticket{Number(values.quantity) === 1 ? "" : "s"}{" "}
+          yourself, anytime, at{" "}
+          <Link href="/tickets/status" className="text-accent-strong underline">
+            Check your ticket
+          </Link>{" "}
+          with just the phone number or email you used.
         </p>
       </div>
     );
@@ -167,8 +173,8 @@ export function TicketPurchaseForm({
           <span className="font-semibold text-ink">2.</span> Upload your transfer slip below.
         </li>
         <li>
-          <span className="font-semibold text-ink">3.</span> Submit — we verify and email your
-          ticket.
+          <span className="font-semibold text-ink">3.</span> Submit — we verify your transfer,
+          then check your ticket yourself anytime with your phone or email.
         </li>
       </ol>
 
@@ -186,7 +192,7 @@ export function TicketPurchaseForm({
         type="email"
         inputMode="email"
         autoComplete="email"
-        hint="Your e-ticket is sent here."
+        hint="Used to look up your ticket status later — no email is sent to it."
         value={values.email}
         onChange={(e) => set("email", e.target.value)}
         error={errors.email}
@@ -198,6 +204,7 @@ export function TicketPurchaseForm({
         inputMode="tel"
         autoComplete="tel"
         placeholder="077 123 4567"
+        hint="Used to look up your ticket status later."
         value={values.phone}
         onChange={(e) => set("phone", e.target.value)}
         error={errors.phone}

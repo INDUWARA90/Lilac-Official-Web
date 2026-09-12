@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/Button";
 
 /**
  * Review a pending purchase: check the slip, tick the confirmation box, then
- * "Confirm order" — which issues the tickets and emails the buyer their
- * e-ticket(s). Or reject with a note.
+ * "Confirm order" — which just issues the tickets. No email, no WhatsApp, no
+ * push notification of any kind. The buyer finds their ticket(s) — or a
+ * rejection note — themselves at /tickets/status (reference + phone/email).
  */
 export function TicketReviewActions({ purchaseId }: { purchaseId: string }) {
   const router = useRouter();
@@ -28,14 +29,8 @@ export function TicketReviewActions({ purchaseId }: { purchaseId: string }) {
           action === "reject" ? { action, purchaseId, note } : { action, purchaseId },
         ),
       });
-      const data = (await res.json()) as { ok: boolean; error?: string; emailSent?: boolean };
+      const data = (await res.json()) as { ok: boolean; error?: string };
       if (data.ok) {
-        if (action === "approve" && data.emailSent === false) {
-          window.alert(
-            "Order confirmed and tickets issued — but the e-ticket email did not send. " +
-              "Copy the ticket links below and send them to the buyer manually.",
-          );
-        }
         router.refresh();
       } else {
         setError(data.error ?? "Something went wrong.");
@@ -66,7 +61,7 @@ export function TicketReviewActions({ purchaseId }: { purchaseId: string }) {
       </label>
 
       <label className="mt-4 flex flex-col gap-1.5 font-sans text-sm font-medium text-ink-muted">
-        Note to buyer (sent if you reject)
+        Note to buyer (shown on their ticket status check if you reject)
         <input
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -83,7 +78,7 @@ export function TicketReviewActions({ purchaseId }: { purchaseId: string }) {
           loading={busy === "approve"}
           disabled={!slipChecked || busy !== null}
         >
-          Confirm order &amp; email tickets
+          Confirm order &amp; issue tickets
         </Button>
         <Button variant="ghost" onClick={() => act("reject")} loading={busy === "reject"}>
           Reject

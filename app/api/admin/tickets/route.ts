@@ -52,9 +52,7 @@ export async function POST(req: Request) {
 
   if (input.action === "approve") {
     const r = await approvePurchase(input.purchaseId, session.email);
-    return r.ok
-      ? json({ ok: true, emailSent: r.emailSent })
-      : json({ ok: false, error: r.error }, 400);
+    return r.ok ? json({ ok: true }) : json({ ok: false, error: r.error }, 400);
   }
   if (input.action === "reject") {
     const r = await rejectPurchase(input.purchaseId, session.email, input.note ?? "");

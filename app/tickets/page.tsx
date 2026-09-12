@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SiteFrame } from "@/components/ui/SiteFrame";
 import { getAvailability, getTicketSettings } from "@/lib/tickets";
 import { formatLkr, MAX_TICKETS_PER_PURCHASE } from "@/lib/tickets-shared";
@@ -27,6 +28,13 @@ export default async function TicketsPage() {
           <span className="text-ink">
             {availability.left} of {availability.capacity} left.
           </span>
+        </p>
+        <p className="mt-2 font-sans text-sm text-ink-muted">
+          Already bought a ticket?{" "}
+          <Link href="/tickets/status" className="text-accent-strong underline">
+            Check your ticket
+          </Link>
+          .
         </p>
 
         {canBuy ? (

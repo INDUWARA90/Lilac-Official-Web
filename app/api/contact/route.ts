@@ -2,11 +2,13 @@ import { z } from "zod";
 import { contactInputSchema } from "@/lib/validation/contact";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
-import { sendContactMessage } from "@/lib/email/brevo";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * POST /api/contact — forward a contact-form message to the admin inbox.
- * No database table: the message is emailed and not stored.
+ * POST /api/contact — store a contact-form message for the admin to read at
+ * /admin/messages. No email — same self-service-over-push-notification model
+ * as the ticket flow. Inserted via the service-role client (rate-limited +
+ * zod-validated here first), same as entries/events/tickets.
  */
 export const dynamic = "force-dynamic";
 
@@ -31,15 +33,16 @@ export async function POST(req: Request) {
   }
   const input = parsed.data;
 
-  const sent = await sendContactMessage({
+  const { error } = await createAdminClient().from("contact_messages").insert({
     name: input.name,
     email: input.email,
     message: input.message,
   });
-  if (!sent.ok) {
+  if (error) {
+    console.error(`contact message insert failed: ${error.code ?? "unknown"}`);
     return json(
       { ok: false, error: "We couldn't send your message just now. Please try again shortly." },
-      502,
+      500,
     );
   }
 

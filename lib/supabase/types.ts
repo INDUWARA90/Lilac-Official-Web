@@ -72,6 +72,14 @@ export type AuditLogRow = {
   created_at: string;
 };
 
+export type ContactMessageRow = {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  created_at: string;
+};
+
 export type EventType = "ad_view" | "ad_complete";
 
 export type EventRow = {
@@ -181,6 +189,12 @@ export type Database = {
         EventRow,
         Pick<EventRow, "type"> & Partial<Omit<EventRow, "type">>,
         Partial<EventRow>
+      >;
+      contact_messages: TableShape<
+        ContactMessageRow,
+        Omit<ContactMessageRow, "id" | "created_at"> &
+          Partial<Pick<ContactMessageRow, "id" | "created_at">>,
+        Partial<ContactMessageRow>
       >;
       ads: TableShape<
         AdRow,
