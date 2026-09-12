@@ -163,7 +163,11 @@ export async function createPurchase(input: {
   revalidatePath("/tickets"); // seats just got taken — see app/tickets/page.tsx (ISR)
   const settings = await getTicketSettings();
 
-  // Acknowledgement to the buyer's own email address.
+  // Acknowledgement to the buyer's own email address. No admin alert here —
+  // that would be one email per purchase, which just adds noise since the
+  // admin already reviews every pending purchase from the dashboard. The
+  // only admin-facing notification on this path is the one-time "sold out"
+  // alert below, once capacity actually runs out.
   const buyerEmail = await sendTicketPending({
     to: input.email,
     name: input.name,
@@ -176,15 +180,19 @@ export async function createPurchase(input: {
     console.error(`ticket pending email to buyer failed: ${buyerEmail.reason ?? "unknown"}`);
   }
 
-  await sendAdminAlert(
-    "New ticket purchase to review",
-    `${input.name} <${input.email}> requested ${input.quantity} ticket(s).\n` +
-      `Reference: ${reference}\n` +
-      (buyerEmail.ok
-        ? "The buyer was emailed a confirmation."
-        : `⚠ Could not email the buyer (${buyerEmail.reason}). Contact them directly.`) +
-      `\nReview: ${publicEnv.siteUrl}/admin/tickets`,
-  ).catch(() => {});
+  // This purchase may have been the one that used up the last seat(s) — tell
+  // the admin once, right when that happens, rather than on every purchase.
+  // Later attempts are rejected by the RPC before reaching here (SOLD_OUT),
+  // so this naturally fires exactly once.
+  const availability = await getAvailability();
+  if (availability.left <= 0) {
+    await sendAdminAlert(
+      "🎟️ Tickets sold out",
+      `All ${availability.capacity} Lilac tickets are now taken.\n` +
+        `Last purchase: ${input.name} <${input.email}>, reference ${reference}.\n` +
+        `Review pending purchases: ${publicEnv.siteUrl}/admin/tickets`,
+    ).catch(() => {});
+  }
 
   return { ok: true, reference };
 }

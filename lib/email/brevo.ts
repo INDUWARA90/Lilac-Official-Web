@@ -236,15 +236,20 @@ ${footer()}
 }
 
 /**
- * The brand mark itself — `public/Lailac.png` (1434×711, transparent),
- * hosted at the live site and referenced by URL. Brevo has no inline/cid
- * attachment support, so a real logo in the body has to be a normal `<img>`
- * pointing at a public HTTPS URL (the standard approach every transactional-
- * email provider expects) rather than an email attachment.
+ * The brand mark itself (1434×711, transparent), hosted on Cloudinary and
+ * referenced by a fixed URL — not the local `/Lailac.png` from `public/`,
+ * which only resolves once the site is actually deployed at `siteUrl`, and
+ * doesn't help in local dev at all. Brevo has no inline/cid attachment
+ * support, so a real logo in the body has to be a normal `<img>` pointing at
+ * a public HTTPS URL (the standard approach every transactional-email
+ * provider expects) rather than an email attachment.
  */
+const LOGO_URL =
+  "https://res.cloudinary.com/dkj7pc9xo/image/upload/v1789143775/iyfutjsdi3zrdir4ldrp.png";
+
 function logoImg(width: number): string {
   const height = Math.round((width * 711) / 1434);
-  return `<img src="${escapeHtml(publicEnv.siteUrl)}/Lailac.png" width="${width}" height="${height}" alt="Lilac" style="display:block;width:${width}px;height:${height}px;max-width:100%;border:0;outline:none;text-decoration:none;">`;
+  return `<img src="${escapeHtml(LOGO_URL)}" width="${width}" height="${height}" alt="Lilac" style="display:block;width:${width}px;height:${height}px;max-width:100%;border:0;outline:none;text-decoration:none;">`;
 }
 
 /** Filled pill CTA — the one visual language for every "go do something" link. */
