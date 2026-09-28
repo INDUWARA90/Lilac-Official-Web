@@ -6,6 +6,9 @@ import { z } from "zod";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { SelectField } from "@/components/ui/SelectField";
+import { Sparkle } from "@/components/ui/decor/Sparkle";
+import { AnimatedCheck } from "@/components/ui/decor/AnimatedCheck";
+import { CopyButton } from "@/components/ui/decor/CopyButton";
 import { createAnonClient } from "@/lib/supabase/client";
 import { ticketPurchaseSchema } from "@/lib/validation/ticket";
 import {
@@ -134,15 +137,18 @@ export function TicketPurchaseForm({
 
   if (done) {
     return (
-      <div className="rounded-card bg-canvas-raised px-5 py-6 ring-1 ring-hairline">
+      <div className="lilac-magic-card relative px-5 py-6">
+        <Sparkle size={16} gold className="absolute -top-2 right-6" />
+        <AnimatedCheck size={48} className="mb-3 text-accent" />
         <h2 className="text-lg text-ink">Request received</h2>
         <p className="mt-2 font-sans text-sm leading-relaxed text-ink-muted">
-          Your reference is <strong className="text-ink">{done.reference}</strong>. We&rsquo;re
-          verifying your bank transfer, usually within a day or two.
+          Your reference is <strong className="text-ink">{done.reference}</strong>{" "}
+          <CopyButton text={done.reference} label="Copy" />. We&rsquo;re verifying your bank
+          transfer, usually within a day or two.
         </p>
         <p className="mt-3 font-sans text-sm leading-relaxed text-ink-muted">
-          No email or message is sent — check your ticket{Number(values.quantity) === 1 ? "" : "s"}{" "}
-          yourself, anytime, at{" "}
+          Once it&rsquo;s confirmed, your QR ticket{Number(values.quantity) === 1 ? "" : "s"} will
+          be emailed to you. You can also check the status yourself anytime at{" "}
           <Link href="/tickets/status" className="text-accent-strong underline">
             Check your ticket
           </Link>{" "}
@@ -153,8 +159,8 @@ export function TicketPurchaseForm({
   }
 
   return (
-    <form onSubmit={submit} noValidate className="flex flex-col gap-6">
-      <ol className="rounded-card border border-hairline p-4 font-sans text-sm text-ink-muted">
+    <form onSubmit={submit} noValidate className="lilac-stagger flex flex-col gap-6">
+      <ol className="lilac-magic-card p-4 font-sans text-sm text-ink-muted">
         <li className="mb-2">
           <span className="font-semibold text-ink">1.</span> Transfer{" "}
           <strong className="text-ink">{formatLkr(priceLkr)}</strong> per ticket to:
@@ -173,8 +179,8 @@ export function TicketPurchaseForm({
           <span className="font-semibold text-ink">2.</span> Upload your transfer slip below.
         </li>
         <li>
-          <span className="font-semibold text-ink">3.</span> Submit — we verify your transfer,
-          then check your ticket yourself anytime with your phone or email.
+          <span className="font-semibold text-ink">3.</span> Submit — once we verify your
+          transfer, your QR ticket is emailed to you.
         </li>
       </ol>
 
@@ -192,7 +198,7 @@ export function TicketPurchaseForm({
         type="email"
         inputMode="email"
         autoComplete="email"
-        hint="Used to look up your ticket status later — no email is sent to it."
+        hint="Your e-ticket is emailed here once approved."
         value={values.email}
         onChange={(e) => set("email", e.target.value)}
         error={errors.email}
@@ -246,7 +252,7 @@ export function TicketPurchaseForm({
         </p>
       )}
 
-      <Button type="submit" loading={busy} className="self-start">
+      <Button type="submit" variant="magic" loading={busy} className="self-start">
         Submit ticket request
       </Button>
     </form>

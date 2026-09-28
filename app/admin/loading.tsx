@@ -6,7 +6,7 @@
  * jump when it swaps in.
  */
 function Block({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-card bg-canvas-raised ${className}`} />;
+  return <div className={`lilac-skeleton rounded-card bg-canvas-raised ${className}`} />;
 }
 
 export default function AdminLoading() {

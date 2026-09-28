@@ -29,6 +29,19 @@ export const publicEnv = {
 export const serverEnv = {
   supabaseServiceRoleKey: clean(process.env.SUPABASE_SERVICE_ROLE_KEY),
 
+  // Mailjet (free tier) — the e-ticket QR + reference (on approval), the
+  // winner notice (on draw), and contact-form forwarding all go through this
+  // (see lib/email/mailjet.ts). Inert without all three; each flow still
+  // succeeds either way, it just logs to /admin/audit instead of sending.
+  // Called directly from this Next.js app — no Supabase Edge Function in
+  // between.
+  mailjet: {
+    apiKey: clean(process.env.MAILJET_API_KEY),
+    secretKey: clean(process.env.MAILJET_SECRET_KEY),
+    senderEmail: clean(process.env.MAILJET_SENDER_EMAIL),
+    senderName: clean(process.env.MAILJET_SENDER_NAME) || "Lilac",
+  },
+
   // Admin panel: the single allowed admin email + password, and the secret used
   // to sign the admin session cookie.
   adminEmail: clean(process.env.ADMIN_EMAIL).toLowerCase(),

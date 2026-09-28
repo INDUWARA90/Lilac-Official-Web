@@ -11,7 +11,7 @@
  *   npx supabase gen types typescript --project-id <ref> > lib/supabase/types.ts
  */
 
-export type EmailStatus = "pending" | "sent" | "failed";
+export type EmailStatus = "pending" | "sending" | "sent" | "failed";
 
 export type EntryRow = {
   id: string;
@@ -80,11 +80,13 @@ export type ContactMessageRow = {
   created_at: string;
 };
 
-export type EventType = "ad_view" | "ad_complete";
+export type EventType = "ad_view" | "ad_complete" | "ad_shown" | "ad_watched";
 
 export type EventRow = {
   id: string;
   type: EventType;
+  /** Set for 'ad_shown'/'ad_watched' — which ad the event was about. */
+  ad_id: string | null;
   created_at: string;
 };
 
@@ -255,7 +257,7 @@ export type Database = {
         Returns: string;
       };
       create_event: {
-        Args: { p_type: string };
+        Args: { p_type: string; p_ad_id?: string | null };
         Returns: undefined;
       };
     };

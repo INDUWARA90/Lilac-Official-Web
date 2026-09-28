@@ -70,7 +70,7 @@ export default async function AuditPage({
               <th className="py-2 font-medium">Details</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="lilac-rows">
             {(rows ?? []).length === 0 ? (
               <tr>
                 <td colSpan={3} className="py-6 text-center text-ink-muted">

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { SelectField } from "@/components/ui/SelectField";
 import { Checkbox } from "@/components/ui/Checkbox";
+import { Sparkle } from "@/components/ui/decor/Sparkle";
 import {
   AGE_RANGES,
   GENDER_OPTIONS,
@@ -149,14 +150,15 @@ export function EntryForm({
 
   return (
     <section className="pt-4">
-      <div className="space-y-2 text-center">
+      <div className="relative space-y-2 text-center">
+        <Sparkle size={18} className="absolute -top-2 right-[calc(50%-5rem)]" />
         <h1 className="text-3xl text-ink">Enter the draw</h1>
         <p className="mx-auto max-w-sm font-sans text-sm leading-relaxed text-ink-muted">
           One entry per person. Your entry is counted as soon as you submit.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="mt-8 flex flex-col gap-6">
+      <form onSubmit={handleSubmit} noValidate className="lilac-stagger mt-8 flex flex-col gap-6">
         <TextField
           label="Full name"
           required
@@ -269,7 +271,7 @@ export function EntryForm({
             </p>
           )}
 
-          <Button type="submit" loading={submitting} className="self-start">
+          <Button type="submit" variant="magic" loading={submitting} className="self-start">
             Submit entry
           </Button>
         </div>

@@ -1,12 +1,13 @@
 -- ============================================================
--- Lilac — full schema (migrations 0001–0010 combined)
+-- Lilac — full schema (migrations 0001–0013 combined)
 -- Paste into Supabase dashboard → SQL Editor → Run.
 --
 -- FOR A FRESH DATABASE ONLY. This runs 0001→0005 in sequence, so it recreates
 -- objects (generate_ticket_code(), the ticket_code / verification_token
 -- indexes) that 0004 then drops — fine on an empty project, but it ERRORS if
 -- those columns are already gone. On a database that already has 0001–0004,
--- run only supabase/migrations/0005_ads.sql instead.
+-- run only the migrations after the ones you've already applied instead
+-- (supabase/migrations/*.sql, in order).
 -- ============================================================
 
 -- >>> supabase/migrations/0001_init.sql
@@ -640,3 +641,94 @@ revoke all on function public.create_event(text) from public, anon, authenticate
 grant execute on function public.create_event(text) to service_role;
 
 drop policy if exists "events_anon_insert" on public.events;
+
+
+-- >>> supabase/migrations/0011_contact_messages_no_email.sql
+-- ============================================================================
+-- Lilac — drop the email provider entirely (Brevo). Apply after 0001–0010.
+-- Safe to re-run.
+--
+-- What changes:
+--   - Contact form messages are now stored here and read from /admin/messages,
+--     instead of being emailed to the admin. Service-role only — the
+--     rate-limited, zod-validated /api/contact route inserts via the
+--     service-role client, same as entries/events/tickets (see 0009/0010).
+--   - Winner "confirmation email" is gone (see lib/tickets.ts /
+--     lib/winner-emails.ts removal) — winners already appear on the public
+--     /results page. `winners.email_status` / `email_sent_at` are left in
+--     place but unused; harmless to keep, drop them later if you want.
+-- ============================================================================
+
+create table if not exists public.contact_messages (
+  id         uuid primary key default gen_random_uuid(),
+  name       text not null,
+  email      text not null,
+  message    text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists contact_messages_created_at_idx
+  on public.contact_messages (created_at desc);
+
+alter table public.contact_messages enable row level security;
+-- No policies: service-role only, same model as entries/tickets.
+
+
+-- >>> supabase/migrations/0012_winner_email_claim.sql
+-- ============================================================================
+-- Lilac — add a "sending" state to winners.email_status so the auto-send
+-- (after a draw) and a manual "Resend" click can't race and double-send the
+-- same winner's email. Apply after 0001-0011.
+--
+-- Postgres can't add an enum value inside the same transaction it's used in,
+-- so this is its own statement/migration.
+-- ============================================================================
+
+alter type email_status add value if not exists 'sending';
+
+
+-- >>> supabase/migrations/0013_ad_analytics.sql
+-- ============================================================================
+-- Lilac — per-ad interaction analytics, so sponsors can see how their own ad
+-- performed (not just the site-wide funnel). Apply after 0001-0012.
+--
+--   events.ad_id       — which ad a 'ad_shown'/'ad_watched' event was about.
+--                         Nullable: the existing flow-level 'ad_view' /
+--                         'ad_complete' events (fired once per session, see
+--                         components/flow/track.ts) stay ad_id = null and
+--                         keep their current meaning untouched.
+--   'ad_shown'          — a specific ad became visible in the flow.
+--   'ad_watched'        — the visitor satisfied that ad's watch/view
+--                         requirement and moved on (see AdsStep.tsx).
+-- ============================================================================
+
+alter table public.events
+  add column if not exists ad_id uuid references public.ads (id) on delete set null;
+
+create index if not exists events_ad_id_idx on public.events (ad_id);
+create index if not exists events_type_ad_id_idx on public.events (type, ad_id);
+
+alter table public.events drop constraint if exists events_type_check;
+alter table public.events
+  add constraint events_type_check
+  check (type in ('ad_view', 'ad_complete', 'ad_shown', 'ad_watched'));
+
+-- create_event() gains an optional p_ad_id — PostgREST lets callers omit it
+-- (it defaults to null), so the existing flow-level track() calls that don't
+-- pass one keep working unchanged. Drop the old single-arg signature first:
+-- `create or replace` matches by full signature, so without this we'd end up
+-- with two overloaded create_event()s instead of one replaced.
+drop function if exists public.create_event(text);
+
+create function public.create_event(p_type text, p_ad_id uuid default null)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.events (type, ad_id) values (p_type, p_ad_id);
+end $$;
+
+revoke all on function public.create_event(text, uuid) from public, anon, authenticated;
+grant execute on function public.create_event(text, uuid) to service_role;

@@ -6,6 +6,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { DrawPanel } from "@/components/admin/DrawPanel";
 import { DrawLock } from "@/components/admin/DrawLock";
 import { formatDateTime } from "@/lib/format";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 
 export const metadata: Metadata = { title: "Draw winners", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -17,8 +18,10 @@ export default async function DrawPage() {
   const [drawUnlocked, { data: verified }, { data: prevWinners }, { data: draws }] =
     await Promise.all([
       getDrawUnlocked(),
-      db.from("entries").select("id").eq("verified", true),
-      db.from("winners").select("entry_id"),
+      fetchAll((from, to) =>
+        db.from("entries").select("id").eq("verified", true).order("id").range(from, to),
+      ),
+      fetchAll((from, to) => db.from("winners").select("entry_id").order("id").range(from, to)),
       db.from("draws").select("id, winner_count, drawn_at").order("drawn_at", { ascending: false }),
     ]);
 
@@ -58,7 +61,7 @@ export default async function DrawPage() {
               <th className="py-2 font-medium">Winners</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="lilac-rows">
             {(draws ?? []).map((d) => (
               <tr key={d.id} className="border-b border-hairline">
                 <td className="py-2">{formatDateTime(d.drawn_at)}</td>

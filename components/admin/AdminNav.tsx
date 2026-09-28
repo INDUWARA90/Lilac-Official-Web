@@ -71,6 +71,15 @@ const NAV: NavItem[] = [
     ),
   },
   {
+    href: "/admin/analytics",
+    label: "Analytics",
+    icon: (
+      <svg {...s}>
+        <path d="M4 19V5M4 19h16M8 19v-6M13 19V9M18 19v-3" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/tickets",
     label: "Tickets",
     icon: (
@@ -165,13 +174,15 @@ export function AdminNav({
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={
-              "flex items-center gap-3 rounded-field px-3 py-2 font-sans text-sm transition-colors " +
+              "group flex items-center gap-3 rounded-field px-3 py-2 font-sans text-sm transition-colors " +
               (active
-                ? "bg-accent-wash font-medium text-accent-strong"
+                ? "lilac-nav-active bg-accent-wash font-medium text-accent-strong"
                 : "text-ink-muted hover:bg-canvas-raised hover:text-accent-strong")
             }
           >
-            <span className="shrink-0 text-current">{item.icon}</span>
+            <span className="shrink-0 text-current transition-transform duration-200 group-hover:scale-110 motion-reduce:transition-none">
+              {item.icon}
+            </span>
             {item.label}
           </Link>
         );

@@ -17,6 +17,14 @@
   --color-accent-wash: #f1eefc; /* faint purple fill: active step dot, focus halo */
   --color-hairline: #e6e2f0; /* pale lavender-gray borders / rules */
 
+  /* Fairytale theme accents — used sparingly for the public flow's "magical"
+     touches (petals, sparkles, glows): a paler lavender for decorative petal
+     shapes, a warm blush for the background wash, and a soft gold for sparkle
+     highlights. The single-accent rule above still governs text/buttons. */
+  --color-accent-soft: #c9b8f0;
+  --color-blush: #fbeaf0;
+  --color-magic-gold: #e3b04b;
+
   --font-serif: var(--font-fraunces), Georgia, "Times New Roman", serif;
   --font-sans: var(--font-manrope), system-ui, -apple-system, Segoe UI, Roboto,
     sans-serif;
@@ -35,13 +43,26 @@ html {
 }
 
 body {
-  background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
   font-size: 1rem;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Fairytale background wash: soft lavender/blush blooms on white, fixed so
+   they don't repeat/scroll oddly on tall pages. The admin panel sits on top
+   of an opaque `bg-canvas` div of its own (see AdminShell), so this never
+   shows through there — it's effectively scoped to the public site. */
+.bg-wash {
+  background-color: var(--color-canvas);
+  background-image:
+    radial-gradient(ellipse 70% 45% at 15% -8%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 60%),
+    radial-gradient(ellipse 55% 40% at 105% 5%, color-mix(in srgb, var(--color-blush) 75%, transparent), transparent 60%),
+    radial-gradient(ellipse 65% 45% at 50% 115%, color-mix(in srgb, var(--color-accent-wash) 90%, transparent), transparent 60%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 
 /* Headlines use the warm serif. Sizes are set per-use with utilities; the base
@@ -93,8 +114,672 @@ h3 {
   animation: lilac-frame-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* ---------------------------------------------------------------------------
+   Fairytale theme motion — public flow / results / tickets only (see
+   components/ui/decor/*, Button's "magic" variant, StepIndicator). Every rule
+   here is transform/opacity only (GPU-cheap) and gets fully disabled below
+   `prefers-reduced-motion: reduce`, same discipline as the two moments above.
+   --------------------------------------------------------------------------- */
+
+/* A softer, more generalized version of lilac-frame-in — reused for each
+   step/phase transition in the flow, not just the ad frame. */
+@keyframes lilac-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.lilac-enter {
+  animation: lilac-enter 550ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* One petal drifting top-to-bottom with a gentle side-to-side sway and a
+   slow tumble. Each <FloatingPetals> instance varies left/size/duration/delay
+   via inline style custom properties, not separate keyframes. */
+@keyframes lilac-petal-fall {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate3d(3vw, 52vh, 0) rotate(160deg);
+  }
+  92% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate3d(-2.5vw, 112vh, 0) rotate(320deg);
+    opacity: 0;
+  }
+}
+
+.lilac-petal {
+  position: absolute;
+  top: 0;
+  left: var(--petal-left, 10%);
+  width: var(--petal-size, 22px);
+  height: var(--petal-size, 22px);
+  opacity: 0;
+  animation: lilac-petal-fall var(--petal-duration, 16s) linear infinite;
+  animation-delay: var(--petal-delay, 0s);
+  will-change: transform, opacity;
+}
+
+/* A small twinkling accent (see components/ui/decor/Sparkle.tsx). */
+@keyframes lilac-sparkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(18deg);
+  }
+}
+
+.lilac-sparkle {
+  animation: lilac-sparkle var(--sparkle-duration, 2.6s) ease-in-out infinite;
+  animation-delay: var(--sparkle-delay, 0s);
+}
+
+/* A slow, soft glow pulse — the active step dot, primary buttons on hover. */
+@keyframes lilac-glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 38%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 16px 3px color-mix(in srgb, var(--color-accent) 38%, transparent);
+  }
+}
+
+.lilac-glow-pulse {
+  animation: lilac-glow-pulse 2.4s ease-in-out infinite;
+}
+
+/* Primary button: gradient fill + a light sweep on hover, soft press-scale. */
+.lilac-btn-magic {
+  background-image: linear-gradient(135deg, var(--color-accent), var(--color-accent-strong));
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 150ms ease,
+    box-shadow 200ms ease;
+  box-shadow: 0 6px 20px -8px color-mix(in srgb, var(--color-accent) 60%, transparent);
+}
+
+.lilac-btn-magic::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+  background-size: 220% 100%;
+  background-position: 150% 0;
+  transition: background-position 700ms ease;
+}
+
+.lilac-btn-magic:hover::after {
+  background-position: -50% 0;
+}
+
+.lilac-btn-magic:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -8px color-mix(in srgb, var(--color-accent) 70%, transparent);
+}
+
+.lilac-btn-magic:active {
+  transform: scale(0.97);
+}
+
+/* Soft "enchanted" card treatment — winner rows, the ticket QR frame, the
+   ticket-purchase summary card. Glassy: a blurred, translucent panel that
+   lets the aurora wash behind it show through. */
+.lilac-magic-card {
+  position: relative;
+  border-radius: var(--radius-card);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 16%, var(--color-hairline));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.5));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    0 1px 2px rgba(69, 50, 159, 0.06),
+    0 10px 28px -16px rgba(69, 50, 159, 0.35);
+}
+
+/* Large, slow-drifting blurred color blobs behind the page (see
+   components/ui/decor/Aurora.tsx) — the "wow" layer under the petals. Pure
+   transform/opacity, GPU-cheap despite the blur (blur is applied once, not
+   per-frame). */
+@keyframes lilac-aurora-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, 5%, 0) scale(1.1);
+  }
+  100% {
+    transform: translate3d(-3%, -4%, 0) scale(0.96);
+  }
+}
+
+.lilac-aurora-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+  animation: lilac-aurora-drift var(--aurora-duration, 22s) ease-in-out infinite alternate;
+  animation-delay: var(--aurora-delay, 0s);
+  will-change: transform;
+}
+
+/* Hover lift — winner rows, ticket-status purchase cards, the "how it
+   works" steps. A small pop toward the viewer, not a full flip/tilt, so it
+   stays calm rather than gimmicky. */
+.lilac-hover-lift {
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease;
+}
+
+.lilac-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 34px -16px color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+/* A gentle, continuous up/down float — the ticket QR card, the home hero. */
+@keyframes lilac-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.lilac-float {
+  animation: lilac-float 5s ease-in-out infinite;
+}
+
+/* Animated gradient headline text — used sparingly, for a couple of big
+   hero moments only (home title, the success headline), not every h1. */
+@keyframes lilac-text-shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.lilac-gradient-text {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-accent-strong),
+    var(--color-magic-gold),
+    var(--color-accent),
+    var(--color-accent-strong)
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: lilac-text-shimmer 7s ease-in-out infinite;
+}
+
+/* Expanding "burst" rings behind the success headline. Multiple rings are
+   staggered via animation-delay on each element (see SuccessCelebration). */
+@keyframes lilac-ring-burst {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.lilac-ring {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 110px;
+  height: 110px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--color-accent-soft);
+  animation: lilac-ring-burst 2.2s ease-out infinite;
+  animation-delay: var(--ring-delay, 0s);
+}
+
+/* Scroll-reveal is handled by components/ui/decor/Reveal.tsx via
+   framer-motion's whileInView, not CSS — nothing needed here. */
+
+/* Tiny twinkling fairy-dust — denser and smaller than the petals, a
+   different texture (see components/ui/decor/Glimmer.tsx). */
+@keyframes lilac-glimmer-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  50% {
+    opacity: var(--glimmer-peak, 0.9);
+    transform: scale(1);
+  }
+}
+
+.lilac-glimmer {
+  position: absolute;
+  border-radius: 9999px;
+  background: var(--glimmer-color, var(--color-accent-soft));
+  animation: lilac-glimmer-twinkle var(--glimmer-duration, 3.2s) ease-in-out infinite;
+  animation-delay: var(--glimmer-delay, 0s);
+}
+
+/* Rotating holographic glow border — a slim conic-gradient ring, masked so
+   only the border itself shows. Opt-in via .lilac-border-glow, layered on
+   top of .lilac-magic-card or the ad/video frame for the highest-impact
+   moments (the ticket QR card, the ad frame), not everywhere. */
+@keyframes lilac-border-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.lilac-border-glow {
+  position: relative;
+  isolation: isolate;
+}
+
+.lilac-border-glow::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from 0deg,
+    var(--color-accent),
+    var(--color-magic-gold),
+    var(--color-blush),
+    var(--color-accent-soft),
+    var(--color-accent)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: lilac-border-spin 6s linear infinite;
+  opacity: 0.85;
+}
+
+/* A soft glow halo — the nav logo, sitting behind it. */
+.lilac-logo-halo {
+  position: relative;
+}
+
+.lilac-logo-halo::before {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  z-index: -1;
+  border-radius: 9999px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 30%, transparent), transparent 70%);
+  animation: lilac-glow-pulse-soft 3.4s ease-in-out infinite;
+}
+
+@keyframes lilac-glow-pulse-soft {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+/* A gentle sway on the FlowerDivider's center flourish. */
+@keyframes lilac-sway {
+  0%,
+  100% {
+    transform: rotate(-6deg);
+  }
+  50% {
+    transform: rotate(6deg);
+  }
+}
+
+.lilac-sway {
+  transform-origin: 50% 15%;
+  animation: lilac-sway 3.6s ease-in-out infinite;
+}
+
+/* Validation message: drops in with a tiny side-to-side shake so an error is
+   noticed without a jarring color flash. Keyed by message text in the field
+   components, so a *changed* message replays it. */
+@keyframes lilac-error-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  40% {
+    opacity: 1;
+    transform: translateX(-3px);
+  }
+  60% {
+    transform: translateX(3px);
+  }
+  80% {
+    transform: translateX(-1px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+}
+
+.lilac-error-in {
+  animation: lilac-error-in 380ms ease-out both;
+}
+
+/* Horizontal bar that grows from the left — admin dashboard breakdowns. The
+   bar's own width is set inline; this only animates it in via transform. */
+@keyframes lilac-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.lilac-bar-grow {
+  transform-origin: left center;
+  animation: lilac-bar-grow 800ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--bar-delay, 0ms);
+}
+
+/* Loading placeholder: a soft highlight sweeps across a flat block. The base
+   color comes from the element's own bg-* class; this only overlays the sweep. */
+@keyframes lilac-skeleton-sweep {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.lilac-skeleton {
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in srgb, var(--color-accent) 12%, white) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: lilac-skeleton-sweep 1.6s ease-in-out infinite;
+}
+
+/* Endless horizontal ticker (components/ui/decor/Marquee.tsx). The track holds
+   two identical rows, so sliding by exactly -50% loops with no jump. */
+@keyframes lilac-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.lilac-marquee {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.lilac-marquee-track {
+  animation: lilac-marquee 34s linear infinite;
+}
+
+.lilac-marquee:hover .lilac-marquee-track {
+  animation-play-state: paused;
+}
+
+/* A diagonal sheen that sweeps across a card every few seconds — for the
+   cards that should catch the eye (ticket banner, "buy tickets" call-out). */
+@keyframes lilac-shine-sweep {
+  0%,
+  55% {
+    transform: translateX(-140%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(340%) skewX(-20deg);
+  }
+}
+
+.lilac-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.lilac-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 35%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  transform: translateX(-140%) skewX(-20deg);
+  animation: lilac-shine-sweep 5.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Cascade a form's direct children in one after another (first child has no
+   delay; the rest step up by 60ms). */
+.lilac-stagger > * {
+  animation: lilac-enter 550ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lilac-stagger > :nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.lilac-stagger > :nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.lilac-stagger > :nth-child(4) {
+  animation-delay: 180ms;
+}
+
+.lilac-stagger > :nth-child(5) {
+  animation-delay: 240ms;
+}
+
+.lilac-stagger > :nth-child(6) {
+  animation-delay: 300ms;
+}
+
+.lilac-stagger > :nth-child(7) {
+  animation-delay: 360ms;
+}
+
+.lilac-stagger > :nth-child(8) {
+  animation-delay: 420ms;
+}
+
+.lilac-stagger > :nth-child(9) {
+  animation-delay: 480ms;
+}
+
+.lilac-stagger > :nth-child(10) {
+  animation-delay: 540ms;
+}
+
+/* Status badge "pop": overshoots slightly then settles. */
+@keyframes lilac-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.lilac-pop {
+  animation: lilac-pop 420ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
+}
+
+/* Admin table body: rows fade up one after another (first 12 rows; the rest
+   just share the last delay). */
+@keyframes lilac-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lilac-rows > tr {
+  animation: lilac-row-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lilac-rows > tr:nth-child(2) {
+  animation-delay: 35ms;
+}
+
+.lilac-rows > tr:nth-child(3) {
+  animation-delay: 70ms;
+}
+
+.lilac-rows > tr:nth-child(4) {
+  animation-delay: 105ms;
+}
+
+.lilac-rows > tr:nth-child(5) {
+  animation-delay: 140ms;
+}
+
+.lilac-rows > tr:nth-child(6) {
+  animation-delay: 175ms;
+}
+
+.lilac-rows > tr:nth-child(7) {
+  animation-delay: 210ms;
+}
+
+.lilac-rows > tr:nth-child(8) {
+  animation-delay: 245ms;
+}
+
+.lilac-rows > tr:nth-child(9) {
+  animation-delay: 280ms;
+}
+
+.lilac-rows > tr:nth-child(10) {
+  animation-delay: 315ms;
+}
+
+.lilac-rows > tr:nth-child(11) {
+  animation-delay: 350ms;
+}
+
+.lilac-rows > tr:nth-child(12) {
+  animation-delay: 385ms;
+}
+
+.lilac-rows > tr:nth-child(n + 13) {
+  animation-delay: 420ms;
+}
+
+/* Admin sidebar: the current section's left accent bar grows in. */
+@keyframes lilac-tab-in {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.lilac-nav-active {
+  position: relative;
+}
+
+.lilac-nav-active::before {
+  content: "";
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  left: 0;
+  width: 3px;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  animation: lilac-tab-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* About / Privacy / Terms: each section heading eases in as it scrolls into
+   view. Scroll-driven, so it only applies in browsers that support it; the
+   rest just show the headings normally. */
+@supports (animation-timeline: view()) {
+  .lilac-prose h2 {
+    animation: lilac-enter linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 55%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .lilac-frame-in {
+  .lilac-pop,
+  .lilac-rows > tr,
+  .lilac-nav-active::before,
+  .lilac-prose h2,
+  .lilac-marquee-track,
+  .lilac-shine::after,
+  .lilac-stagger > *,
+  .lilac-skeleton,
+  .lilac-error-in,
+  .lilac-bar-grow,
+  .lilac-frame-in,
+  .lilac-enter,
+  .lilac-petal,
+  .lilac-sparkle,
+  .lilac-glow-pulse,
+  .lilac-aurora-blob,
+  .lilac-float,
+  .lilac-gradient-text,
+  .lilac-ring,
+  .lilac-glimmer,
+  .lilac-border-glow::before,
+  .lilac-logo-halo::before,
+  .lilac-sway {
     animation: none;
+  }
+
+  .lilac-btn-magic,
+  .lilac-btn-magic::after,
+  .lilac-hover-lift {
+    transition: none;
   }
 }

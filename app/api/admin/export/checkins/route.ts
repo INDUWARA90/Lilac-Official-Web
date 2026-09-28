@@ -2,6 +2,7 @@ import { getAdminSession } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { toCsv, csvResponse } from "@/lib/csv";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 
 /**
  * GET /api/admin/export/checkins — CSV of every issued ticket and its
@@ -18,11 +19,17 @@ export async function GET() {
 
   const db = createAdminClient();
   const [{ data: tickets, error }, { data: purchases }] = await Promise.all([
-    db
-      .from("tickets")
-      .select("purchase_id, seat_label, holder_name, checked_in_at, checked_in_by, created_at")
-      .order("created_at", { ascending: true }),
-    db.from("ticket_purchases").select("id, reference, email, phone"),
+    fetchAll((from, to) =>
+      db
+        .from("tickets")
+        .select("purchase_id, seat_label, holder_name, checked_in_at, checked_in_by, created_at")
+        .order("created_at", { ascending: true })
+        .order("id")
+        .range(from, to),
+    ),
+    fetchAll((from, to) =>
+      db.from("ticket_purchases").select("id, reference, email, phone").order("id").range(from, to),
+    ),
   ]);
 
   if (error) {

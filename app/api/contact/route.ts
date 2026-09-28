@@ -1,14 +1,18 @@
 import { z } from "zod";
+import { after } from "next/server";
 import { contactInputSchema } from "@/lib/validation/contact";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { serverEnv } from "@/lib/env";
+import { sendContactMessage } from "@/lib/email/mailjet";
 
 /**
  * POST /api/contact — store a contact-form message for the admin to read at
- * /admin/messages. No email — same self-service-over-push-notification model
- * as the ticket flow. Inserted via the service-role client (rate-limited +
- * zod-validated here first), same as entries/events/tickets.
+ * /admin/messages, then best-effort forward it to the admin's inbox via
+ * Mailjet. The DB row is the source of truth (rate-limited + zod-validated
+ * here first, same as entries/events/tickets) — a Mailjet hiccup here just
+ * means the admin finds out from /admin/messages instead.
  */
 export const dynamic = "force-dynamic";
 
@@ -43,6 +47,17 @@ export async function POST(req: Request) {
     return json(
       { ok: false, error: "We couldn't send your message just now. Please try again shortly." },
       500,
+    );
+  }
+
+  if (serverEnv.adminEmail) {
+    after(() =>
+      sendContactMessage({
+        name: input.name,
+        email: input.email,
+        message: input.message,
+        to: serverEnv.adminEmail,
+      }).catch(() => {}),
     );
   }
 

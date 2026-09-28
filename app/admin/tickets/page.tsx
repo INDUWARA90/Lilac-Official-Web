@@ -136,7 +136,7 @@ export default async function AdminTicketsPage({
               <th className="py-2 font-medium">Date</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="lilac-rows">
             {(rows ?? []).length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-6 text-center text-ink-muted">

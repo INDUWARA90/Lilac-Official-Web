@@ -5,6 +5,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
+import { Reveal } from "@/components/ui/decor/Reveal";
 import { ticketStatusLookupSchema } from "@/lib/validation/ticket";
 import { PURCHASE_STATUS_LABEL, type TicketPurchaseStatus } from "@/lib/tickets-shared";
 
@@ -68,7 +69,7 @@ export function TicketStatusLookup() {
 
   return (
     <div className="flex flex-col gap-8">
-      <form onSubmit={submit} noValidate className="flex flex-col gap-6">
+      <form onSubmit={submit} noValidate className="lilac-stagger flex flex-col gap-6">
         <TextField
           label="Phone or email"
           required
@@ -88,15 +89,17 @@ export function TicketStatusLookup() {
             {formError}
           </p>
         )}
-        <Button type="submit" loading={busy} className="self-start">
+        <Button type="submit" variant="magic" loading={busy} className="self-start">
           Check status
         </Button>
       </form>
 
       {results && (
-        <div className="flex flex-col gap-4">
-          {results.map((r) => (
-            <PurchaseCard key={r.reference} purchase={r} />
+        <div className="lilac-stagger flex flex-col gap-4">
+          {results.map((r, i) => (
+            <Reveal key={r.reference} delay={i * 100}>
+              <PurchaseCard purchase={r} />
+            </Reveal>
           ))}
         </div>
       )}
@@ -106,7 +109,7 @@ export function TicketStatusLookup() {
 
 function PurchaseCard({ purchase }: { purchase: Purchase }) {
   return (
-    <div className="rounded-card border border-hairline p-5">
+    <div className="lilac-magic-card lilac-hover-lift p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg text-ink">{purchase.reference}</h2>
         <StatusPill status={purchase.status} />
@@ -167,7 +170,7 @@ function StatusPill({ status }: { status: TicketPurchaseStatus }) {
         ? "bg-red-50 text-red-700"
         : "bg-canvas-raised text-ink-muted";
   return (
-    <span className={`rounded-pill px-3 py-1 font-sans text-xs font-semibold ${tone}`}>
+    <span className={`lilac-pop rounded-pill px-3 py-1 font-sans text-xs font-semibold ${tone}`}>
       {PURCHASE_STATUS_LABEL[status]}
     </span>
   );

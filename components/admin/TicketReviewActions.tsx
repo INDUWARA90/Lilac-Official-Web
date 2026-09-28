@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/Button";
 
 /**
  * Review a pending purchase: check the slip, tick the confirmation box, then
- * "Confirm order" — which just issues the tickets. No email, no WhatsApp, no
- * push notification of any kind. The buyer finds their ticket(s) — or a
- * rejection note — themselves at /tickets/status (reference + phone/email).
+ * "Confirm order" — which issues the tickets and emails the QR + reference
+ * via Mailjet. The buyer can also always look their ticket(s) up themselves
+ * at /tickets/status (reference + phone/email) — handy as a backup if the
+ * email doesn't land, and it's still the only place a rejection note shows.
  */
 export function TicketReviewActions({ purchaseId }: { purchaseId: string }) {
   const router = useRouter();
@@ -16,6 +17,11 @@ export function TicketReviewActions({ purchaseId }: { purchaseId: string }) {
   const [busy, setBusy] = useState<"approve" | "reject" | null>(null);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // Distinct from `error`: the order still succeeded, so we hold off on
+  // router.refresh() (which would unmount this component — see the parent
+  // page's `purchase.status === "pending_review"` guard) until the admin has
+  // seen it and clicked through.
+  const [emailWarning, setEmailWarning] = useState(false);
 
   async function act(action: "approve" | "reject") {
     if (action === "approve" && !slipChecked) return;
@@ -29,9 +35,13 @@ export function TicketReviewActions({ purchaseId }: { purchaseId: string }) {
           action === "reject" ? { action, purchaseId, note } : { action, purchaseId },
         ),
       });
-      const data = (await res.json()) as { ok: boolean; error?: string };
+      const data = (await res.json()) as { ok: boolean; error?: string; emailSent?: boolean };
       if (data.ok) {
-        router.refresh();
+        if (action === "approve" && data.emailSent === false) {
+          setEmailWarning(true);
+        } else {
+          router.refresh();
+        }
       } else {
         setError(data.error ?? "Something went wrong.");
       }
@@ -40,6 +50,29 @@ export function TicketReviewActions({ purchaseId }: { purchaseId: string }) {
     } finally {
       setBusy(null);
     }
+  }
+
+  if (emailWarning) {
+    return (
+      <div className="rounded-card border border-amber-300 bg-amber-50 p-4">
+        <h2 className="text-lg text-ink">Order confirmed — email didn&rsquo;t send</h2>
+        <p className="mt-1 font-sans text-sm text-ink-muted">
+          Tickets were issued, but the e-ticket email did not send (check{" "}
+          <code className="text-xs">MAILJET_*</code> env vars, or see{" "}
+          <a href="/admin/audit" className="text-accent-strong underline">
+            /admin/audit
+          </a>{" "}
+          for the reason). The buyer can still get their ticket at{" "}
+          <a href="/tickets/status" className="text-accent-strong underline">
+            /tickets/status
+          </a>
+          , or you can copy the link(s) below and send them manually.
+        </p>
+        <Button className="mt-4" variant="ghost" onClick={() => router.refresh()}>
+          Continue
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -78,7 +111,7 @@ export function TicketReviewActions({ purchaseId }: { purchaseId: string }) {
           loading={busy === "approve"}
           disabled={!slipChecked || busy !== null}
         >
-          Confirm order &amp; issue tickets
+          Confirm order &amp; email tickets
         </Button>
         <Button variant="ghost" onClick={() => act("reject")} loading={busy === "reject"}>
           Reject

@@ -34,26 +34,34 @@ export function EntryExperience({
       <StepIndicator current={STEP_FOR_PHASE[phase]} />
 
       {phase === "watch" && (
-        <AdsStep
-          ads={ads}
-          onDone={() => {
-            track("ad_complete");
-            setPhase("enter");
-          }}
-        />
+        <div key="watch" className="lilac-enter">
+          <AdsStep
+            ads={ads}
+            onDone={() => {
+              track("ad_complete");
+              setPhase("enter");
+            }}
+          />
+        </div>
       )}
 
       {phase === "enter" && (
-        <EntryForm
-          adSession={adSession}
-          onSubmitted={(r) => {
-            setFirstName(r.firstName);
-            setPhase("done");
-          }}
-        />
+        <div key="enter" className="lilac-enter">
+          <EntryForm
+            adSession={adSession}
+            onSubmitted={(r) => {
+              setFirstName(r.firstName);
+              setPhase("done");
+            }}
+          />
+        </div>
       )}
 
-      {phase === "done" && <SuccessCelebration firstName={firstName} />}
+      {phase === "done" && (
+        <div key="done" className="lilac-enter">
+          <SuccessCelebration firstName={firstName} />
+        </div>
+      )}
     </div>
   );
 }

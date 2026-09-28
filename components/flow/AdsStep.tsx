@@ -2,8 +2,17 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { Sparkle } from "@/components/ui/decor/Sparkle";
+import { track } from "@/components/flow/track";
 import { IMAGE_AUTO_ADVANCE_SECONDS, VIDEO_MIN_WATCH_SECONDS, type Ad } from "@/lib/ads-shared";
 import { loadYouTubeIframeApi } from "@/lib/youtube-iframe-api";
+
+// DEFAULT_ADS' fallback entry (see lib/ads-shared.ts) has id "default" — not
+// a real `ads` table row, so per-ad analytics can't reference it (the DB
+// column is a FK). Only track a real ad id.
+function analyticsId(ad: Ad): string | undefined {
+  return ad.id === "default" ? undefined : ad.id;
+}
 
 export function AdsStep({
   ads,
@@ -16,14 +25,23 @@ export function AdsStep({
   const ad = ads[index];
   const isLast = index === ads.length - 1;
 
+  // Per-sponsor-ad analytics: this ad became visible.
+  useEffect(() => {
+    track("ad_shown", analyticsId(ad));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ad.id]);
+
   function advance() {
+    // This ad's watch/view requirement was satisfied.
+    track("ad_watched", analyticsId(ad));
     if (isLast) onDone();
     else setIndex((i) => i + 1);
   }
 
   return (
     <section className="flex flex-col items-center gap-8 pt-4 text-center">
-      <div className="space-y-3">
+      <div className="relative space-y-3">
+        <Sparkle size={18} className="absolute -top-2 right-[calc(50%-4rem)]" />
         <h1 className="text-3xl text-ink">{ad.title}</h1>
         <p className="mx-auto max-w-sm font-sans text-sm leading-relaxed text-ink-muted">
           A word from this year&rsquo;s sponsors, then enter the draw.
@@ -71,8 +89,8 @@ function ImageAd({
 
   return (
     <>
-      <div className="lilac-frame-in w-full overflow-hidden rounded-card bg-canvas-raised ring-1 ring-hairline">
-        <div className="relative aspect-video w-full">
+      <div className="lilac-frame-in lilac-border-glow w-full rounded-card">
+        <div className="relative aspect-video w-full overflow-hidden rounded-card bg-canvas-raised ring-1 ring-hairline">
           {/* eslint-disable-next-line @next/next/no-img-element -- external Supabase Storage URL */}
           <img
             src={ad.url}
@@ -102,8 +120,8 @@ function VideoAd({
 
   return (
     <>
-      <div className="lilac-frame-in w-full overflow-hidden rounded-card bg-canvas-raised ring-1 ring-hairline">
-        <div className="relative aspect-video w-full">
+      <div className="lilac-frame-in lilac-border-glow w-full rounded-card">
+        <div className="relative aspect-video w-full overflow-hidden rounded-card bg-canvas-raised ring-1 ring-hairline">
           {ad.kind === "youtube" ? (
             <YouTubePlayer youtubeId={ad.youtubeId} title={ad.title} onWatched={setWatched} />
           ) : (
@@ -113,7 +131,7 @@ function VideoAd({
       </div>
 
       <div className="flex flex-col items-center gap-2">
-        <Button onClick={onDone} disabled={!ready}>
+        <Button variant="magic" onClick={onDone} disabled={!ready}>
           {isLast ? "Continue to the form" : "Next ad"}
         </Button>
         {!ready && (

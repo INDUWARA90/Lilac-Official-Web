@@ -29,14 +29,15 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
           className={
             "border-0 border-b bg-transparent px-0 py-2 font-sans text-base text-ink " +
             "placeholder:text-ink-muted/50 focus:outline-none focus:ring-0 " +
+            "transition-[border-color,box-shadow] duration-200 " +
             (error
               ? "border-red-400 focus:border-red-500"
-              : "border-hairline focus:border-accent")
+              : "border-hairline focus:border-accent focus:shadow-[0_10px_16px_-14px_var(--color-accent)]")
           }
           {...rest}
         />
         {error ? (
-          <p id={`${id}-error`} className="font-sans text-xs text-red-600">
+          <p key={error} id={`${id}-error`} className="lilac-error-in font-sans text-xs text-red-600">
             {error}
           </p>
         ) : hint ? (

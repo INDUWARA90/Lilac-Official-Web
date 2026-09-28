@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
+import { AnimatedCheck } from "@/components/ui/decor/AnimatedCheck";
 import { TextField } from "@/components/ui/TextField";
 import { contactInputSchema } from "@/lib/validation/contact";
 
@@ -54,14 +55,15 @@ export function ContactForm() {
 
   if (done) {
     return (
-      <p className="rounded-card bg-canvas-raised px-4 py-3 font-sans text-sm text-ink ring-1 ring-hairline">
-        Thank you. Your message has been sent and we will respond by email.
-      </p>
+      <div className="lilac-enter flex items-center gap-4 rounded-card bg-canvas-raised px-4 py-4 font-sans text-sm text-ink ring-1 ring-hairline">
+        <AnimatedCheck size={40} className="shrink-0 text-accent" />
+        <p>Thank you. Your message has been sent and we will respond by email.</p>
+      </div>
     );
   }
 
   return (
-    <form onSubmit={submit} noValidate className="flex flex-col gap-6">
+    <form onSubmit={submit} noValidate className="lilac-stagger flex flex-col gap-6">
       
       <TextField
         label="Your name"

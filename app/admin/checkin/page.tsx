@@ -6,6 +6,7 @@ import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { TicketCheckinToggle } from "@/components/admin/TicketCheckinToggle";
 import { formatTimeAndDate } from "@/lib/format";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 
 export const metadata: Metadata = { title: "Check-in", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -24,11 +25,22 @@ export default async function AdminCheckinPage({
 
   const db = createAdminClient();
   const [{ data: tickets }, { data: purchases }] = await Promise.all([
-    db
-      .from("tickets")
-      .select("id, token, seat_label, holder_name, checked_in_at, checked_in_by, purchase_id")
-      .order("created_at", { ascending: true }),
-    db.from("ticket_purchases").select("id, reference, email, phone").eq("status", "approved"),
+    fetchAll((from, to) =>
+      db
+        .from("tickets")
+        .select("id, token, seat_label, holder_name, checked_in_at, checked_in_by, purchase_id")
+        .order("created_at", { ascending: true })
+        .order("id")
+        .range(from, to),
+    ),
+    fetchAll((from, to) =>
+      db
+        .from("ticket_purchases")
+        .select("id, reference, email, phone")
+        .eq("status", "approved")
+        .order("id")
+        .range(from, to),
+    ),
     getDrawUnlocked(), // warm the shared cache — AdminShell needs it too, see lib/app-config.ts
   ]);
 
@@ -139,7 +151,7 @@ export default async function AdminCheckinPage({
               <th className="py-2 font-medium">Action</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="lilac-rows">
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-6 text-center text-ink-muted">

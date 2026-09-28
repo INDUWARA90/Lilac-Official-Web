@@ -1,3 +1,4 @@
+import { Sparkle } from "@/components/ui/decor/Sparkle";
 
 const STEPS = ["Watch", "Enter", "Confirm"] as const;
 
@@ -16,13 +17,13 @@ export function StepIndicator({ current }: { current: FlowStep }) {
         const done = i < currentIndex;
         return (
           <li key={step} className="flex items-center gap-2.5">
-            <span className="flex items-center gap-2">
+            <span className="relative flex items-center gap-2">
               <span
                 aria-hidden
                 className={
                   "flex size-5 items-center justify-center rounded-pill text-[10px] font-semibold " +
                   (active
-                    ? "bg-accent text-white"
+                    ? "lilac-glow-pulse bg-accent text-white"
                     : done
                       ? "bg-accent text-white"
                       : "text-ink-muted ring-1 ring-hairline")
@@ -42,6 +43,9 @@ export function StepIndicator({ current }: { current: FlowStep }) {
                   i + 1
                 )}
               </span>
+              {done && (
+                <Sparkle size={10} className="absolute -top-1.5 -right-1" duration={2.2} />
+              )}
               <span
                 className={
                   "uppercase tracking-[0.14em] " +
@@ -52,7 +56,12 @@ export function StepIndicator({ current }: { current: FlowStep }) {
               </span>
             </span>
             {i < STEPS.length - 1 && (
-              <span aria-hidden className="h-px w-5 bg-hairline" />
+              <span aria-hidden className="relative h-px w-5 overflow-hidden bg-hairline">
+                <span
+                  className="absolute inset-y-0 left-0 bg-accent transition-[width] duration-500 ease-out"
+                  style={{ width: i < currentIndex ? "100%" : "0%" }}
+                />
+              </span>
             )}
           </li>
         );

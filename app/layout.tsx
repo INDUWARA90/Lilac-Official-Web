@@ -48,7 +48,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${fraunces.variable} ${manrope.variable}`}>
-      <body className="min-h-dvh bg-canvas text-ink">{children}</body>
+      <body className="bg-wash min-h-dvh text-ink">{children}</body>
     </html>
   );
 }

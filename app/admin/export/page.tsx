@@ -23,6 +23,11 @@ const GROUPS: { title: string; note: string; items: { href: string; label: strin
       { href: "/api/admin/export/checkins", label: "Check-in / attendance list" },
     ],
   },
+  {
+    title: "Analytics",
+    note: "Site-wide totals + per-ad breakdown — safe to hand to a sponsor, no personal data.",
+    items: [{ href: "/api/admin/export/analytics", label: "Site & sponsor-ad analytics" }],
+  },
 ];
 
 export default async function ExportPage() {

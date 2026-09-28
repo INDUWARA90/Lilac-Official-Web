@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFrame } from "@/components/ui/SiteFrame";
+import { Sparkle } from "@/components/ui/decor/Sparkle";
+import { SeatsMeter } from "@/components/ui/decor/SeatsMeter";
+import { CountUp } from "@/components/ui/decor/CountUp";
+import { Reveal } from "@/components/ui/decor/Reveal";
 import { getAvailability, getTicketSettings } from "@/lib/tickets";
 import { formatLkr, MAX_TICKETS_PER_PURCHASE } from "@/lib/tickets-shared";
 import { TicketPurchaseForm } from "@/components/tickets/TicketPurchaseForm";
@@ -22,14 +26,42 @@ export default async function TicketsPage() {
   return (
     <SiteFrame>
       <div className="py-12">
-        <h1 className="text-3xl text-ink">Event tickets</h1>
+        <div className="relative inline-block">
+          <Sparkle size={18} gold className="absolute -top-2 -right-5" />
+          <h1 className="text-3xl text-ink">Event tickets</h1>
+        </div>
         <p className="mt-3 font-sans text-base leading-relaxed text-ink-muted">
           {formatLkr(settings.priceLkr)} per ticket — admission to the Lilac event.{" "}
           <span className="text-ink">
             {availability.left} of {availability.capacity} left.
           </span>
         </p>
-        <p className="mt-2 font-sans text-sm text-ink-muted">
+        <Reveal className="mt-5">
+          <div className="lilac-magic-card lilac-shine">
+            <div className="flex items-stretch">
+              <div className="flex-1 px-5 py-4">
+                <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
+                  Admission
+                </p>
+                <p className="mt-1 font-serif text-2xl text-ink">{formatLkr(settings.priceLkr)}</p>
+                <p className="font-sans text-xs text-ink-muted">per ticket</p>
+              </div>
+              {/* Perforated stub edge, like a real ticket. */}
+              <div className="relative flex w-28 flex-col items-center justify-center border-l-2 border-dashed border-hairline px-3 py-4 text-center">
+                <span aria-hidden className="absolute -top-2 -left-[9px] size-4 rounded-full bg-canvas ring-1 ring-hairline" />
+                <span aria-hidden className="absolute -bottom-2 -left-[9px] size-4 rounded-full bg-canvas ring-1 ring-hairline" />
+                <p className="font-serif text-2xl text-accent-strong">
+                  <CountUp value={availability.left} />
+                </p>
+                <p className="font-sans text-xs text-ink-muted">seats left</p>
+              </div>
+            </div>
+            <div className="px-5 pb-4">
+              <SeatsMeter taken={availability.taken} capacity={availability.capacity} />
+            </div>
+          </div>
+        </Reveal>
+        <p className="mt-3 font-sans text-sm text-ink-muted">
           Already bought a ticket?{" "}
           <Link href="/tickets/status" className="text-accent-strong underline">
             Check your ticket
@@ -52,7 +84,7 @@ export default async function TicketsPage() {
             />
           </div>
         ) : (
-          <p className="mt-8 rounded-card bg-canvas-raised px-4 py-3 font-sans text-sm text-ink ring-1 ring-hairline">
+          <p className="lilac-magic-card mt-8 px-4 py-3 font-sans text-sm text-ink">
             {availability.salesOpen
               ? "Sorry — tickets are sold out."
               : "Ticket sales are closed."}

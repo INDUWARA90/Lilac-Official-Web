@@ -16,10 +16,9 @@ import { getClientIp } from "@/lib/http";
  *      to service_role only (see 0010_entries_rpc.sql). The anon key can't
  *      reach `entries` by any path, so this route's rate limit, ad-watch-
  *      session check, and zod validation can't be bypassed by calling
- *      Supabase directly.
+ *      Supabase directly. The row is already `verified=true` on insert (the
+ *      BEFORE INSERT trigger sets it — see 0004_no_verify_no_ticket.sql).
  *        - unique violation → 409 "already entered"
- *   3. mark it verified (service-role). A BEFORE INSERT trigger forces
- *      `verified=false`, so this flip is a separate statement.
  */
 
 export const dynamic = "force-dynamic";
@@ -110,18 +109,6 @@ export async function POST(req: Request) {
       { ok: false, error: "Something went wrong creating your entry. Please try again." } satisfies ErrorBody,
       500,
     );
-  }
-
-  // ---- 3. Confirm it (service-role — the trigger forced verified=false) ----
-  const { error: confirmError } = await admin
-    .from("entries")
-    .update({ verified: true, verified_at: new Date().toISOString() })
-    .eq("email", input.email);
-
-  if (confirmError) {
-    // The row exists; only the confirm flip failed. Don't fail the user — a
-    // later reconcile / the draw's verified filter is the backstop.
-    console.error(`Entry confirm failed: ${confirmError.code ?? "unknown"}`);
   }
 
   return json({ ok: true, firstName: input.name.split(" ")[0] || "there" });

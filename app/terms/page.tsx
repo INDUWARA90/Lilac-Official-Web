@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteFrame } from "@/components/ui/SiteFrame";
 import { Prose } from "@/components/ui/Prose";
+import { Reveal } from "@/components/ui/decor/Reveal";
 
 export const metadata: Metadata = { title: "Terms" };
 
@@ -8,16 +9,18 @@ export default function TermsPage() {
   return (
     <SiteFrame>
       <article className="py-12">
-        <span className="w-fit rounded-pill bg-accent-wash px-3 py-1 font-sans text-xs font-semibold uppercase tracking-wider text-accent-strong">
-          Draft · placeholder copy
-        </span>
-        <h1 className="mt-4 text-3xl text-ink">Terms</h1>
-        <p className="mt-3 font-sans text-base leading-relaxed text-ink-muted">
-          The rules for entering the Lilac draw. This is a draft outline and
-          is not the final terms.
-        </p>
+        <Reveal>
+          <span className="w-fit rounded-pill bg-accent-wash px-3 py-1 font-sans text-xs font-semibold uppercase tracking-wider text-accent-strong">
+            Draft · placeholder copy
+          </span>
+          <h1 className="mt-4 text-3xl text-ink">Terms</h1>
+          <p className="mt-3 font-sans text-base leading-relaxed text-ink-muted">
+            The rules for entering the Lilac draw. This is a draft outline and
+            is not the final terms.
+          </p>
+        </Reveal>
 
-        <div className="mt-8">
+        <Reveal delay={120} className="mt-8">
           <Prose>
             <h2>Entry</h2>
             <ul>
@@ -57,12 +60,14 @@ export default function TermsPage() {
               to follow.
             </p>
           </Prose>
-        </div>
+        </Reveal>
 
-        <p className="mt-12 border-t border-hairline pt-4 font-sans text-xs text-ink-muted">
-          This is placeholder text. Final, reviewed copy will replace it before
-          launch.
-        </p>
+        <Reveal delay={200}>
+          <p className="mt-12 border-t border-hairline pt-4 font-sans text-xs text-ink-muted">
+            This is placeholder text. Final, reviewed copy will replace it before
+            launch.
+          </p>
+        </Reveal>
       </article>
     </SiteFrame>
   );

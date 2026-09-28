@@ -4,6 +4,8 @@ import { requireFullAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { getAvailability, getTicketSettings } from "@/lib/tickets";
+import { fetchAll } from "@/lib/supabase/fetch-all";
+import { CountUp } from "@/components/ui/decor/CountUp";
 import { formatLkr } from "@/lib/tickets-shared";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { DrawLock } from "@/components/admin/DrawLock";
@@ -36,7 +38,7 @@ function Breakdown({ title, data }: { title: string; data: [string, number][] })
         {data.length === 0 && (
           <li className="font-sans text-xs text-ink-muted">No data yet.</li>
         )}
-        {data.map(([k, n]) => (
+        {data.map(([k, n], i) => (
           <li key={k} className="font-sans text-xs">
             <div className="flex justify-between">
               <span className="text-ink">{k}</span>
@@ -44,8 +46,8 @@ function Breakdown({ title, data }: { title: string; data: [string, number][] })
             </div>
             <div className="mt-1 h-1.5 overflow-hidden rounded-pill bg-canvas-raised">
               <div
-                className="h-full rounded-pill bg-accent/50"
-                style={{ width: `${(n / max) * 100}%` }}
+                className="lilac-bar-grow h-full rounded-pill bg-accent/50"
+                style={{ width: `${(n / max) * 100}%`, "--bar-delay": `${i * 60}ms` } as React.CSSProperties}
               />
             </div>
           </li>
@@ -93,8 +95,17 @@ export default async function AdminDashboard() {
     db.from("tickets").select("id", head).not("checked_in_at", "is", null),
     getAvailability(),
     getTicketSettings(),
-    db.from("entries").select("age_range, gender, district"),
-    db.from("ticket_purchases").select("amount_lkr, quantity").eq("status", "approved"),
+    fetchAll((from, to) =>
+      db.from("entries").select("age_range, gender, district").order("id").range(from, to),
+    ),
+    fetchAll((from, to) =>
+      db
+        .from("ticket_purchases")
+        .select("amount_lkr, quantity")
+        .eq("status", "approved")
+        .order("id")
+        .range(from, to),
+    ),
   ]);
 
   const totalC = total.count ?? 0;
@@ -120,10 +131,14 @@ export default async function AdminDashboard() {
         Raffle funnel
       </h2>
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {funnel.map((f) => (
-          <div key={f.label} className="rounded-card border border-hairline p-4">
+        {funnel.map((f, i) => (
+          <div
+            key={f.label}
+            className="lilac-enter rounded-card border border-hairline p-4"
+            style={{ animationDelay: `${i * 70}ms` }}
+          >
             <div className="font-sans text-2xl font-semibold text-ink">
-              {f.value.toLocaleString()}
+              <CountUp value={f.value} />
             </div>
             <div className="mt-1 font-sans text-xs font-medium text-ink">{f.label}</div>
             <div className="font-sans text-xs text-ink-muted">{f.sub}</div>
@@ -136,9 +151,15 @@ export default async function AdminDashboard() {
           { label: "Entries last 7d", value: entries7d.count ?? 0 },
           { label: "Draws run", value: draws.count ?? 0 },
           { label: "Winners", value: winners.count ?? 0 },
-        ].map((s) => (
-          <div key={s.label} className="rounded-card border border-hairline p-4">
-            <div className="font-sans text-xl font-semibold text-ink">{s.value}</div>
+        ].map((s, i) => (
+          <div
+            key={s.label}
+            className="lilac-enter rounded-card border border-hairline p-4"
+            style={{ animationDelay: `${i * 70}ms` }}
+          >
+            <div className="font-sans text-xl font-semibold text-ink">
+              <CountUp value={s.value} />
+            </div>
             <div className="mt-1 font-sans text-xs text-ink-muted">{s.label}</div>
           </div>
         ))}

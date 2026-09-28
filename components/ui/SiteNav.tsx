@@ -48,7 +48,7 @@ export function SiteNav({ showResults = false }: { showResults?: boolean }) {
           >
             <MenuIcon />
           </button>
-          <Link href="/" aria-label="Lilac — home">
+          <Link href="/" aria-label="Lilac — home" className="lilac-logo-halo">
             <Logo />
           </Link>
         </div>
@@ -60,10 +60,14 @@ export function SiteNav({ showResults = false }: { showResults?: boolean }) {
               href={l.href}
               aria-current={isActive(l.href) ? "page" : undefined}
               className={
-                "font-sans text-sm font-medium transition-colors " +
+                // Underline grows from the left on hover and stays for the
+                // current page.
+                "relative font-sans text-sm font-medium transition-colors " +
+                "after:absolute after:inset-x-0 after:-bottom-1 after:h-px after:origin-left after:bg-accent " +
+                "after:transition-transform after:duration-300 motion-reduce:after:transition-none " +
                 (isActive(l.href)
-                  ? "text-accent-strong"
-                  : "text-ink-muted hover:text-accent-strong")
+                  ? "text-accent-strong after:scale-x-100"
+                  : "text-ink-muted after:scale-x-0 hover:text-accent-strong hover:after:scale-x-100")
               }
             >
               {l.label}
@@ -103,14 +107,16 @@ export function SiteNav({ showResults = false }: { showResults?: boolean }) {
           </button>
         </div>
         <nav className="flex flex-col gap-1 px-3 py-2">
-          {links.map((l) => (
+          {links.map((l, i) => (
             <Link
               key={l.href}
               href={l.href}
               onClick={() => setOpen(false)}
+              style={{ transitionDelay: open ? `${100 + i * 55}ms` : "0ms" }}
               aria-current={isActive(l.href) ? "page" : undefined}
               className={
-                "rounded-field px-3 py-2 font-sans text-sm transition-colors " +
+                "rounded-field px-3 py-2 font-sans text-sm transition-[color,background-color,opacity,transform] duration-300 motion-reduce:transition-none " +
+                (open ? "translate-x-0 opacity-100 " : "-translate-x-4 opacity-0 ") +
                 (isActive(l.href)
                   ? "bg-accent-wash font-medium text-accent-strong"
                   : "text-ink-muted hover:bg-canvas-raised hover:text-accent-strong")

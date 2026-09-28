@@ -3,6 +3,7 @@ import { requireFullAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { ResendButton } from "@/components/admin/ResendButton";
 import { formatDateTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Winners", robots: { index: false } };
@@ -15,7 +16,7 @@ export default async function WinnersPage() {
 
   const { data: winners } = await db
     .from("winners")
-    .select("id, entry_id, draw_id, created_at")
+    .select("id, entry_id, draw_id, email_status, email_sent_at, created_at")
     .order("created_at", { ascending: false });
 
   const entryIds = [...new Set((winners ?? []).map((w) => w.entry_id))];
@@ -33,7 +34,7 @@ export default async function WinnersPage() {
         <a href="/results" className="text-accent-strong hover:underline">
           /results
         </a>{" "}
-        — no email is sent to winners.
+        — each winner is emailed automatically when the draw runs.
       </p>
 
       {(winners ?? []).length === 0 ? (
@@ -45,17 +46,38 @@ export default async function WinnersPage() {
               <tr className="border-b border-hairline text-left text-ink-muted">
                 <th className="py-2 pr-4 font-medium">Name</th>
                 <th className="py-2 pr-4 font-medium">Email</th>
-                <th className="py-2 font-medium">Drawn</th>
+                <th className="py-2 pr-4 font-medium">Drawn</th>
+                <th className="py-2 pr-4 font-medium">Email status</th>
+                <th className="py-2 font-medium"></th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="lilac-rows">
               {(winners ?? []).map((w) => {
                 const e = byId.get(w.entry_id);
                 return (
                   <tr key={w.id} className="border-b border-hairline align-middle">
                     <td className="py-2 pr-4">{e?.name ?? "—"}</td>
                     <td className="py-2 pr-4 text-ink-muted">{e?.email ?? "—"}</td>
-                    <td className="py-2 text-ink-muted">{formatDateTime(w.created_at)}</td>
+                    <td className="py-2 pr-4 text-ink-muted">{formatDateTime(w.created_at)}</td>
+                    <td className="py-2 pr-4">
+                      <span
+                        className={
+                          w.email_status === "sent"
+                            ? "text-green-700"
+                            : w.email_status === "failed"
+                              ? "text-red-600"
+                              : "text-ink-muted"
+                        }
+                      >
+                        {w.email_status}
+                      </span>
+                    </td>
+                    <td className="py-2">
+                      {/* "sending" too: a send that died mid-flight leaves the row
+                          stuck there, and the server only lets a Resend through
+                          once that claim has gone stale. */}
+                      {w.email_status !== "sent" && <ResendButton winnerId={w.id} />}
+                    </td>
                   </tr>
                 );
               })}

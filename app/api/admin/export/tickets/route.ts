@@ -2,6 +2,7 @@ import { getAdminSession } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { toCsv, csvResponse } from "@/lib/csv";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 
 /** GET /api/admin/export/tickets — CSV of every ticket purchase (sales report). */
 export const dynamic = "force-dynamic";
@@ -13,12 +14,17 @@ export async function GET() {
     return Response.json({ ok: false, error: "Not authorised." }, { status: 403 });
   }
 
-  const { data, error } = await createAdminClient()
-    .from("ticket_purchases")
-    .select(
-      "reference, name, email, phone, quantity, amount_lkr, status, review_note, reviewed_by, reviewed_at, created_at",
-    )
-    .order("created_at", { ascending: true });
+  const db = createAdminClient();
+  const { data, error } = await fetchAll((from, to) =>
+    db
+      .from("ticket_purchases")
+      .select(
+        "reference, name, email, phone, quantity, amount_lkr, status, review_note, reviewed_by, reviewed_at, created_at",
+      )
+      .order("created_at", { ascending: true })
+      .order("id")
+      .range(from, to),
+  );
 
   if (error) {
     return Response.json({ ok: false, error: "Export failed." }, { status: 500 });

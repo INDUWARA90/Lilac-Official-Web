@@ -5,14 +5,16 @@ import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { publicEnv } from "@/lib/env";
 import { logAudit } from "@/lib/audit";
+import { sendTicketApproved } from "@/lib/email/mailjet";
 import { normalizeLkPhone } from "@/lib/validation/entry";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 import {
   TICKET_SLIP_BUCKET,
   type TicketAvailability,
   type TicketPurchaseStatus,
   type TicketSettings,
 } from "@/lib/tickets-shared";
-import type { TicketRow, TicketSettingsRow } from "@/lib/supabase/types";
+import type { TicketPurchaseRow, TicketRow, TicketSettingsRow } from "@/lib/supabase/types";
 
 // ---- ids ------------------------------------------------------------------
 
@@ -64,7 +66,14 @@ export async function getAvailability(): Promise<TicketAvailability> {
   const db = createAdminClient();
   const [{ data: settings }, { data: live }] = await Promise.all([
     db.from("ticket_settings").select("capacity, sales_open").eq("id", "default").maybeSingle(),
-    db.from("ticket_purchases").select("quantity").in("status", ["pending_review", "approved"]),
+    fetchAll((from, to) =>
+      db
+        .from("ticket_purchases")
+        .select("quantity")
+        .in("status", ["pending_review", "approved"])
+        .order("id")
+        .range(from, to),
+    ),
   ]);
 
   const capacity = settings?.capacity ?? 100;
@@ -182,7 +191,7 @@ export async function createPurchase(input: {
 export async function approvePurchase(
   purchaseId: string,
   by: string,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; emailSent?: boolean }> {
   const db = createAdminClient();
 
   // Claim the purchase atomically FIRST, guarded on its current status, before
@@ -247,10 +256,49 @@ export async function approvePurchase(
     null,
   );
 
-  // No push notification of any kind — the buyer finds their ticket(s)
-  // themselves at /tickets/status (reference + phone/email), which links to
-  // /ticket/[token] for the QR. Nothing to send, nothing to fail.
-  return { ok: true };
+  // Email the QR + reference via Mailjet. Best effort — the tickets already
+  // exist and are reachable at /tickets/status either way (and door staff can
+  // still check them in), so a Mailjet hiccup (including QR generation
+  // itself) logs to /admin/audit rather than failing the approval, which has
+  // already committed by this point.
+  const sent = await (async (): Promise<{ ok: boolean; reason?: string }> => {
+    try {
+      const attachments = await Promise.all(
+        created.map(async (t, i) => ({
+          filename: `lilac-ticket-${i + 1}.png`,
+          contentType: "image/png",
+          contentId: `qr-ticket-${i}`, // matches the `cid` below — shows inline, not just attached
+          base64Content: (
+            await QRCode.toBuffer(checkinUrl(t.token), { width: 512, margin: 1 })
+          ).toString("base64"),
+        })),
+      );
+      return await sendTicketApproved({
+        to: purchase.email,
+        name: purchase.name,
+        reference: purchase.reference,
+        tickets: created.map((t, i) => ({
+          seatLabel: t.seat_label,
+          url: ticketUrl(t.token),
+          cid: `qr-ticket-${i}`,
+        })),
+        attachments,
+      });
+    } catch {
+      return { ok: false, reason: "threw" };
+    }
+  })();
+
+  if (!sent.ok) {
+    console.error(`e-ticket email failed for ${purchase.reference}: ${sent.reason ?? "unknown"}`);
+    await logAudit(
+      "ticket.email_failed",
+      { purchase_id: purchase.id, reference: purchase.reference, reason: sent.reason ?? "unknown" },
+      null,
+    );
+  }
+
+  return { ok: true, emailSent: sent.ok };
 }
 
 export async function rejectPurchase(
@@ -331,15 +379,20 @@ export async function getPurchaseStatus(contact: string): Promise<PurchaseStatus
   const emailLower = contactTrimmed.toLowerCase();
   const normalizedPhone = normalizeLkPhone(contactTrimmed);
 
-  const conditions = [`email.eq.${emailLower}`];
-  if (normalizedPhone) conditions.push(`phone.eq.${normalizedPhone}`);
-
-  const { data: purchases } = await db
-    .from("ticket_purchases")
-    .select("*")
-    .or(conditions.join(","))
-    .order("created_at", { ascending: false });
-  if (!purchases || purchases.length === 0) return [];
+  // Separate `.eq()` queries, never `.or("email.eq.<input>,...")`: `contact`
+  // is free text from an unauthenticated caller, and interpolating it into a
+  // PostgREST filter string lets input like `x,id.not.is.null` add its own
+  // conditions and dump every purchase (with its ticket tokens).
+  const [byEmail, byPhone] = await Promise.all([
+    contactTrimmed.includes("@")
+      ? db.from("ticket_purchases").select("*").eq("email", emailLower)
+      : null,
+    normalizedPhone ? db.from("ticket_purchases").select("*").eq("phone", normalizedPhone) : null,
+  ]);
+  const found = new Map<string, TicketPurchaseRow>();
+  for (const p of [...(byEmail?.data ?? []), ...(byPhone?.data ?? [])]) found.set(p.id, p);
+  const purchases = [...found.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  if (purchases.length === 0) return [];
 
   const results: PurchaseStatusItem[] = [];
   for (const purchase of purchases) {

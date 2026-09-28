@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 import { SiteFrame } from "@/components/ui/SiteFrame";
+import { FlowerDivider } from "@/components/ui/decor/FlowerDivider";
+import { Reveal } from "@/components/ui/decor/Reveal";
+import { Sparkle } from "@/components/ui/decor/Sparkle";
+import { CountUp } from "@/components/ui/decor/CountUp";
+import { WinnersConfetti } from "@/components/ui/decor/WinnersConfetti";
+import { SectionTitle } from "@/components/ui/decor/SectionTitle";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate } from "@/lib/format";
 
@@ -40,26 +46,33 @@ export default async function ResultsPage() {
 
         <p className="mt-4 font-sans text-sm text-ink-muted">
           <span className="text-2xl font-semibold text-ink">
-            {(verifiedCount ?? 0).toLocaleString()}
+            <CountUp value={verifiedCount ?? 0} />
           </span>{" "}
           confirmed entr{verifiedCount === 1 ? "y" : "ies"} in the draw.
         </p>
 
-        <hr className="my-8 border-hairline" />
+        <FlowerDivider className="my-8" />
 
         {hasWinners ? (
           <section>
-            <h2 className="text-xl text-ink">Winners</h2>
+            <WinnersConfetti />
+            <SectionTitle className="text-xl text-ink">Winners</SectionTitle>
             {latestDraw?.drawn_at && (
               <p className="mt-1 font-sans text-xs text-ink-muted">
                 Drawn {formatDate(latestDraw.drawn_at)}.
               </p>
             )}
-            <ul className="mt-4 divide-y divide-hairline">
-              {(winnerEntries ?? []).map((w) => (
-                <li key={w.id} className="py-3 font-sans text-sm text-ink">
+            <ul className="mt-4 flex flex-col gap-2">
+              {(winnerEntries ?? []).map((w, i) => (
+                <Reveal
+                  key={w.id}
+                  as="li"
+                  delay={i * 80}
+                  className={`lilac-magic-card lilac-hover-lift flex items-center gap-2 px-4 py-3 font-sans text-sm text-ink${i === 0 ? " lilac-shine" : ""}`}
+                >
+                  <Sparkle size={13} gold={i % 3 === 0} />
                   {w.name}
-                </li>
+                </Reveal>
               ))}
             </ul>
           </section>

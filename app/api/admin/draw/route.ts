@@ -1,10 +1,13 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { getAdminSession } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pickRandom } from "@/lib/draw";
 import { logAudit } from "@/lib/audit";
 import { getDrawUnlocked, setDrawUnlocked } from "@/lib/app-config";
+import { sendPendingWinnerEmails } from "@/lib/winner-emails";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 
 /**
  * POST /api/admin/draw
@@ -14,7 +17,9 @@ import { getDrawUnlocked, setDrawUnlocked } from "@/lib/app-config";
  *     1. eligible = verified entries that haven't already won
  *     2. pick `winnerCount` of them with crypto.randomInt
  *     3. record the draw + winners, audit
- *     4. winners appear on /results immediately — no email is sent
+ *     4. winners appear on /results immediately; the winner email goes out
+ *        in the background via after() (best effort — see /admin/winners
+ *        for status + a manual Resend if one fails)
  */
 export const dynamic = "force-dynamic";
 
@@ -56,10 +61,14 @@ export async function POST(req: Request) {
   const db = createAdminClient();
 
   // 1. Work out who's eligible.
+  // Paginated: a plain select() is capped at 1000 rows, which would silently
+  // exclude everyone past the first 1000 entries from the draw.
   const [{ data: verified, error: vErr }, { data: prevWinners, error: wErr }] =
     await Promise.all([
-      db.from("entries").select("id").eq("verified", true),
-      db.from("winners").select("entry_id"),
+      fetchAll((from, to) =>
+        db.from("entries").select("id").eq("verified", true).order("id").range(from, to),
+      ),
+      fetchAll((from, to) => db.from("winners").select("entry_id").order("id").range(from, to)),
     ]);
 
   if (vErr || wErr) {
@@ -114,6 +123,8 @@ export async function POST(req: Request) {
   // /results is ISR (see app/results/page.tsx) — push the new winners out
   // immediately instead of waiting for the next background revalidation.
   revalidatePath("/results");
+
+  after(() => sendPendingWinnerEmails());
 
   return json({
     ok: true,

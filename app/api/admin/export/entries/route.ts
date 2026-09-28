@@ -2,6 +2,7 @@ import { getAdminSession } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { toCsv, csvResponse } from "@/lib/csv";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 
 /** GET /api/admin/export/entries — CSV of every entry. */
 export const dynamic = "force-dynamic";
@@ -13,12 +14,17 @@ export async function GET() {
     return Response.json({ ok: false, error: "Not authorised." }, { status: 403 });
   }
 
-  const { data, error } = await createAdminClient()
-    .from("entries")
-    .select(
-      "name, email, phone, address, age_range, gender, occupation, district, ad_watched_at, consent_at, created_at",
-    )
-    .order("created_at", { ascending: true });
+  const db = createAdminClient();
+  const { data, error } = await fetchAll((from, to) =>
+    db
+      .from("entries")
+      .select(
+        "name, email, phone, address, age_range, gender, occupation, district, ad_watched_at, consent_at, created_at",
+      )
+      .order("created_at", { ascending: true })
+      .order("id")
+      .range(from, to),
+  );
 
   if (error) {
     return Response.json({ ok: false, error: "Export failed." }, { status: 500 });

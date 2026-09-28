@@ -1,16 +1,31 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { SiteNav } from "@/components/ui/SiteNav";
+import { Aurora } from "@/components/ui/decor/Aurora";
+import { FloatingPetals } from "@/components/ui/decor/FloatingPetals";
+import { Glimmer } from "@/components/ui/decor/Glimmer";
+import { PageTransition } from "@/components/ui/decor/PageTransition";
+import { CursorTrail } from "@/components/ui/decor/CursorTrail";
+import { ScrollProgress } from "@/components/ui/decor/ScrollProgress";
+import { BackToTop } from "@/components/ui/decor/BackToTop";
 import { getPublicDrawUnlocked } from "@/lib/app-config";
 
 export async function SiteFrame({ children }: { children: ReactNode }) {
   const drawUnlocked = await getPublicDrawUnlocked();
   return (
     <div className="flex min-h-dvh flex-col">
+      <Aurora />
+      <Glimmer />
+      <FloatingPetals />
+      <CursorTrail />
+      <ScrollProgress />
+      <BackToTop />
       <SiteNav showResults={drawUnlocked} />
 
       <main className="flex flex-1 justify-center px-6 pb-20">
-        <div className="w-full max-w-[560px]">{children}</div>
+        <div className="w-full max-w-[560px]">
+          <PageTransition>{children}</PageTransition>
+        </div>
       </main>
 
       <footer className="flex justify-center border-t border-hairline px-6 py-8">
