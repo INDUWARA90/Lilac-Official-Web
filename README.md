@@ -75,8 +75,9 @@ except the Supabase URL, anon key, and site URL.
 ## Applying the database schema
 
 1. Open your Supabase project → **SQL Editor**.
-2. Either paste `SETUP_database.sql` (all migrations, `0001`–`0013`, combined)
-   and Run, or run `supabase/migrations/*.sql` one at a time in order.
+2. Run `supabase/migrations/0001_init.sql` through
+  `supabase/migrations/0013_ad_analytics.sql` one file at a time, in numerical
+  order. Run each migration as a separate SQL Editor query.
 3. Verify under **Table Editor** that `entries`, `draws`, `winners`,
    `audit_log`, `events`, `ads`, `contact_messages`, `ticket_settings`,
    `ticket_purchases`, and `tickets` exist, each with **RLS enabled**.
@@ -150,5 +151,5 @@ lib/
   ads.ts / ads-shared.ts    sponsor ad list (YouTube/video/image), bucket names + limits
   app-config.ts             misc singleton config (e.g. draw lock)
   supabase/{client,admin,types}.ts
-supabase/migrations/       0001_init … 0013_ad_analytics   ·   SETUP_database.sql (all migrations combined)
+supabase/migrations/       0001_init … 0013_ad_analytics
 ```

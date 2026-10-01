@@ -501,7 +501,7 @@ export async function undoCheckIn(
 export async function slipDownloadUrl(path: string): Promise<string | null> {
   const { data } = await createAdminClient()
     .storage.from(TICKET_SLIP_BUCKET)
-    .createSignedUrl(path, 60 * 10);
+    .createSignedUrl(path, 60 * 60 * 24 * 30);
   return data?.signedUrl ?? null;
 }
 

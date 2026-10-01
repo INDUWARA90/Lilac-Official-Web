@@ -7,6 +7,10 @@
    Exposed through @theme so Tailwind generates utilities: bg-canvas, text-ink,
    text-accent, border-hairline, font-serif, font-sans, rounded-card ...
    =========================================================================== */
+@theme inline {
+  --font-sinhala: var(--font-abhaya), var(--font-fraunces), serif;
+}
+
 @theme {
   --color-canvas: #ffffff;
   --color-canvas-raised: #faf9fd; /* barely-there lavender tint for panels */

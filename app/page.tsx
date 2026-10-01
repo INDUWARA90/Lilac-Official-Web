@@ -14,6 +14,7 @@ import { Marquee } from "@/components/ui/decor/Marquee";
 import { SectionTitle } from "@/components/ui/decor/SectionTitle";
 import { Timeline } from "@/components/ui/decor/Timeline";
 import { TiltCard } from "@/components/ui/decor/TiltCard";
+import { getPublicDrawUnlocked } from "@/lib/app-config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAvailability } from "@/lib/tickets";
 
@@ -88,9 +89,10 @@ const FAQ: readonly FaqItem[] = [
 
 export default async function HomePage() {
   const db = createAdminClient();
-  const [{ count: verifiedCount }, availability] = await Promise.all([
+  const [{ count: verifiedCount }, availability, drawUnlocked] = await Promise.all([
     db.from("entries").select("*", { count: "exact", head: true }).eq("verified", true),
     getAvailability(),
+    getPublicDrawUnlocked(),
   ]);
 
   return (
@@ -105,34 +107,39 @@ export default async function HomePage() {
           <HeroItem className="relative mt-4 inline-block">
             <Sparkle size={22} gold className="absolute -top-3 -left-7" delay={0.2} />
             <Sparkle size={16} className="absolute -top-1 -right-6" delay={1.4} />
-            <h1 className="lilac-gradient-text text-5xl sm:text-6xl">Lilac</h1>
+            <span lang="si" className="font-sinhala lilac-gradient-text text-5xl sm:text-6xl font-bold">
+              ලයිලැක්
+            </span>
+            {/* <h1 className="">Lailac</h1> */}
           </HeroItem>
           <HeroItem>
-          <p className="mx-auto mt-4 max-w-md font-sans text-base leading-relaxed text-ink-muted">
-            Watch this year&rsquo;s sponsor films, enter the draw, and you could be
-            one of our winners. It takes about a minute.
-          </p>
+            <p className="mx-auto mt-4 max-w-md font-sans text-base leading-relaxed text-ink-muted">
+              Watch this year&rsquo;s sponsor films, enter the draw, and you could be
+              one of our winners. It takes about a minute.
+            </p>
           </HeroItem>
           <HeroItem className="mt-8 flex flex-wrap justify-center gap-3">
-            <Magnetic>
-              <Link href="/enter">
-                <Button variant="magic">Enter the draw</Button>
-              </Link>
-            </Magnetic>
+            {drawUnlocked && (
+              <Magnetic>
+                <Link href="/enter">
+                  <Button variant="magic">Enter the draw</Button>
+                </Link>
+              </Magnetic>
+            )}
             <Magnetic>
               <Link href="/tickets">
-                <Button variant="ghost">Buy event tickets</Button>
+                <Button variant="magic">Buy event tickets</Button>
               </Link>
             </Magnetic>
           </HeroItem>
 
           {verifiedCount !== null && verifiedCount > 0 && (
             <HeroItem>
-            <p className="mt-6 font-sans text-xs text-ink-muted">
-              <Sparkle size={11} className="mr-1 inline align-middle" gold />
-              <strong className="text-ink"><CountUp value={verifiedCount} /></strong>{" "}
-              {verifiedCount === 1 ? "person has" : "people have"} entered so far
-            </p>
+              <p className="mt-6 font-sans text-xs text-ink-muted">
+                <Sparkle size={11} className="mr-1 inline align-middle" gold />
+                <strong className="text-ink"><CountUp value={verifiedCount} /></strong>{" "}
+                {verifiedCount === 1 ? "person has" : "people have"} entered so far
+              </p>
             </HeroItem>
           )}
         </HeroStagger>

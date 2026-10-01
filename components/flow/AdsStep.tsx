@@ -89,7 +89,7 @@ function ImageAd({
 
   return (
     <>
-      <div className="lilac-frame-in lilac-border-glow w-full rounded-card">
+      <div className="lilac-frame-in w-full rounded-card">
         <div className="relative aspect-video w-full overflow-hidden rounded-card bg-canvas-raised ring-1 ring-hairline">
           {/* eslint-disable-next-line @next/next/no-img-element -- external Supabase Storage URL */}
           <img
@@ -120,7 +120,7 @@ function VideoAd({
 
   return (
     <>
-      <div className="lilac-frame-in lilac-border-glow w-full rounded-card">
+      <div className="lilac-frame-in w-full rounded-card">
         <div className="relative aspect-video w-full overflow-hidden rounded-card bg-canvas-raised ring-1 ring-hairline">
           {ad.kind === "youtube" ? (
             <YouTubePlayer youtubeId={ad.youtubeId} title={ad.title} onWatched={setWatched} />

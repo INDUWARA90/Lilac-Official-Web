@@ -25,7 +25,7 @@ export default async function TicketPage({
   return (
     <SiteFrame>
       <div className="py-10 text-center">
-        <div className="lilac-magic-card lilac-border-glow lilac-float relative mx-auto max-w-sm px-6 py-8">
+        <div className="lilac-magic-card lilac-float relative mx-auto max-w-sm px-6 py-8">
           <Sparkle size={16} gold className="absolute top-4 left-5" delay={0.4} />
           <Sparkle size={12} className="absolute top-6 right-6" delay={1.3} />
           <p className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">
