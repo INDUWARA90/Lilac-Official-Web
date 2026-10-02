@@ -159,6 +159,22 @@ export type TicketRow = {
   created_at: string;
 };
 
+export type TshirtSettingsRow = {
+  id: string;
+  price_lkr: number;
+  sales_open: boolean;
+  updated_at: string;
+  updated_by: string | null;
+};
+
+export type TshirtOrderStatusDb = "pending_review" | "payment_collected" | "rejected" | "cancelled";
+export type TshirtOrderRow = {
+  id: string; reference: string; name: string; registration_number: string; faculty: string;
+  email: string; phone: string; tshirt_size: string; quantity: number; amount_lkr: number;
+  receipt_path: string; status: TshirtOrderStatusDb; review_note: string | null;
+  collected_by: string | null; collected_at: string | null; created_at: string; updated_at: string;
+};
+
 type TableShape<Row, Insert, Update> = {
   Row: Row;
   Insert: Insert;
@@ -224,6 +240,12 @@ export type Database = {
           >,
         Partial<TicketRow>
       >;
+      tshirt_settings: TableShape<TshirtSettingsRow, Partial<TshirtSettingsRow>, Partial<TshirtSettingsRow>>;
+      tshirt_orders: TableShape<
+        TshirtOrderRow,
+        Omit<TshirtOrderRow, "id" | "created_at" | "updated_at" | "status"> & Partial<Pick<TshirtOrderRow, "id" | "created_at" | "updated_at" | "status">>,
+        Partial<TshirtOrderRow>
+      >;
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -241,6 +263,10 @@ export type Database = {
           p_reference: string;
         };
         Returns: { purchase_id: string; purchase_reference: string }[];
+      };
+      create_tshirt_order: {
+        Args: { p_name: string; p_registration_number: string; p_faculty: string; p_email: string; p_phone: string; p_tshirt_size: string; p_quantity: number; p_receipt_path: string; p_reference: string };
+        Returns: string;
       };
       create_entry: {
         Args: {

@@ -35,19 +35,24 @@ const MARQUEE = [
 
 const FEATURED_ARTISTS = [
   {
-    name: "Elara Vance",
+    name: "Imesh Sandeepa",
     imageUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop",
-    variant: "lavender"
+    variant: "poppy"
   },
   {
-    name: "Kaelen Rhys",
-    imageUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=600&auto=format&fit=crop",
+    name: "Uvindu Ayshcharya",
+    imageUrl: "https://res.cloudinary.com/dkj7pc9xo/image/upload/v1790937125/wvt6bkrfdbql40nxovuj.jpg",
     variant: "gypsophila"
   },
   {
-    name: "Aiko Tanaka",
+    name: "Chathurya Sandabarana",
     imageUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop",
     variant: "clematis"
+  },
+  {
+    name: "Yesha Frenando",
+    imageUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop",
+    variant: "lavender"
   },
 ] as const;
 
@@ -77,7 +82,6 @@ export default async function HomePage() {
             <span lang="si" className="font-sinhala lilac-gradient-text text-5xl sm:text-6xl font-bold">
               ලයිලැක්
             </span>
-            {/* <h1 className="">Lailac</h1> */}
           </HeroItem>
           <HeroItem>
             <p className="mx-auto mt-4 max-w-md font-sans text-base leading-relaxed text-ink-muted">
@@ -96,6 +100,11 @@ export default async function HomePage() {
             <Magnetic>
               <Link href="/tickets">
                 <Button variant="magic">Buy event tickets</Button>
+              </Link>
+            </Magnetic>
+            <Magnetic>
+              <Link href="/tshirts">
+                <Button variant="magic">T-shirt Order</Button>
               </Link>
             </Magnetic>
           </HeroItem>
@@ -147,19 +156,20 @@ export default async function HomePage() {
               </div>
             </div>
           </Reveal>
-
-          <div className="mx-auto mt-10 grid max-w-7xl grid-cols-1 gap-14 px-2 sm:mt-14 sm:grid-cols-3 sm:gap-2 sm:pb-12">
+          <div className="mx-auto mt-10 flex max-w-7xl flex-wrap items-start justify-center gap-y-14 px-2 sm:mt-14 sm:pb-12">
             {FEATURED_ARTISTS.map((artist, i) => (
-              <Reveal key={artist.name} delay={i * 120}>
-                <ArtistFrame
-                  src={artist.imageUrl}
-                  alt={artist.name}
-                  name={artist.name}
-                  variant={artist.variant}
-                  floatDelay={i * 1.2}
-                  className={i === 1 ? "sm:translate-y-10" : ""}
-                />
-              </Reveal>
+              <div key={artist.name} className="flex w-full justify-center sm:w-1/3">
+                <Reveal delay={(i % 3) * 120} className="w-full">
+                  <ArtistFrame
+                    src={artist.imageUrl}
+                    alt={artist.name}
+                    name={artist.name}
+                    variant={artist.variant}
+                    floatDelay={(i % 3) * 1.2}
+                    className={i % 3 === 1 ? "sm:translate-y-10" : ""}
+                  />
+                </Reveal>
+              </div>
             ))}
           </div>
         </section>

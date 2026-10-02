@@ -23,14 +23,14 @@ export async function SiteFrame({ children }: { children: ReactNode }) {
       <SiteNav showResults={drawUnlocked} />
       
       <main className="flex flex-1 justify-center px-6 pb-20">
-        <div className="w-full max-w-4xl">
+        <div className="w-full max-w-6xl">
           <PageTransition>{children}</PageTransition>
         </div>
       </main>
 
       <footer className="flex justify-center border-t border-hairline px-6 py-8">
         <div className="flex w-full max-w-[560px] flex-col gap-3 font-sans text-xs text-ink-muted sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} Lilac. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} Lailac. All rights reserved.</span>
           <nav className="flex flex-wrap gap-x-4 gap-y-1">
             <Link href="/about" className="hover:text-accent-strong">
               About us

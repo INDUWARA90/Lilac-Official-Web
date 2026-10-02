@@ -421,7 +421,7 @@ export async function getPurchaseStatus(contact: string): Promise<PurchaseStatus
 export type CheckInLookup = {
   ticket: TicketRow;
   purchaseReference: string;
-  purchaseStatus: string;
+  purchaseStatus: TicketPurchaseStatus;
 };
 
 export async function getTicketByToken(token: string): Promise<CheckInLookup | null> {
@@ -436,7 +436,9 @@ export async function getTicketByToken(token: string): Promise<CheckInLookup | n
   return {
     ticket,
     purchaseReference: purchase?.reference ?? "",
-    purchaseStatus: purchase?.status ?? "unknown",
+    // A missing purchase is an invalid ticket state; treat it as cancelled so
+    // callers never accidentally render it as a valid, approved ticket.
+    purchaseStatus: (purchase?.status as TicketPurchaseStatus | undefined) ?? "cancelled",
   };
 }
 

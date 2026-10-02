@@ -8,16 +8,18 @@ import { Logo } from "@/components/ui/Logo";
 const LINKS = [
   { href: "/", label: "Home" },
   { href: "/tickets", label: "Tickets" },
+  { href: "/tshirts", label: "T-shirts" },
   { href: "/about", label: "About us" },
   { href: "/contact", label: "Contact us" },
+  { href: "/tickets/status", label: "Ticket status" }
 ];
 
 const RESULTS_LINK = { href: "/results", label: "Results" };
 
 /**
  * Public site navigation — shown on every non-admin page (admin has its own
- * sidebar). Inline links from `sm` up; below that a hamburger button slides in
- * a left-side drawer holding the same links.
+ * sidebar). The full link list is only shown from `xl` up; below that a
+ * hamburger keeps the header from overflowing and opens the same link list.
  */
 export function SiteNav({ showResults = false }: { showResults?: boolean }) {
   const pathname = usePathname();
@@ -36,7 +38,7 @@ export function SiteNav({ showResults = false }: { showResults?: boolean }) {
 
   return (
     <header className="border-b border-hairline">
-      <div className="mx-auto flex w-full max-w-[560px] items-center justify-between px-6 py-5">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-4 sm:px-6">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -44,16 +46,16 @@ export function SiteNav({ showResults = false }: { showResults?: boolean }) {
             aria-label="Open menu"
             aria-expanded={open}
             aria-controls="site-drawer"
-            className="rounded-field border border-hairline p-2 text-ink-muted transition-colors hover:border-accent hover:text-accent-strong sm:hidden"
+            className="rounded-field border border-hairline p-2 text-ink-muted transition-colors hover:border-accent hover:text-accent-strong xl:hidden"
           >
             <MenuIcon />
           </button>
-          <Link href="/" aria-label="Lilac — home" className="lilac-logo-halo">
+          <Link href="/" aria-label="Lilac — home" className="">
             <Logo />
           </Link>
         </div>
 
-        <nav className="hidden gap-6 sm:flex">
+        <nav className="hidden items-center gap-5 xl:flex">
           {links.map((l) => (
             <Link
               key={l.href}
@@ -81,7 +83,7 @@ export function SiteNav({ showResults = false }: { showResults?: boolean }) {
         onClick={() => setOpen(false)}
         aria-hidden={!open}
         className={
-          "fixed inset-0 z-40 bg-ink/30 transition-opacity duration-200 sm:hidden " +
+          "fixed inset-0 z-40 bg-ink/30 transition-opacity duration-200 xl:hidden " +
           (open ? "opacity-100" : "pointer-events-none opacity-0")
         }
       />
@@ -91,7 +93,7 @@ export function SiteNav({ showResults = false }: { showResults?: boolean }) {
         aria-modal="true"
         aria-label="Menu"
         className={
-          "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[82%] flex-col border-r border-hairline bg-canvas transition-transform duration-200 sm:hidden " +
+          "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[82%] flex-col border-r border-hairline bg-canvas transition-transform duration-200 xl:hidden " +
           (open ? "translate-x-0" : "-translate-x-full")
         }
       >

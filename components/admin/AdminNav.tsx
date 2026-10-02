@@ -90,6 +90,15 @@ const NAV: NavItem[] = [
     ),
   },
   {
+    href: "/admin/tshirts",
+    label: "T-shirt orders",
+    icon: (
+      <svg {...s}>
+        <path d="M7 5l3-2h4l3 2 4 3-3 4-2-1v10H8V11l-2 1-3-4 4-3z" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/checkin",
     label: "Check-in",
     icon: (
@@ -135,7 +144,7 @@ const NAV: NavItem[] = [
 // (dashboard, raffle entries/draw/winners, ads, export, audit) is reserved
 // for the full admin; see requireFullAdmin() in lib/auth.ts, which also
 // enforces this server-side regardless of what this nav shows.
-const TICKET_MANAGER_HREFS = new Set(["/admin/tickets", "/admin/checkin"]);
+const TICKET_MANAGER_HREFS = new Set(["/admin/tickets", "/admin/tshirts", "/admin/checkin"]);
 
 /**
  * Admin nav — a vertical list of icon + label links, used in both the desktop
