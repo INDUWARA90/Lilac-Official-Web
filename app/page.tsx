@@ -6,23 +6,14 @@ import { FlowerDivider } from "@/components/ui/decor/FlowerDivider";
 import { Reveal } from "@/components/ui/decor/Reveal";
 import { Sparkle } from "@/components/ui/decor/Sparkle";
 import { CountUp } from "@/components/ui/decor/CountUp";
-import { SeatsMeter } from "@/components/ui/decor/SeatsMeter";
-import { Faq, type FaqItem } from "@/components/ui/decor/Faq";
 import { HeroItem, HeroStagger } from "@/components/ui/decor/Hero";
 import { Magnetic } from "@/components/ui/decor/Magnetic";
 import { Marquee } from "@/components/ui/decor/Marquee";
-import { SectionTitle } from "@/components/ui/decor/SectionTitle";
-import { Timeline } from "@/components/ui/decor/Timeline";
-import { TiltCard } from "@/components/ui/decor/TiltCard";
 import { getPublicDrawUnlocked } from "@/lib/app-config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAvailability } from "@/lib/tickets";
+import { ArtistFrame } from "@/components/ui/decor/ArtistFrame";
 
-/**
- * Public landing page. The raffle flow lives at `/enter`; this page is the
- * calm "front door" — hero, live entry count, a few feature cards, then the
- * How it works / Winners blurbs.
- */
 export const metadata: Metadata = {
   title: { absolute: "Lilac — the annual company event" },
 };
@@ -31,61 +22,34 @@ export const metadata: Metadata = {
 // count without a Supabase round trip on every idle visit.
 export const revalidate = 30;
 
-const FEATURES = [
-  {
-    title: "About a minute",
-    body: "Watch a short sponsor film, fill in a few fields, and you're done — no account, no waiting.",
-    gold: false,
-  },
-  {
-    title: "Counted instantly",
-    body: "No email confirmation step. The moment you submit, your entry is in the draw.",
-    gold: true,
-  },
-  {
-    title: "Real prizes, published winners",
-    body: "Winners are picked at random and their names go up on the results page for everyone to see.",
-    gold: false,
-  },
-] as const;
-
 const MARQUEE = [
   "Watch the sponsor films",
   "Enter the draw",
   "Win a prize",
   "Join the event",
-  "See you at Lilac",
+  "Exclusive sponsor highlights",
+  "Prizes revealed weekly",
+  "Secure your ticket today",
+  "See you at Lailac",
 ] as const;
 
-const STEPS = [
-  "Scan the QR code at the event, or tap \u201cEnter the draw\u201d.",
-  "Watch the sponsor messages.",
-  "Fill in the short entry form \u2014 one entry per person.",
-  "Your entry is confirmed straight away.",
+const FEATURED_ARTISTS = [
+  {
+    name: "Elara Vance",
+    imageUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop",
+    variant: "lavender"
+  },
+  {
+    name: "Kaelen Rhys",
+    imageUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=600&auto=format&fit=crop",
+    variant: "gypsophila"
+  },
+  {
+    name: "Aiko Tanaka",
+    imageUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop",
+    variant: "clematis"
+  },
 ] as const;
-
-const FAQ: readonly FaqItem[] = [
-  {
-    q: "Is entering the draw free?",
-    a: "Yes. Watch the sponsor messages, fill in the short form, and your entry is counted straight away.",
-  },
-  {
-    q: "Can I enter more than once?",
-    a: "No — it's one entry per person, checked by email address and phone number.",
-  },
-  {
-    q: "How will I know if I've won?",
-    a: "Winners are picked at random after entries close and notified by email. Names are also published on the results page.",
-  },
-  {
-    q: "How do I buy an event ticket?",
-    a: "Go to Tickets, fill in your details and upload your bank-transfer slip. Once it's confirmed your QR ticket is emailed to you, and you can check its status anytime with your phone or email.",
-  },
-  {
-    q: "Does a ticket also enter me in the draw?",
-    a: "No — tickets and the draw are separate. Buying a ticket doesn't add an entry, and entering the draw doesn't get you a ticket.",
-  },
-];
 
 export default async function HomePage() {
   const db = createAdminClient();
@@ -101,7 +65,10 @@ export default async function HomePage() {
         <HeroStagger className="lilac-float text-center">
           <HeroItem>
             <p className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">
-              The annual company event
+              The Chapter of event{' '}
+              <span lang="si" className="font-sinhala font-normal normal-case tracking-normal text-ink-muted text-lg">
+                මායාත්‍රා
+              </span>
             </p>
           </HeroItem>
           <HeroItem className="relative mt-4 inline-block">
@@ -150,74 +117,51 @@ export default async function HomePage() {
 
         <FlowerDivider className="my-12" />
 
-        <section className="grid gap-4 sm:grid-cols-3">
-          {FEATURES.map((f, i) => (
-            <Reveal key={f.title} delay={i * 100}>
-              <TiltCard className="h-full">
-                <div className="lilac-magic-card lilac-hover-lift h-full p-5">
-                  <Sparkle size={16} gold={f.gold} />
-                  <h3 className="mt-2 font-serif text-base text-ink">{f.title}</h3>
-                  <p className="mt-2 font-sans text-sm leading-relaxed text-ink-muted">{f.body}</p>
-                </div>
-              </TiltCard>
-            </Reveal>
-          ))}
-        </section>
+        <section className="relative py-2">
+          {/* ambient lilac backdrop */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[75%] w-full max-w-5xl -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(190,160,235,0.28),transparent_70%)] blur-3xl"
+          />
 
-        <FlowerDivider className="my-12" />
-
-        <section className="space-y-8">
           <Reveal>
-            <div className="lilac-magic-card lilac-hover-lift p-5">
-              <SectionTitle className="font-serif text-xl text-ink">How it works</SectionTitle>
-              <Timeline steps={STEPS} />
-            </div>
-          </Reveal>
+            <div className="relative mx-auto max-w-2xl px-4 text-center">
+              <Sparkle size={18} gold className="absolute -top-2 left-[8%]" delay={0.3} />
+              <Sparkle size={13} className="absolute top-8 right-[10%]" delay={1.2} />
 
-          <Reveal delay={120}>
-            <div className="lilac-magic-card lilac-hover-lift p-5">
-              <SectionTitle className="font-serif text-xl text-ink">Winners</SectionTitle>
-              <p className="mt-3 font-sans text-sm leading-relaxed text-ink-muted">
-                Winners are drawn after entries close and are notified by email.
-                Names are published on the{" "}
-                <Link href="/results" className="text-accent-strong underline">
-                  results
-                </Link>{" "}
-                page.
+              <p className="font-sans text-xs font-semibold uppercase tracking-[0.25em] text-ink-muted">
+                The lineup
               </p>
-            </div>
-          </Reveal>
+              <h2 className="lilac-gradient-text mt-3 font-serif text-3xl font-bold sm:text-4xl">
+                Artists coming to the event
+              </h2>
+              <p className="mx-auto mt-3 max-w-md font-sans text-sm leading-relaxed text-ink-muted">
+                Meet the artists joining us at Lailac concert this year.
+              </p>
 
-          {availability.salesOpen && availability.left > 0 && (
-            <Reveal delay={240}>
-              <div className="lilac-magic-card lilac-shine p-5 text-center sm:flex sm:items-center sm:justify-between sm:gap-4 sm:text-left">
-                <div>
-                  <h2 className="font-serif text-xl text-ink">Coming to the event?</h2>
-                  <p className="mt-2 font-sans text-sm leading-relaxed text-ink-muted">
-                    Grab a paid ticket for admission — {availability.left} of{" "}
-                    {availability.capacity} left. Separate from the raffle, just as easy.
-                  </p>
-                  <div className="mt-3">
-                    <SeatsMeter taken={availability.taken} capacity={availability.capacity} />
-                  </div>
-                </div>
-                <Link href="/tickets" className="mt-4 inline-block shrink-0 sm:mt-0">
-                  <Button variant="magic">Buy tickets</Button>
-                </Link>
+              {/* flourish */}
+              <div className="mt-5 flex items-center justify-center gap-3 text-[#a67fd4]" aria-hidden="true">
+                <span className="h-px w-16 bg-gradient-to-r from-transparent to-[#b79ddb]/60" />
+                <span className="text-base">❀</span>
+                <span className="h-px w-16 bg-gradient-to-l from-transparent to-[#b79ddb]/60" />
               </div>
-            </Reveal>
-          )}
-        </section>
-
-        <FlowerDivider className="my-12" />
-
-        <section>
-          <Reveal>
-            <div className="mb-4">
-              <SectionTitle className="font-serif text-xl text-ink">Questions</SectionTitle>
             </div>
-            <Faq items={FAQ} />
           </Reveal>
+
+          <div className="mx-auto mt-10 grid max-w-7xl grid-cols-1 gap-14 px-2 sm:mt-14 sm:grid-cols-3 sm:gap-2 sm:pb-12">
+            {FEATURED_ARTISTS.map((artist, i) => (
+              <Reveal key={artist.name} delay={i * 120}>
+                <ArtistFrame
+                  src={artist.imageUrl}
+                  alt={artist.name}
+                  name={artist.name}
+                  variant={artist.variant}
+                  floatDelay={i * 1.2}
+                  className={i === 1 ? "sm:translate-y-10" : ""}
+                />
+              </Reveal>
+            ))}
+          </div>
         </section>
       </div>
     </SiteFrame>

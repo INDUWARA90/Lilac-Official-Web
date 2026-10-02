@@ -16,8 +16,6 @@ const manrope = Manrope({
   display: "swap",
 });
 
-// Sinhala wordmark ("ලයිලැක්"). Not a variable font, so weights are listed
-// explicitly. Only the sinhala subset is needed, which keeps the download small.
 const abhaya = Abhaya_Libre({
   variable: "--font-abhaya",
   subsets: ["sinhala"],

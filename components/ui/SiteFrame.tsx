@@ -21,9 +21,9 @@ export async function SiteFrame({ children }: { children: ReactNode }) {
       <ScrollProgress />
       <BackToTop />
       <SiteNav showResults={drawUnlocked} />
-
+      
       <main className="flex flex-1 justify-center px-6 pb-20">
-        <div className="w-full max-w-[560px]">
+        <div className="w-full max-w-4xl">
           <PageTransition>{children}</PageTransition>
         </div>
       </main>

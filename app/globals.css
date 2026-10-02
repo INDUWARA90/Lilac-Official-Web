@@ -787,3 +787,15 @@ h3 {
     transition: none;
   }
 }
+
+@keyframes artist-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+.artist-float {
+  animation: artist-float 7s ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s);
+}
+@media (prefers-reduced-motion: reduce) {
+  .artist-float { animation: none; }
+}
