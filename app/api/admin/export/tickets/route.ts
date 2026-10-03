@@ -19,7 +19,7 @@ export async function GET() {
     db
       .from("ticket_purchases")
       .select(
-        "reference, name, email, phone, quantity, amount_lkr, status, review_note, reviewed_by, reviewed_at, created_at",
+        "reference, name, email, phone, ticket_type, quantity, amount_lkr, status, review_note, reviewed_by, reviewed_at, created_at",
       )
       .order("created_at", { ascending: true })
       .order("id")
@@ -31,11 +31,11 @@ export async function GET() {
   }
 
   const headers = [
-    "reference", "name", "email", "phone", "quantity", "amount_lkr",
+    "reference", "name", "email", "phone", "ticket_type", "quantity", "amount_lkr",
     "status", "review_note", "reviewed_by", "reviewed_at", "created_at",
   ];
   const rows = (data ?? []).map((p) => [
-    p.reference, p.name, p.email, p.phone, p.quantity, p.amount_lkr,
+    p.reference, p.name, p.email, p.phone, p.ticket_type, p.quantity, p.amount_lkr,
     p.status, p.review_note, p.reviewed_by, p.reviewed_at, p.created_at,
   ]);
 

@@ -206,8 +206,8 @@ export default async function AdminDashboard() {
         ))}
       </div>
       <p className="mt-2 font-sans text-xs text-ink-muted">
-        {buyers} confirmed purchase{buyers === 1 ? "" : "s"} · {formatLkr(settings.priceLkr)} per
-        ticket.
+        {buyers} confirmed purchase{buyers === 1 ? "" : "s"} · Seating {formatLkr(settings.seatingPriceLkr)} /
+        Standing {formatLkr(settings.standingPriceLkr)}.
       </p>
 
       <h2 className="mt-8 font-sans text-sm font-semibold uppercase tracking-wider text-ink-muted">

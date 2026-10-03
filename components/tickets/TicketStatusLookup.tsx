@@ -7,13 +7,18 @@ import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { Reveal } from "@/components/ui/decor/Reveal";
 import { ticketStatusLookupSchema } from "@/lib/validation/ticket";
-import { PURCHASE_STATUS_LABEL, type TicketPurchaseStatus } from "@/lib/tickets-shared";
+import {
+  PURCHASE_STATUS_LABEL,
+  type TicketPurchaseStatus,
+  type TicketType,
+} from "@/lib/tickets-shared";
 
 type FieldErrors = Partial<Record<string, string>>;
 
 type Purchase = {
   reference: string;
   status: TicketPurchaseStatus;
+  ticketType: TicketType;
   quantity: number;
   reviewNote: string | null;
   tickets: { token: string; seatLabel: string }[];
@@ -114,6 +119,9 @@ function PurchaseCard({ purchase }: { purchase: Purchase }) {
         <h2 className="text-lg text-ink">{purchase.reference}</h2>
         <StatusPill status={purchase.status} />
       </div>
+      <p className="mt-2 font-sans text-sm capitalize text-ink-muted">
+        {purchase.ticketType} · {purchase.quantity} ticket{purchase.quantity === 1 ? "" : "s"}
+      </p>
 
       {purchase.status === "pending_review" && (
         <p className="mt-3 font-sans text-sm leading-relaxed text-ink-muted">

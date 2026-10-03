@@ -19,6 +19,8 @@ export type TicketPurchaseStatus =
   | "rejected"
   | "cancelled";
 
+export type TicketType = "seating" | "standing";
+
 export const PURCHASE_STATUS_LABEL: Record<TicketPurchaseStatus, string> = {
   pending_review: "Pending review",
   approved: "Approved",
@@ -27,8 +29,10 @@ export const PURCHASE_STATUS_LABEL: Record<TicketPurchaseStatus, string> = {
 };
 
 export type TicketSettings = {
-  priceLkr: number;
-  capacity: number;
+  seatingPriceLkr: number;
+  standingPriceLkr: number;
+  seatingCapacity: number;
+  standingCapacity: number;
   salesOpen: boolean;
   bankName: string;
   bankAccountName: string;
@@ -38,10 +42,18 @@ export type TicketSettings = {
 };
 
 export type TicketAvailability = {
+  seating: TicketTypeAvailability;
+  standing: TicketTypeAvailability;
   capacity: number;
   taken: number;
   left: number;
   salesOpen: boolean;
+};
+
+export type TicketTypeAvailability = {
+  capacity: number;
+  taken: number;
+  left: number;
 };
 
 export function formatLkr(amount: number): string {

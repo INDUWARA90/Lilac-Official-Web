@@ -14,7 +14,9 @@ import { ticketPurchaseSchema } from "@/lib/validation/ticket";
 import {
   ALLOWED_SLIP_TYPES,
   MAX_SLIP_BYTES,
+  MAX_TICKETS_PER_PURCHASE,
   formatLkr,
+  type TicketType,
 } from "@/lib/tickets-shared";
 
 type FieldErrors = Partial<Record<string, string>>;
@@ -28,15 +30,25 @@ type Bank = {
 };
 
 export function TicketPurchaseForm({
-  priceLkr,
-  maxQuantity,
+  seatingPriceLkr,
+  standingPriceLkr,
+  seatingLeft,
+  standingLeft,
   bank,
 }: {
-  priceLkr: number;
-  maxQuantity: number;
+  seatingPriceLkr: number;
+  standingPriceLkr: number;
+  seatingLeft: number;
+  standingLeft: number;
   bank: Bank;
 }) {
-  const [values, setValues] = useState({ name: "", email: "", phone: "", quantity: "1" });
+  const [values, setValues] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    ticketType: (seatingLeft > 0 ? "seating" : "standing") as TicketType,
+    quantity: "1",
+  });
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -55,10 +67,16 @@ export function TicketPurchaseForm({
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
+  const selectedTypeLeft = values.ticketType === "seating" ? seatingLeft : standingLeft;
   const qtyOptions = useMemo(
-    () => Array.from({ length: Math.max(1, maxQuantity) }, (_, i) => String(i + 1)),
-    [maxQuantity],
+    () =>
+      Array.from(
+        { length: Math.min(MAX_TICKETS_PER_PURCHASE, Math.max(1, selectedTypeLeft)) },
+        (_, i) => String(i + 1),
+      ),
+    [selectedTypeLeft],
   );
+  const priceLkr = values.ticketType === "seating" ? seatingPriceLkr : standingPriceLkr;
   const total = priceLkr * (Number(values.quantity) || 1);
 
   function set<K extends keyof typeof values>(key: K, value: string) {
@@ -229,7 +247,7 @@ export function TicketPurchaseForm({
           <li className="flex gap-3.5 items-start">
             <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-accent/15 font-bold text-accent-strong text-xs mt-0.5">1</span>
             <div className="flex-1">
-              Transfer exactly <strong className="text-ink">{formatLkr(priceLkr)}</strong> per ticket to our official account:
+              Transfer exactly <strong className="text-ink">{formatLkr(priceLkr)}</strong> per {values.ticketType} ticket to our official account:
               <div className="mt-2.5 rounded-field bg-canvas-raised p-4 font-mono text-xs sm:text-sm text-ink space-y-2 border border-hairline shadow-inner">
                 {bank.name && <div className="font-sans font-bold text-ink pb-1.5 border-b border-hairline text-base">{bank.name}</div>}
                 {bank.accountName && <div className="flex justify-between"><span className="text-ink-muted font-sans">A/C Name:</span> <span className="font-medium">{bank.accountName}</span></div>}
@@ -266,6 +284,20 @@ export function TicketPurchaseForm({
       {/* Input Fields Section */}
       <div className="lilac-magic-card p-5 sm:p-7 space-y-5">
         <h3 className="font-serif text-base text-ink font-medium pb-1 border-b border-hairline">Attendee Details</h3>
+
+        <SelectField
+          label="Ticket type"
+          required
+          options={[
+            ...(seatingLeft > 0 ? [`Seating — ${formatLkr(seatingPriceLkr)}`] : []),
+            ...(standingLeft > 0 ? [`Standing — ${formatLkr(standingPriceLkr)}`] : []),
+          ]}
+          value={`${values.ticketType === "seating" ? "Seating" : "Standing"} — ${formatLkr(priceLkr)}`}
+          onChange={(e) => {
+            set("ticketType", e.target.value.startsWith("Seating") ? "seating" : "standing");
+            set("quantity", "1");
+          }}
+        />
 
         <TextField
           label="Full name"

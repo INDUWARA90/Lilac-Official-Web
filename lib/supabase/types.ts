@@ -113,8 +113,10 @@ export type AppConfigRow = {
 
 export type TicketSettingsRow = {
   id: string;
-  price_lkr: number;
-  capacity: number;
+  seating_price_lkr: number;
+  standing_price_lkr: number;
+  seating_capacity: number;
+  standing_capacity: number;
   sales_open: boolean;
   bank_name: string;
   bank_account_name: string;
@@ -137,6 +139,7 @@ export type TicketPurchaseRow = {
   name: string;
   email: string;
   phone: string;
+  ticket_type: "seating" | "standing";
   quantity: number;
   amount_lkr: number;
   slip_path: string;
@@ -258,6 +261,7 @@ export type Database = {
           p_name: string;
           p_email: string;
           p_phone: string;
+          p_ticket_type: "seating" | "standing";
           p_quantity: number;
           p_slip_path: string;
           p_reference: string;

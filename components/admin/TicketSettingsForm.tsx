@@ -9,8 +9,10 @@ import type { TicketSettings } from "@/lib/tickets-shared";
 export function TicketSettingsForm({ current }: { current: TicketSettings }) {
   const router = useRouter();
   const [v, setV] = useState({
-    priceLkr: String(current.priceLkr),
-    capacity: String(current.capacity),
+    seatingPriceLkr: String(current.seatingPriceLkr),
+    standingPriceLkr: String(current.standingPriceLkr),
+    seatingCapacity: String(current.seatingCapacity),
+    standingCapacity: String(current.standingCapacity),
     salesOpen: current.salesOpen,
     bankName: current.bankName,
     bankAccountName: current.bankAccountName,
@@ -37,8 +39,10 @@ export function TicketSettingsForm({ current }: { current: TicketSettings }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           action: "update_settings",
-          priceLkr: Number(v.priceLkr) || 0,
-          capacity: Number(v.capacity) || 0,
+          seatingPriceLkr: Number(v.seatingPriceLkr) || 0,
+          standingPriceLkr: Number(v.standingPriceLkr) || 0,
+          seatingCapacity: Number(v.seatingCapacity) || 0,
+          standingCapacity: Number(v.standingCapacity) || 0,
           salesOpen: v.salesOpen,
           bankName: v.bankName,
           bankAccountName: v.bankAccountName,
@@ -65,16 +69,28 @@ export function TicketSettingsForm({ current }: { current: TicketSettings }) {
     <form onSubmit={submit} className="max-w-lg flex flex-col gap-5">
       <div className="grid grid-cols-2 gap-5">
         <TextField
-          label="Price per ticket (LKR)"
+          label="Seating ticket price (LKR)"
           inputMode="numeric"
-          value={v.priceLkr}
-          onChange={(e) => set("priceLkr", e.target.value.replace(/\D/g, ""))}
+          value={v.seatingPriceLkr}
+          onChange={(e) => set("seatingPriceLkr", e.target.value.replace(/\D/g, ""))}
         />
         <TextField
-          label="Total capacity"
+          label="Standing ticket price (LKR)"
           inputMode="numeric"
-          value={v.capacity}
-          onChange={(e) => set("capacity", e.target.value.replace(/\D/g, ""))}
+          value={v.standingPriceLkr}
+          onChange={(e) => set("standingPriceLkr", e.target.value.replace(/\D/g, ""))}
+        />
+        <TextField
+          label="Seating capacity"
+          inputMode="numeric"
+          value={v.seatingCapacity}
+          onChange={(e) => set("seatingCapacity", e.target.value.replace(/\D/g, ""))}
+        />
+        <TextField
+          label="Standing capacity"
+          inputMode="numeric"
+          value={v.standingCapacity}
+          onChange={(e) => set("standingCapacity", e.target.value.replace(/\D/g, ""))}
         />
       </div>
 

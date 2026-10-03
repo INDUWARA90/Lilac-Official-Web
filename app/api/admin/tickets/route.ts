@@ -14,7 +14,7 @@ import {
  *   { action: "approve", purchaseId }
  *   { action: "reject", purchaseId, note? }
  *   { action: "checkin" | "undo_checkin", token }
- *   { action: "update_settings", priceLkr?, capacity?, salesOpen?, bank*? }
+ *   { action: "update_settings", seatingPriceLkr?, standingPriceLkr?, seatingCapacity?, standingCapacity?, salesOpen?, bank*? }
  */
 export const dynamic = "force-dynamic";
 
@@ -31,8 +31,10 @@ const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("undo_checkin"), token: z.string().min(1).max(200) }),
   z.object({
     action: z.literal("update_settings"),
-    priceLkr: z.coerce.number().int().min(0).max(1_000_000).optional(),
-    capacity: z.coerce.number().int().min(0).max(100_000).optional(),
+    seatingPriceLkr: z.coerce.number().int().min(0).max(1_000_000).optional(),
+    standingPriceLkr: z.coerce.number().int().min(0).max(1_000_000).optional(),
+    seatingCapacity: z.coerce.number().int().min(0).max(100_000).optional(),
+    standingCapacity: z.coerce.number().int().min(0).max(100_000).optional(),
     salesOpen: z.boolean().optional(),
     bankName: z.string().trim().max(120).optional(),
     bankAccountName: z.string().trim().max(120).optional(),
@@ -80,8 +82,10 @@ export async function POST(req: Request) {
 
   const ok = await updateTicketSettings(
     {
-      priceLkr: input.priceLkr,
-      capacity: input.capacity,
+      seatingPriceLkr: input.seatingPriceLkr,
+      standingPriceLkr: input.standingPriceLkr,
+      seatingCapacity: input.seatingCapacity,
+      standingCapacity: input.standingCapacity,
       salesOpen: input.salesOpen,
       bankName: input.bankName,
       bankAccountName: input.bankAccountName,

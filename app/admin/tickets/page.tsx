@@ -36,7 +36,7 @@ export default async function AdminTicketsPage({
   const db = createAdminClient();
   let query = db
     .from("ticket_purchases")
-    .select("id, reference, name, email, phone, quantity, amount_lkr, status, created_at", {
+    .select("id, reference, name, email, phone, ticket_type, quantity, amount_lkr, status, created_at", {
       count: "exact",
     })
     .order("created_at", { ascending: false });
@@ -78,11 +78,19 @@ export default async function AdminTicketsPage({
 
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Price", value: formatLkr(settings.priceLkr) },
           {
-            label: "Seats",
-            value: `${availability.taken} / ${availability.capacity}`,
-            sub: availability.salesOpen ? `${availability.left} left` : "sales closed",
+            label: "Seating / Standing",
+            value: `${formatLkr(settings.seatingPriceLkr)} / ${formatLkr(settings.standingPriceLkr)}`,
+          },
+          {
+            label: "Seating sold / capacity",
+            value: `${availability.seating.taken} / ${availability.seating.capacity}`,
+            sub: availability.salesOpen ? `${availability.seating.left} left` : "sales closed",
+          },
+          {
+            label: "Standing sold / capacity",
+            value: `${availability.standing.taken} / ${availability.standing.capacity}`,
+            sub: availability.salesOpen ? `${availability.standing.left} left` : "sales closed",
           },
           { label: "Tickets issued", value: issued ?? 0 },
           { label: "Checked in", value: `${checkedIn ?? 0} / ${issued ?? 0}` },
@@ -130,6 +138,7 @@ export default async function AdminTicketsPage({
               <th className="py-2 pr-4 font-medium">Reference</th>
               <th className="py-2 pr-4 font-medium">Name</th>
               <th className="py-2 pr-4 font-medium">Contact</th>
+              <th className="py-2 pr-4 font-medium">Type</th>
               <th className="py-2 pr-4 font-medium">Qty</th>
               <th className="py-2 pr-4 font-medium">Amount</th>
               <th className="py-2 pr-4 font-medium">Status</th>
@@ -139,7 +148,7 @@ export default async function AdminTicketsPage({
           <tbody className="lilac-rows">
             {(rows ?? []).length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-6 text-center text-ink-muted">
+                <td colSpan={8} className="py-6 text-center text-ink-muted">
                   No purchases.
                 </td>
               </tr>
@@ -160,6 +169,7 @@ export default async function AdminTicketsPage({
                     <br />
                     {r.phone}
                   </td>
+                  <td className="py-2 pr-4 capitalize">{r.ticket_type}</td>
                   <td className="py-2 pr-4">{r.quantity}</td>
                   <td className="py-2 pr-4">{formatLkr(r.amount_lkr)}</td>
                   <td className="py-2 pr-4">{PURCHASE_STATUS_LABEL[r.status]}</td>

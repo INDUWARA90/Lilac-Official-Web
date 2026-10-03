@@ -13,6 +13,7 @@ import {
   type TicketAvailability,
   type TicketPurchaseStatus,
   type TicketSettings,
+  type TicketType,
 } from "@/lib/tickets-shared";
 import type { TicketPurchaseRow, TicketRow, TicketSettingsRow } from "@/lib/supabase/types";
 
@@ -51,8 +52,10 @@ export async function getTicketSettings(): Promise<TicketSettings> {
     .maybeSingle();
 
   return {
-    priceLkr: data?.price_lkr ?? 500,
-    capacity: data?.capacity ?? 100,
+    seatingPriceLkr: data?.seating_price_lkr ?? 500,
+    standingPriceLkr: data?.standing_price_lkr ?? 300,
+    seatingCapacity: data?.seating_capacity ?? 100,
+    standingCapacity: data?.standing_capacity ?? 100,
     salesOpen: data?.sales_open ?? true,
     bankName: data?.bank_name ?? "",
     bankAccountName: data?.bank_account_name ?? "",
@@ -65,23 +68,37 @@ export async function getTicketSettings(): Promise<TicketSettings> {
 export async function getAvailability(): Promise<TicketAvailability> {
   const db = createAdminClient();
   const [{ data: settings }, { data: live }] = await Promise.all([
-    db.from("ticket_settings").select("capacity, sales_open").eq("id", "default").maybeSingle(),
+    db
+      .from("ticket_settings")
+      .select("seating_capacity, standing_capacity, sales_open")
+      .eq("id", "default")
+      .maybeSingle(),
     fetchAll((from, to) =>
       db
         .from("ticket_purchases")
-        .select("quantity")
+        .select("ticket_type, quantity")
         .in("status", ["pending_review", "approved"])
         .order("id")
         .range(from, to),
     ),
   ]);
 
-  const capacity = settings?.capacity ?? 100;
-  const taken = (live ?? []).reduce((n, r) => n + (r.quantity ?? 0), 0);
+  const seatingCapacity = settings?.seating_capacity ?? 100;
+  const standingCapacity = settings?.standing_capacity ?? 100;
+  const seatingTaken = (live ?? [])
+    .filter((purchase) => purchase.ticket_type === "seating")
+    .reduce((n, purchase) => n + (purchase.quantity ?? 0), 0);
+  const standingTaken = (live ?? [])
+    .filter((purchase) => purchase.ticket_type === "standing")
+    .reduce((n, purchase) => n + (purchase.quantity ?? 0), 0);
+  const seatingLeft = Math.max(0, seatingCapacity - seatingTaken);
+  const standingLeft = Math.max(0, standingCapacity - standingTaken);
   return {
-    capacity,
-    taken,
-    left: Math.max(0, capacity - taken),
+    seating: { capacity: seatingCapacity, taken: seatingTaken, left: seatingLeft },
+    standing: { capacity: standingCapacity, taken: standingTaken, left: standingLeft },
+    capacity: seatingCapacity + standingCapacity,
+    taken: seatingTaken + standingTaken,
+    left: seatingLeft + standingLeft,
     salesOpen: settings?.sales_open ?? true,
   };
 }
@@ -94,8 +111,10 @@ export async function updateTicketSettings(
     updated_at: new Date().toISOString(),
     updated_by: by,
   };
-  if (patch.priceLkr !== undefined) row.price_lkr = patch.priceLkr;
-  if (patch.capacity !== undefined) row.capacity = patch.capacity;
+  if (patch.seatingPriceLkr !== undefined) row.seating_price_lkr = patch.seatingPriceLkr;
+  if (patch.standingPriceLkr !== undefined) row.standing_price_lkr = patch.standingPriceLkr;
+  if (patch.seatingCapacity !== undefined) row.seating_capacity = patch.seatingCapacity;
+  if (patch.standingCapacity !== undefined) row.standing_capacity = patch.standingCapacity;
   if (patch.salesOpen !== undefined) row.sales_open = patch.salesOpen;
   if (patch.bankName !== undefined) row.bank_name = patch.bankName;
   if (patch.bankAccountName !== undefined) row.bank_account_name = patch.bankAccountName;
@@ -124,6 +143,7 @@ export async function createPurchase(input: {
   name: string;
   email: string;
   phone: string;
+  ticketType: TicketType;
   quantity: number;
   slipPath: string;
 }): Promise<CreateResult> {
@@ -142,6 +162,7 @@ export async function createPurchase(input: {
     p_name: input.name,
     p_email: input.email,
     p_phone: input.phone,
+    p_ticket_type: input.ticketType,
     p_quantity: input.quantity,
     p_slip_path: input.slipPath,
     p_reference: reference,
@@ -149,6 +170,12 @@ export async function createPurchase(input: {
 
   if (error) {
     const m = error.message || "";
+    if (m.includes("SOLD_OUT_SEATING")) {
+      return { ok: false, error: "Sorry — seating tickets just sold out.", soldOut: true };
+    }
+    if (m.includes("SOLD_OUT_STANDING")) {
+      return { ok: false, error: "Sorry — standing tickets just sold out.", soldOut: true };
+    }
     if (m.includes("SOLD_OUT")) {
       return { ok: false, error: "Sorry — those tickets just sold out.", soldOut: true };
     }
@@ -165,7 +192,7 @@ export async function createPurchase(input: {
     return { ok: false, error: "Something went wrong. Please try again." };
   }
 
-  revalidatePath("/tickets"); // seats just got taken — see app/tickets/page.tsx (ISR)
+  revalidatePath("/tickets");   // availability just changed — see app/tickets/page.tsx (ISR)
 
   // No buyer notification of any kind — buyers self-check with reference +
   // phone/email at /tickets/status instead (see getPurchaseStatus below).
@@ -175,10 +202,15 @@ export async function createPurchase(input: {
   // on every purchase. Later attempts are rejected by the RPC before reaching
   // here (SOLD_OUT), so this naturally fires exactly once.
   const availability = await getAvailability();
-  if (availability.left <= 0) {
+  const categoryAvailability = availability[input.ticketType];
+  if (categoryAvailability.left <= 0) {
     await logAudit(
       "tickets.sold_out",
-      { capacity: availability.capacity, last_purchase_reference: reference },
+      {
+        ticket_type: input.ticketType,
+        capacity: categoryAvailability.capacity,
+        last_purchase_reference: reference,
+      },
       null,
     );
   }
@@ -233,7 +265,9 @@ export async function approvePurchase(
     purchase_id: purchase.id,
     token: newToken(),
     seat_label:
-      purchase.quantity === 1 ? "Admission" : `Admission ${i + 1} of ${purchase.quantity}`,
+      `${purchase.ticket_type === "seating" ? "Seating" : "Standing"}${
+        purchase.quantity === 1 ? "" : ` ${i + 1} of ${purchase.quantity}`
+      }`,
     holder_name: purchase.name,
   }));
 
@@ -357,6 +391,7 @@ export async function rejectPurchase(
 export type PurchaseStatusItem = {
   reference: string;
   status: TicketPurchaseStatus;
+  ticketType: TicketType;
   quantity: number;
   reviewNote: string | null;
   /** Only populated once `status === "approved"`. */
@@ -408,6 +443,7 @@ export async function getPurchaseStatus(contact: string): Promise<PurchaseStatus
     results.push({
       reference: purchase.reference,
       status: purchase.status as TicketPurchaseStatus,
+      ticketType: purchase.ticket_type,
       quantity: purchase.quantity,
       reviewNote: purchase.review_note,
       tickets,

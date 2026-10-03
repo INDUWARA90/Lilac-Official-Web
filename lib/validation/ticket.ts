@@ -2,6 +2,8 @@ import { z } from "zod";
 import { normalizeLkPhone } from "@/lib/validation/entry";
 import { MAX_TICKETS_PER_PURCHASE } from "@/lib/tickets-shared";
 
+export const ticketTypeSchema = z.enum(["seating", "standing"]);
+
 /**
  * Server-side schema for a ticket purchase. The client form validates with the
  * same schema; `/api/tickets` is the authority.
@@ -33,6 +35,8 @@ export const ticketPurchaseSchema = z.object({
       }
       return normalized;
     }),
+
+  ticketType: ticketTypeSchema,
 
   quantity: z.coerce
     .number()

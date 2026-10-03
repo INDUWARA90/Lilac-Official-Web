@@ -66,6 +66,7 @@ export default async function TicketPurchasePage({
           </p>
           <p className="text-ink-muted">{purchase.phone}</p>
           <p className="mt-3 text-ink">
+            {purchase.ticket_type === "seating" ? "Seating" : "Standing"} ·{" "}
             {purchase.quantity} ticket{purchase.quantity === 1 ? "" : "s"} ·{" "}
             {formatLkr(purchase.amount_lkr)}
           </p>
