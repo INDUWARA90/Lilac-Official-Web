@@ -159,7 +159,12 @@ export default async function HomePage() {
           </Reveal>
           <div className="mx-auto mt-10 flex max-w-7xl flex-wrap items-start justify-center gap-y-14 px-2 sm:mt-14 sm:pb-12">
             {FEATURED_ARTISTS.map((artist, i) => (
-              <div key={artist.name} className="flex w-full justify-center sm:w-1/3">
+              <div
+                key={artist.name}
+                className={`flex w-full justify-center sm:w-1/3 ${
+                  i === 0 ? "order-1 sm:order-none" : i === 1 ? "order-0 sm:order-none" : "order-2 sm:order-none"
+                }`}
+              >
                 <Reveal delay={(i % 3) * 120} className="w-full">
                   <ArtistFrame
                     src={artist.imageUrl}
@@ -175,7 +180,7 @@ export default async function HomePage() {
           </div>
         </section>
         
-        <Reveal >
+        <Reveal className="mt-10" >
           <CtaBanner
             drawUnlocked={drawUnlocked}
             ticketsOpen={availability.salesOpen && availability.left > 0}
