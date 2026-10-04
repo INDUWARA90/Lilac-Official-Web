@@ -1,7 +1,6 @@
 import "server-only";
 import { randomInt } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { logAudit } from "@/lib/audit";
 import { TSHIRT_RECEIPT_BUCKET } from "@/lib/tshirts-shared";
 
 const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
@@ -32,7 +31,6 @@ export async function reviewTshirtOrder(id: string, action: "collect" | "reject"
   const { data, error } = await db.from("tshirt_orders").update({ status, review_note: note || null, collected_by: by, collected_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", id).eq("status", "pending_review").select("reference").maybeSingle();
   if (error) return { ok: false, error: "Could not update the order." };
   if (!data) return { ok: false, error: "This order has already been reviewed." };
-  await logAudit(`tshirt.${action === "collect" ? "payment_collected" : "rejected"}`, { order_id: id, reference: data.reference, by }, null);
   return { ok: true };
 }
 

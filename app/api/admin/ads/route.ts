@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { getAdminSession } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { logAudit } from "@/lib/audit";
 import { parseYouTubeId, VIDEO_BUCKET, IMAGE_BUCKET } from "@/lib/ads-shared";
 
 /**
@@ -49,7 +48,6 @@ export async function POST(req: Request) {
       console.error("ads reorder: one or more updates failed");
       return json({ ok: false, error: "Could not save the new order. Try again." }, 500);
     }
-    await logAudit("ad.reorder", { order: input.order, by: session.email }, null);
     return json({ ok: true });
   }
 
@@ -59,7 +57,6 @@ export async function POST(req: Request) {
       .update({ title: input.title, updated_at: new Date().toISOString() })
       .eq("id", input.id);
     if (error) return json({ ok: false, error: "Could not save. Try again." }, 500);
-    await logAudit("ad.update_title", { id: input.id, title: input.title, by: session.email }, null);
     return json({ ok: true });
   }
 
@@ -79,7 +76,6 @@ export async function POST(req: Request) {
       await db.storage.from(bucket).remove([existing.storage_path]).catch(() => {});
     }
 
-    await logAudit("ad.delete", { id: input.id, by: session.email }, null);
     return json({ ok: true });
   }
 
@@ -120,12 +116,6 @@ export async function POST(req: Request) {
     console.error("ads create failed");
     return json({ ok: false, error: "Could not save. Try again." }, 500);
   }
-
-  await logAudit(
-    "ad.create",
-    { kind: row.kind, youtube_id: row.youtube_id, storage_path: row.storage_path, by: session.email },
-    null,
-  );
 
   return json({ ok: true });
 }

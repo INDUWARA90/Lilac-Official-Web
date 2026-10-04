@@ -57,12 +57,8 @@ export function TicketReviewActions({ purchaseId }: { purchaseId: string }) {
       <div className="rounded-card border border-amber-300 bg-amber-50 p-4">
         <h2 className="text-lg text-ink">Order confirmed — email didn&rsquo;t send</h2>
         <p className="mt-1 font-sans text-sm text-ink-muted">
-          Tickets were issued, but the e-ticket email did not send (check{" "}
-          <code className="text-xs">MAILJET_*</code> env vars, or see{" "}
-          <a href="/admin/audit" className="text-accent-strong underline">
-            /admin/audit
-          </a>{" "}
-          for the reason). The buyer can still get their ticket at{" "}
+          Tickets were issued, but the e-ticket email did not send. Check the{" "}
+          <code className="text-xs">MAILJET_*</code> environment variables. The buyer can still get their ticket at{" "}
           <a href="/tickets/status" className="text-accent-strong underline">
             /tickets/status
           </a>

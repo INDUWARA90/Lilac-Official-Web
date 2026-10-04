@@ -33,7 +33,7 @@ export default async function DrawPage() {
       <h1 className="text-2xl text-ink">Draw winners</h1>
       <p className="mt-1 font-sans text-sm text-ink-muted">
         Winners are chosen with a cryptographically secure random selection from
-        verified entries only. Each draw is recorded and audited.
+        verified entries only. Each draw and its winners are recorded.
       </p>
 
       <div className="mt-6">

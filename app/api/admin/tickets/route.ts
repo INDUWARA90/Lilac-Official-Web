@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       : json({ ok: false, error: r.error, alreadyAt: r.alreadyAt }, 409);
   }
   if (input.action === "undo_checkin") {
-    const r = await undoCheckIn(input.token, session.email);
+    const r = await undoCheckIn(input.token);
     return r.ok ? json({ ok: true }) : json({ ok: false, error: r.error }, 400);
   }
 

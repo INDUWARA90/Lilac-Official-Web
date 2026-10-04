@@ -32,7 +32,7 @@ export const serverEnv = {
   // Mailjet (free tier) — the e-ticket QR + reference (on approval), the
   // winner notice (on draw), and contact-form forwarding all go through this
   // (see lib/email/mailjet.ts). Inert without all three; each flow still
-  // succeeds either way, it just logs to /admin/audit instead of sending.
+  // succeeds if email delivery is not configured.
   // Called directly from this Next.js app — no Supabase Edge Function in
   // between.
   mailjet: {

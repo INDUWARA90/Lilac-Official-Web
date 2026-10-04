@@ -55,10 +55,10 @@ export function TshirtOrderFields({
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 }) {
   return (
-    <form onSubmit={onSubmit} noValidate className="lilac-stagger flex flex-col gap-8">
-      <div className="lilac-magic-card p-5 relative overflow-hidden bg-gradient-to-r from-canvas-raised via-canvas-raised to-accent/5 border border-accent/25">
-        <Sparkle size={16} gold className="absolute top-4 right-5" />
-        <h3 className="font-serif text-base font-semibold text-ink flex items-center gap-2 mb-1.5">
+    <form onSubmit={onSubmit} noValidate className="lilac-stagger flex min-w-0 flex-col gap-6 sm:gap-8">
+      <div className="lilac-magic-card relative overflow-hidden border border-accent/25 bg-gradient-to-r from-canvas-raised via-canvas-raised to-accent/5 p-4 sm:p-5">
+        <Sparkle size={16} gold className="absolute right-4 top-4 sm:right-5" />
+        <h3 className="mb-1.5 flex items-start gap-2 pr-5 font-serif text-base font-semibold text-ink">
           <span>🛍️</span> T-Shirt Pre-Order Instructions
         </h3>
         <p className="font-sans text-xs sm:text-sm text-ink-muted leading-relaxed">
@@ -66,7 +66,7 @@ export function TshirtOrderFields({
         </p>
       </div>
 
-      <div className="lilac-magic-card p-6 sm:p-8 space-y-5 border border-accent/20">
+      <div className="lilac-magic-card space-y-5 border border-accent/20 p-4 sm:p-6 md:p-8">
         <div className="flex items-center justify-between border-b border-hairline pb-3">
           <h4 className="font-serif text-sm font-semibold text-ink uppercase tracking-wider flex items-center gap-2">
             <span className="flex size-6 items-center justify-center rounded-full bg-accent/10 text-accent-strong text-xs font-mono">1</span>
@@ -127,7 +127,7 @@ export function TshirtOrderFields({
         </div>
       </div>
 
-      <div className="lilac-magic-card p-6 sm:p-8 space-y-5 border border-accent/20">
+      <div className="lilac-magic-card space-y-5 border border-accent/20 p-4 sm:p-6 md:p-8">
         <div className="flex items-center justify-between border-b border-hairline pb-3">
           <h4 className="font-serif text-sm font-semibold text-ink uppercase tracking-wider flex items-center gap-2">
             <span className="flex size-6 items-center justify-center rounded-full bg-accent/10 text-accent-strong text-xs font-mono">2</span>
@@ -157,22 +157,22 @@ export function TshirtOrderFields({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="font-sans text-sm font-medium text-ink flex items-center justify-between">
+            <label className="flex flex-col gap-0.5 font-sans text-sm font-medium text-ink sm:flex-row sm:items-center sm:justify-between sm:gap-3">
               <span>Payment receipt slip <span className="text-accent-strong">*</span></span>
-              <span className="text-[11px] text-ink-muted">JPG, PNG, WebP or PDF (Max 5MB)</span>
+              <span className="text-xs text-ink-muted sm:text-[11px]">JPG, PNG, WebP or PDF (Max 5MB)</span>
             </label>
 
-            <div className="relative flex flex-col items-center justify-center rounded-field border-2 border-dashed border-accent/30 bg-canvas-raised p-6 text-center hover:border-accent hover:bg-accent/5 transition-all cursor-pointer">
+            <div className="relative flex min-w-0 flex-col items-center justify-center rounded-field border-2 border-dashed border-accent/30 bg-canvas-raised p-4 text-center transition-all hover:border-accent hover:bg-accent/5 sm:p-6">
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,application/pdf"
                 onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
               />
-              <div className="space-y-1.5 pointer-events-none">
+              <div className="pointer-events-none w-full min-w-0 space-y-1.5">
                 <span className="text-2xl">📄</span>
-                <p className="font-sans text-sm font-semibold text-ink">
-                  {file ? <span className="text-accent-strong">{file.name}</span> : "Click to browse or drag receipt here"}
+                <p className="break-words font-sans text-sm font-semibold text-ink">
+                  {file ? <span className="break-all text-accent-strong">{file.name}</span> : "Tap to browse or drag receipt here"}
                 </p>
                 <p className="font-sans text-xs text-ink-muted">
                   {file ? `${(file.size / (1024 * 1024)).toFixed(2)} MB attached` : "Upload bank transfer confirmation or deposit slip"}
@@ -184,11 +184,11 @@ export function TshirtOrderFields({
         </div>
       </div>
 
-      <div className="lilac-magic-card p-6 flex flex-col sm:flex-row items-center justify-between gap-5 bg-gradient-to-r from-accent/5 via-canvas-raised to-canvas-raised border border-accent/30">
+      <div className="lilac-magic-card flex flex-col items-stretch justify-between gap-4 border border-accent/30 bg-gradient-to-r from-accent/5 via-canvas-raised to-canvas-raised p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-6">
         <div className="text-center sm:text-left">
           <span className="text-xs uppercase tracking-wider text-ink-muted font-semibold block">Total Payment Due</span>
-          <div className="flex items-baseline gap-2 mt-0.5 justify-center sm:justify-start">
-            <span className="font-serif text-3xl font-bold text-accent-strong">{formatLkr(total)}</span>
+          <div className="mt-0.5 flex flex-wrap items-baseline justify-center gap-x-2 sm:justify-start">
+            <span className="font-serif text-2xl font-bold text-accent-strong sm:text-3xl">{formatLkr(total)}</span>
             <span className="text-xs text-ink-muted">({values.quantity || 1} item{Number(values.quantity) > 1 ? "s" : ""})</span>
           </div>
         </div>

@@ -1,5 +1,4 @@
 import { getAdminSession } from "@/lib/auth";
-import { logAudit } from "@/lib/audit";
 import { toCsvSections, csvResponse } from "@/lib/csv";
 import { getSiteAnalytics } from "@/lib/analytics";
 
@@ -22,8 +21,6 @@ export async function GET() {
     ["Ticket buyers", data.ticketBuyers],
   ];
   const adRows = data.perAd.map((a) => [a.title, a.kind, a.shown, a.watched, `${a.completionPct}%`]);
-
-  await logAudit("export.analytics", { by: session.email }, null);
 
   const stamp = new Date().toISOString().slice(0, 10);
   const csv = toCsvSections([

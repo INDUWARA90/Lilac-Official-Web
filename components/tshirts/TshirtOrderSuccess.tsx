@@ -2,7 +2,7 @@ import { Sparkle } from "@/components/ui/decor/Sparkle";
 
 export function TshirtOrderSuccess({ reference, email }: { reference: string; email: string }) {
   return (
-    <div className="lilac-magic-card relative p-8 sm:p-10 text-center overflow-hidden border border-accent/30 shadow-md">
+    <div className="lilac-magic-card relative overflow-hidden border border-accent/30 p-5 text-center shadow-md sm:p-8 md:p-10">
       <div className="absolute -top-16 -right-16 w-48 h-48 bg-accent/15 rounded-full blur-3xl pointer-events-none" />
       <Sparkle size={24} gold className="absolute top-6 right-6" />
 
@@ -14,7 +14,7 @@ export function TshirtOrderSuccess({ reference, email }: { reference: string; em
         Success
       </span>
 
-      <h2 className="font-serif text-3xl font-semibold text-ink tracking-tight">
+      <h2 className="font-serif text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
         Order Received Successfully
       </h2>
 
@@ -34,7 +34,7 @@ export function TshirtOrderSuccess({ reference, email }: { reference: string; em
         </p>
         <p className="flex items-start gap-2">
           <span className="text-accent-strong font-bold">•</span>
-          Confirmation and pickup updates will be emailed to <strong className="text-ink">{email}</strong>.
+          Confirmation and pickup updates will be emailed to <strong className="break-all text-ink">{email}</strong>.
         </p>
       </div>
     </div>

@@ -1,6 +1,5 @@
 import { getAdminSession } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { logAudit } from "@/lib/audit";
 import { toCsv, csvResponse } from "@/lib/csv";
 import { fetchAll } from "@/lib/supabase/fetch-all";
 
@@ -48,8 +47,6 @@ export async function GET() {
       t.checked_in_at ? "yes" : "no", t.checked_in_at, t.checked_in_by,
     ];
   });
-
-  await logAudit("export.checkins", { count: rows.length, by: session.email }, null);
 
   const stamp = new Date().toISOString().slice(0, 10);
   return csvResponse(`lilac-checkins-${stamp}.csv`, toCsv(headers, rows));

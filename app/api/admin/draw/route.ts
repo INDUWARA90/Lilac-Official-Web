@@ -4,7 +4,6 @@ import { after } from "next/server";
 import { getAdminSession } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pickRandom } from "@/lib/draw";
-import { logAudit } from "@/lib/audit";
 import { getDrawUnlocked, setDrawUnlocked } from "@/lib/app-config";
 import { sendPendingWinnerEmails } from "@/lib/winner-emails";
 import { fetchAll } from "@/lib/supabase/fetch-all";
@@ -16,7 +15,7 @@ import { fetchAll } from "@/lib/supabase/fetch-all";
  *   { action: "run", winnerCount } — run a draw (only when unlocked):
  *     1. eligible = verified entries that haven't already won
  *     2. pick `winnerCount` of them with crypto.randomInt
- *     3. record the draw + winners, audit
+ *     3. record the draw + winners
  *     4. winners appear on /results immediately; the winner email goes out
  *        in the background via after() (best effort — see /admin/winners
  *        for status + a manual Resend if one fails)
@@ -53,7 +52,6 @@ export async function POST(req: Request) {
         500,
       );
     }
-    await logAudit(`draw.${input.action}`, { by: session.email }, null);
     return json({ ok: true, drawUnlocked: unlocked });
   }
 
@@ -121,12 +119,6 @@ export async function POST(req: Request) {
     await db.from("draws").delete().eq("id", draw.id);
     return json({ ok: false, error: "Could not record winners. Please try again." }, 500);
   }
-
-  await logAudit(
-    "draw.run",
-    { draw_id: draw.id, winner_count: winnerCount, winner_entry_ids: winnerEntryIds, by: session.email },
-    null,
-  );
 
   // /results is ISR (see app/results/page.tsx) — push the new winners out
   // immediately instead of waiting for the next background revalidation.

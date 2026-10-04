@@ -1,6 +1,5 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { logAudit } from "@/lib/audit";
 import { sendWinnerEmail } from "@/lib/email/mailjet";
 
 /**
@@ -107,7 +106,6 @@ async function sendOneWinnerEmail(
 
   if (!sent.ok) {
     console.error(`winner email failed for ${winnerId}: ${sent.reason ?? "unknown"}`);
-    await logAudit("winner.email_failed", { winner_id: winnerId, reason: sent.reason ?? "unknown" }, null);
   }
 
   return sent;

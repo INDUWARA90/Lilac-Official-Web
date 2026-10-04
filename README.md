@@ -46,7 +46,7 @@ values for now.
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase → Project Settings → API
 - `SUPABASE_SERVICE_ROLE_KEY` — same page, **server-only**, bypasses RLS
 - `NEXT_PUBLIC_SITE_URL` — used to build absolute ticket/check-in links
-- `MAILJET_API_KEY`, `MAILJET_SECRET_KEY`, `MAILJET_SENDER_EMAIL`, `MAILJET_SENDER_NAME` — Mailjet account. Leave unset to run without email; each flow still succeeds, it just logs to `/admin/audit` instead of sending
+- `MAILJET_API_KEY`, `MAILJET_SECRET_KEY`, `MAILJET_SENDER_EMAIL`, `MAILJET_SENDER_NAME` — Mailjet account. Leave unset to run without email; each flow still succeeds if email delivery is not configured
 - `ADMIN_EMAIL`, `ADMIN_PASSWORD` — full-admin credentials for `/admin/login`
 - `ADMIN_SESSION_SECRET` — `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 - `TICKET_MANAGER_EMAIL`, `TICKET_MANAGER_PASSWORD` — optional second login, scoped to ticket review + check-in only
@@ -61,7 +61,7 @@ ticket-manager credentials → an HMAC-signed `admin_session` cookie (24h) is
 set. Pages: Dashboard (funnel counts), Entries (browse/search), Draw, Winners
 (per-row resend), Ads, Analytics (site-wide + per-sponsor-ad breakdown),
 Tickets (review purchases + settings), Messages (contact-form submissions),
-Audit log, Export (CSV: entries / winners / tickets / check-ins / analytics).
+Export (CSV: entries / winners / tickets / check-ins / analytics).
 The ticket manager role can review purchases and check people in, but not
 touch money settings, the raffle draw, or analytics.
 
@@ -76,10 +76,10 @@ except the Supabase URL, anon key, and site URL.
 
 1. Open your Supabase project → **SQL Editor**.
 2. Run `supabase/migrations/0001_init.sql` through
-  `supabase/migrations/0013_ad_analytics.sql` one file at a time, in numerical
+  `supabase/migrations/0017_remove_audit_log.sql` one file at a time, in numerical
   order. Run each migration as a separate SQL Editor query.
 3. Verify under **Table Editor** that `entries`, `draws`, `winners`,
-   `audit_log`, `events`, `ads`, `contact_messages`, `ticket_settings`,
+   `events`, `ads`, `contact_messages`, `ticket_settings`,
    `ticket_purchases`, and `tickets` exist, each with **RLS enabled**.
    (`video_config` existed briefly but was folded into `ads` by
    `0005_ads.sql` — don't expect it on a fresh install.)
@@ -122,7 +122,7 @@ app/
   ticket/[token]/         public single-ticket QR page
   checkin/                door-staff login + scan UI
   api/checkin/            check-in login/logout, token check-in/undo
-  admin/                  login, dashboard (funnel), entries, draw, winners, ads, analytics, tickets, export, audit
+  admin/                  login, dashboard (funnel), entries, draw, winners, ads, analytics, tickets, export
   api/admin/              login, logout, draw, winners/resend, tickets, ads(+upload-url), export/*
   global-error.tsx        root error boundary (last-resort UI)
 next.config.ts             security headers (CSP / HSTS / …)
@@ -142,7 +142,6 @@ lib/
   rate-limit.ts            durable per-key rate limiter (Postgres RPC, fails open)
   draw.ts                  crypto.randomInt winner picker
   csv.ts                   tiny RFC-4180 CSV builder (incl. multi-section files)
-  audit.ts                 append-to-audit_log helper
   analytics.ts             site-wide + per-sponsor-ad interaction numbers (events.ad_id)
   email/mailjet.ts         e-ticket, winner mail, contact forwarding via Mailjet HTTP API
   winner-emails.ts         send/resend winner emails, race-safe claim

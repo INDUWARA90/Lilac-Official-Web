@@ -1,6 +1,5 @@
 import { getAdminSession } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { logAudit } from "@/lib/audit";
 import { toCsv, csvResponse } from "@/lib/csv";
 import { fetchAll } from "@/lib/supabase/fetch-all";
 
@@ -38,8 +37,6 @@ export async function GET() {
     e.name, e.email, e.phone, e.address, e.age_range, e.gender,
     e.occupation, e.district, e.ad_watched_at, e.consent_at, e.created_at,
   ]);
-
-  await logAudit("export.entries", { count: rows.length, by: session.email }, null);
 
   const stamp = new Date().toISOString().slice(0, 10);
   return csvResponse(`lilac-entries-${stamp}.csv`, toCsv(headers, rows));

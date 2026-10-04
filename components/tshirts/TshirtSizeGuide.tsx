@@ -140,7 +140,7 @@ function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: b
           }
         }}
         className={
-          "relative mx-auto flex h-80 w-full max-w-[340px] touch-pan-y select-none items-center justify-center overflow-hidden rounded-[2rem] border border-[#b79ddb]/40 bg-gradient-to-b from-white via-accent-wash/60 to-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_24px_50px_-28px_rgba(110,80,160,0.55)] outline-none focus-visible:ring-2 focus-visible:ring-[#b79ddb] " +
+          "relative mx-auto flex h-72 w-full max-w-[340px] touch-pan-y select-none items-center justify-center overflow-hidden rounded-[2rem] border border-[#b79ddb]/40 bg-gradient-to-b from-white via-accent-wash/60 to-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_24px_50px_-28px_rgba(110,80,160,0.55)] outline-none focus-visible:ring-2 focus-visible:ring-[#b79ddb] sm:h-80 " +
           (dragging ? "cursor-grabbing" : "cursor-grab")
         }
         style={{ perspective: "900px" }}
@@ -309,7 +309,7 @@ export function TshirtSizeGuide() {
   const maxChest = Number(SIZES[SIZES.length - 1][1]);
 
   return (
-    <section className="relative mt-8 overflow-hidden rounded-card border border-[#b79ddb]/40 bg-canvas-raised p-5 shadow-[0_24px_60px_-34px_rgba(110,80,160,0.5)] sm:p-7">
+    <section className="relative mt-6 overflow-hidden rounded-card border border-[#b79ddb]/40 bg-canvas-raised p-4 shadow-[0_24px_60px_-34px_rgba(110,80,160,0.5)] sm:mt-8 sm:p-7">
       {/* ambient glows */}
       <div
         aria-hidden
@@ -396,13 +396,13 @@ export function TshirtSizeGuide() {
           </p>
 
           {/* table */}
-          <div className="mt-4 overflow-x-auto rounded-2xl border border-hairline bg-white/60">
-            <table className="w-full min-w-[320px] border-collapse font-sans text-sm">
+          <div className="mt-4 overflow-hidden rounded-2xl border border-hairline bg-white/60">
+            <table className="w-full table-fixed border-collapse font-sans text-xs sm:text-sm">
               <thead>
-                <tr className="border-b border-hairline bg-accent-wash/50 text-left text-xs uppercase tracking-wide text-ink-muted">
-                  <th className="px-3 py-2.5 font-semibold">Size</th>
-                  <th className="px-3 py-2.5 font-semibold">Chest ({unit})</th>
-                  <th className="px-3 py-2.5 font-semibold">Length ({unit})</th>
+                <tr className="border-b border-hairline bg-accent-wash/50 text-left text-[10px] uppercase tracking-wide text-ink-muted sm:text-xs">
+                  <th className="w-[24%] px-2 py-2 font-semibold sm:px-3 sm:py-2.5">Size</th>
+                  <th className="w-[40%] px-2 py-2 font-semibold sm:px-3 sm:py-2.5">Chest ({unit})</th>
+                  <th className="w-[36%] px-2 py-2 font-semibold sm:px-3 sm:py-2.5">Length ({unit})</th>
                 </tr>
               </thead>
               <tbody>
@@ -417,7 +417,7 @@ export function TshirtSizeGuide() {
                         (active ? "bg-accent-wash" : "hover:bg-accent-wash/50")
                       }
                     >
-                      <td className="relative px-3 py-2.5 font-semibold">
+                      <td className="relative px-2 py-2 font-semibold sm:px-3 sm:py-2.5">
                         <span
                           aria-hidden
                           className={
@@ -427,9 +427,9 @@ export function TshirtSizeGuide() {
                         />
                         {s}
                       </td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-3">
-                          <span className="w-10 tabular-nums">{fmt(c, unit)}</span>
+                      <td className="px-2 py-2 sm:px-3 sm:py-2.5">
+                        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                          <span className="w-9 shrink-0 tabular-nums sm:w-10">{fmt(c, unit)}</span>
                           <span className="hidden h-1.5 flex-1 overflow-hidden rounded-full bg-[#b79ddb]/20 sm:block">
                             <span
                               className={
@@ -441,7 +441,7 @@ export function TshirtSizeGuide() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 tabular-nums">{fmt(l, unit)}</td>
+                      <td className="px-2 py-2 tabular-nums sm:px-3 sm:py-2.5">{fmt(l, unit)}</td>
                     </tr>
                   );
                 })}

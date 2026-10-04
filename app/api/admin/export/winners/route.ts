@@ -1,6 +1,5 @@
 import { getAdminSession } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { logAudit } from "@/lib/audit";
 import { toCsv, csvResponse } from "@/lib/csv";
 
 /** GET /api/admin/export/winners — CSV of winners only. */
@@ -55,8 +54,6 @@ export async function GET() {
       w.email_sent_at,
     ];
   });
-
-  await logAudit("export.winners", { count: rows.length, by: session.email }, null);
 
   const stamp = new Date().toISOString().slice(0, 10);
   return csvResponse(`lilac-winners-${stamp}.csv`, toCsv(headers, rows));

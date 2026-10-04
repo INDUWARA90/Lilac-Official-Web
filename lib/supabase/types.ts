@@ -64,14 +64,6 @@ export type WinnerRow = {
   created_at: string;
 };
 
-export type AuditLogRow = {
-  id: string;
-  admin_id: string | null;
-  action: string;
-  details: Record<string, unknown>;
-  created_at: string;
-};
-
 export type ContactMessageRow = {
   id: string;
   name: string;
@@ -199,12 +191,6 @@ export type Database = {
         Pick<WinnerRow, "entry_id" | "draw_id"> &
           Partial<Omit<WinnerRow, "entry_id" | "draw_id">>,
         Partial<WinnerRow>
-      >;
-      audit_log: TableShape<
-        AuditLogRow,
-        Omit<AuditLogRow, "id" | "created_at"> &
-          Partial<Pick<AuditLogRow, "id" | "created_at" | "details">>,
-        Partial<AuditLogRow>
       >;
       events: TableShape<
         EventRow,

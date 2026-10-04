@@ -16,7 +16,7 @@ const MAILJET_SEND_URL = "https://api.mailjet.com/v3.1/send";
 
 export interface SendResult {
   ok: boolean;
-  /** Provider message id when available — handy for the audit trail. */
+  /** Provider message id when available — useful for Mailjet delivery support. */
   id?: string;
   reason?: string;
 }

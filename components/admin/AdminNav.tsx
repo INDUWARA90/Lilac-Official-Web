@@ -127,21 +127,10 @@ const NAV: NavItem[] = [
       </svg>
     ),
   },
-  {
-    href: "/admin/audit",
-    label: "Audit log",
-    icon: (
-      <svg {...s}>
-        <path d="M7 6H6a2 2 0 00-2 2v11a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2h-1" />
-        <path d="M9 4h6a1 1 0 011 1v1a1 1 0 01-1 1H9a1 1 0 01-1-1V5a1 1 0 011-1z" />
-        <path d="M8.5 13.5l2 2 4-4" />
-      </svg>
-    ),
-  },
 ];
 
 // A ticket manager only sees ticket review + check-in — everything else
-// (dashboard, raffle entries/draw/winners, ads, export, audit) is reserved
+// (dashboard, raffle entries/draw/winners, ads, export) is reserved
 // for the full admin; see requireFullAdmin() in lib/auth.ts, which also
 // enforces this server-side regardless of what this nav shows.
 const TICKET_MANAGER_HREFS = new Set(["/admin/tickets", "/admin/tshirts", "/admin/checkin"]);

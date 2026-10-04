@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { cookies } from "next/headers";
 import { ADMIN_COOKIE, createSessionValue, passwordMatches, type AdminRole } from "@/lib/auth";
-import { logAudit } from "@/lib/audit";
 import { serverEnv } from "@/lib/env";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
@@ -51,7 +50,6 @@ export async function POST(req: Request) {
   // Same response whichever half is wrong, so this can't be used to probe
   // which emails are valid logins.
   if (!role || !passwordOk) {
-    await logAudit("admin.login_failed", { email: parsed.data.email }, null);
     return json({ ok: false, error: "Email or password is incorrect." }, 401);
   }
 
@@ -63,8 +61,6 @@ export async function POST(req: Request) {
     path: "/",
     maxAge: maxAgeSeconds,
   });
-
-  await logAudit("admin.login", { email, role }, null);
 
   return json({ ok: true });
 }

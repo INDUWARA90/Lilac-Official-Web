@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { publicEnv } from "@/lib/env";
-import { logAudit } from "@/lib/audit";
 import { sendTicketApproved } from "@/lib/email/mailjet";
 import { normalizeLkPhone } from "@/lib/validation/entry";
 import { fetchAll } from "@/lib/supabase/fetch-all";
@@ -127,7 +126,6 @@ export async function updateTicketSettings(
     .update(row)
     .eq("id", "default");
   if (!error) {
-    await logAudit("ticket.settings", { fields: Object.keys(row), by }, null);
     revalidatePath("/tickets"); // price/capacity/sales-open changed — see app/tickets/page.tsx (ISR)
   }
   return !error;
@@ -197,24 +195,6 @@ export async function createPurchase(input: {
   // No buyer notification of any kind — buyers self-check with reference +
   // phone/email at /tickets/status instead (see getPurchaseStatus below).
   //
-  // This purchase may have been the one that used up the last seat(s) — log
-  // it once, right when that happens (visible on /admin/audit), rather than
-  // on every purchase. Later attempts are rejected by the RPC before reaching
-  // here (SOLD_OUT), so this naturally fires exactly once.
-  const availability = await getAvailability();
-  const categoryAvailability = availability[input.ticketType];
-  if (categoryAvailability.left <= 0) {
-    await logAudit(
-      "tickets.sold_out",
-      {
-        ticket_type: input.ticketType,
-        capacity: categoryAvailability.capacity,
-        last_purchase_reference: reference,
-      },
-      null,
-    );
-  }
-
   return { ok: true, reference };
 }
 
@@ -284,17 +264,11 @@ export async function approvePurchase(
     return { ok: false, error: "Could not issue the tickets. Try again." };
   }
 
-  await logAudit(
-    "ticket.approve",
-    { purchase_id: purchase.id, reference: purchase.reference, seats: created.length, by },
-    null,
-  );
-
   // Email the QR + reference via Mailjet. Best effort — the tickets already
   // exist and are reachable at /tickets/status either way (and door staff can
   // still check them in), so a Mailjet hiccup (including QR generation
-  // itself) logs to /admin/audit rather than failing the approval, which has
-  // already committed by this point.
+  // itself) does not fail the approval, which has already committed by this
+  // point.
   const sent = await (async (): Promise<{ ok: boolean; reason?: string }> => {
     try {
       const attachments = await Promise.all(
@@ -325,11 +299,6 @@ export async function approvePurchase(
 
   if (!sent.ok) {
     console.error(`e-ticket email failed for ${purchase.reference}: ${sent.reason ?? "unknown"}`);
-    await logAudit(
-      "ticket.email_failed",
-      { purchase_id: purchase.id, reference: purchase.reference, reason: sent.reason ?? "unknown" },
-      null,
-    );
   }
 
   return { ok: true, emailSent: sent.ok };
@@ -375,11 +344,6 @@ export async function rejectPurchase(
   }
 
   revalidatePath("/tickets"); // rejecting frees up the seat(s) it held — see app/tickets/page.tsx (ISR)
-  await logAudit(
-    "ticket.reject",
-    { purchase_id: purchase.id, reference: purchase.reference, by },
-    null,
-  );
 
   // No email — the buyer sees the rejection + review note themselves at
   // /tickets/status (see getPurchaseStatus below).
@@ -514,14 +478,10 @@ export async function checkInTicket(
     return { ok: false, error: "Already checked in.", alreadyAt: current?.checked_in_at ?? undefined };
   }
 
-  await logAudit("ticket.checkin", { ticket_id: ticket.id, by }, null);
   return { ok: true };
 }
 
-export async function undoCheckIn(
-  token: string,
-  by: string,
-): Promise<{ ok: boolean; error?: string }> {
+export async function undoCheckIn(token: string): Promise<{ ok: boolean; error?: string }> {
   const db = createAdminClient();
   const { data: ticket } = await db.from("tickets").select("id").eq("token", token).maybeSingle();
   if (!ticket) return { ok: false, error: "Ticket not found." };
@@ -530,7 +490,6 @@ export async function undoCheckIn(
     .update({ checked_in_at: null, checked_in_by: null })
     .eq("id", ticket.id);
   if (error) return { ok: false, error: "Could not update the ticket." };
-  await logAudit("ticket.checkin_undo", { ticket_id: ticket.id, by }, null);
   return { ok: true };
 }
 

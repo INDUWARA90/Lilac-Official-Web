@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Manrope, Abhaya_Libre } from "next/font/google";
 import { publicEnv } from "@/lib/env";
+import { MayathraFloat } from "@/components/ui/decor/MayathraFloat";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -31,7 +32,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${fraunces.variable} ${manrope.variable} ${abhaya.variable}`}
     >
-      <body className="bg-wash min-h-dvh text-ink">{children}</body>
+      <body className="bg-wash min-h-dvh text-ink">
+        {children}
+        <MayathraFloat />
+      </body>
     </html>
   );
 }

@@ -2,7 +2,6 @@ import { z } from "zod";
 import { hasCheckinSession } from "@/lib/checkin-auth";
 import { getAdminSession } from "@/lib/auth";
 import { checkInTicket } from "@/lib/tickets";
-import { logAudit } from "@/lib/audit";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
 
@@ -37,7 +36,6 @@ export async function POST(
   if (!parsed.success) return json({ ok: false, error: "Invalid request." }, 400);
 
   if (parsed.data.action === "refuse") {
-    await logAudit("ticket.checkin", { token_tail: token.slice(-6), refused: true, by }, null);
     return json({ ok: true, refused: true });
   }
 
