@@ -37,22 +37,22 @@ const MARQUEE = [
 const FEATURED_ARTISTS = [
   {
     name: "Imesh Sandeepa",
-    imageUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop",
+    imageUrl: "https://res.cloudinary.com/dkj7pc9xo/image/upload/v1791103924/hiayhtrwwhsqgd0sdfrq.jpg",
     variant: "poppy"
   },
   {
     name: "Uvindu Ayshcharya",
-    imageUrl: "https://res.cloudinary.com/dkj7pc9xo/image/upload/v1790937125/wvt6bkrfdbql40nxovuj.jpg",
+    imageUrl: "https://res.cloudinary.com/dkj7pc9xo/image/upload/v1791105203/lmdbcgn7ko0iddb7jzy8.jpg",
     variant: "gypsophila"
   },
   {
     name: "Chathurya Sandabarana",
-    imageUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop",
+    imageUrl: "https://res.cloudinary.com/dkj7pc9xo/image/upload/v1791105074/hf3sgsktnbrs3cjppvne.jpg",
     variant: "clematis"
   },
   {
     name: "Yesha Frenando",
-    imageUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop",
+    imageUrl: "https://res.cloudinary.com/dkj7pc9xo/image/upload/v1791105348/a4njnctt48r546bxpsxy.jpg",
     variant: "lavender"
   },
 ] as const;
@@ -73,7 +73,7 @@ export default async function HomePage() {
             <p className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">
               The Chapter of event{' '}
               <span lang="si" className="font-sinhala font-normal normal-case tracking-normal text-ink-muted text-lg">
-                මායාත්‍රා
+                මායාත්‍ර
               </span>
             </p>
           </HeroItem>
