@@ -52,7 +52,7 @@ const FEATURED_ARTISTS = [
   },
   {
     name: "Yesha Frenando",
-    imageUrl: "https://res.cloudinary.com/dkj7pc9xo/image/upload/v1791105348/a4njnctt48r546bxpsxy.jpg",
+    imageUrl: "https://res.cloudinary.com/dkj7pc9xo/image/upload/v1791106009/h13xoqhpicyqm7iivew0.jpg",
     variant: "lavender"
   },
 ] as const;
