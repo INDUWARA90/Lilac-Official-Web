@@ -44,7 +44,15 @@ export async function POST(req: Request) {
   if (input.action === "unlock" || input.action === "lock") {
     const unlocked = input.action === "unlock";
     const ok = await setDrawUnlocked(unlocked, session.email);
-    if (!ok) return json({ ok: false, error: "Could not update the draw lock." }, 500);
+    if (!ok) {
+      return json(
+        {
+          ok: false,
+          error: "Could not update the draw lock. Check that migration 0007_draw_lock.sql has been applied.",
+        },
+        500,
+      );
+    }
     await logAudit(`draw.${input.action}`, { by: session.email }, null);
     return json({ ok: true, drawUnlocked: unlocked });
   }

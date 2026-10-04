@@ -10,11 +10,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 const DRAW_UNLOCKED_TAG = "draw-unlocked";
 
 async function fetchDrawUnlocked(): Promise<boolean> {
-  const { data } = await createAdminClient()
+  const { data, error } = await createAdminClient()
     .from("app_config")
     .select("draw_unlocked")
     .eq("id", "default")
     .maybeSingle();
+  if (error) {
+    console.error("Draw lock: failed to read app config", error);
+    return false;
+  }
   return data?.draw_unlocked ?? false;
 }
 
@@ -45,14 +49,27 @@ export const getPublicDrawUnlocked = unstable_cache(fetchDrawUnlocked, ["draw-un
 });
 
 export async function setDrawUnlocked(unlocked: boolean, by: string): Promise<boolean> {
-  const { error } = await createAdminClient()
+  const { data, error } = await createAdminClient()
     .from("app_config")
-    .update({ draw_unlocked: unlocked, updated_at: new Date().toISOString(), updated_by: by })
-    .eq("id", "default");
+    .upsert(
+      {
+        id: "default",
+        draw_unlocked: unlocked,
+        updated_at: new Date().toISOString(),
+        updated_by: by,
+      },
+      { onConflict: "id" },
+    )
+    .select("draw_unlocked")
+    .single();
+  if (error || !data || data.draw_unlocked !== unlocked) {
+    console.error("Draw lock: failed to persist app config", error);
+    return false;
+  }
   // `{ expire: 0 }` — no stale-while-revalidate window: the very next request
   // for this tag blocks on a fresh read, so the nav reflects the flip right
   // away rather than serving up to a year of stale data (the `"max"` profile
   // Next recommends for content where that's fine, which this isn't).
-  if (!error) revalidateTag(DRAW_UNLOCKED_TAG, { expire: 0 });
-  return !error;
+  revalidateTag(DRAW_UNLOCKED_TAG, { expire: 0 });
+  return true;
 }
