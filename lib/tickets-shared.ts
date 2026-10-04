@@ -5,7 +5,7 @@
 
 export const TICKET_SLIP_BUCKET = "ticket-slips";
 export const MAX_SLIP_BYTES = 5 * 1024 * 1024;
-export const MAX_TICKETS_PER_PURCHASE = 10;
+export const MAX_TICKETS_PER_PURCHASE = 5;
 export const ALLOWED_SLIP_TYPES = [
   "image/jpeg",
   "image/png",

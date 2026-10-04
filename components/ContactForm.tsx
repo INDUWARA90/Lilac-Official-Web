@@ -4,12 +4,15 @@ import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
 import { AnimatedCheck } from "@/components/ui/decor/AnimatedCheck";
+import { Sparkle } from "@/components/ui/decor/Sparkle";
 import { TextField } from "@/components/ui/TextField";
 import { contactInputSchema } from "@/lib/validation/contact";
 
 type FieldErrors = Partial<Record<string, string>>;
 
-/** Contact form. Same validate-twice pattern as the entry form. */
+const MAX_MESSAGE_LENGTH = 500;
+
+/** Contact form with luxury card wrapper, sparkles, and refined micro-interactions. */
 export function ContactForm() {
   const [values, setValues] = useState({ name: "", email: "", message: "" });
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -53,78 +56,140 @@ export function ContactForm() {
     }
   }
 
-  if (done) {
-    return (
-      <div className="lilac-enter flex items-center gap-4 rounded-card bg-canvas-raised px-4 py-4 font-sans text-sm text-ink ring-1 ring-hairline">
-        <AnimatedCheck size={40} className="shrink-0 text-accent" />
-        <p>Thank you. Your message has been sent and we will respond by email.</p>
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={submit} noValidate className="lilac-stagger flex flex-col gap-6">
-      
-      <TextField
-        label="Your name"
-        required
-        autoComplete="name"
-        value={values.name}
-        onChange={(e) => set("name", e.target.value)}
-        error={errors.name}
+    <div className="relative mx-auto w-full max-w-2xl overflow-hidden rounded-[2.5rem] border border-[#b79ddb]/40 bg-gradient-to-br from-white/95 via-[#f9f5ff]/90 to-[#f3ebff]/70 p-8 shadow-[0_35px_80px_-25px_rgba(110,80,160,0.3)] backdrop-blur-2xl sm:p-12">
+      {/* Ambient background glows */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-20 -top-20 size-72 rounded-full bg-[#b79ddb]/25 blur-3xl motion-safe:animate-pulse"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-24 -left-20 size-72 rounded-full bg-[#7b539f]/15 blur-3xl"
       />
 
-      <TextField
-        label="Email address"
-        required
-        type="email"
-        inputMode="email"
-        autoComplete="email"
-        value={values.email}
-        onChange={(e) => set("email", e.target.value)}
-        error={errors.email}
-      />
+      {/* Decorative Sparkles */}
+      <Sparkle size={20} gold className="absolute right-8 top-8" delay={0.3} />
+      <Sparkle size={14} className="absolute left-10 bottom-12 opacity-80" delay={0.9} />
 
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="contact-message"
-          className="font-sans text-sm font-medium text-ink-muted"
-        >
-          Message <span className="text-accent-strong">*</span>
-        </label>
+      <div className="relative">
+        {done ? (
+          <div className="lilac-enter flex flex-col items-center text-center py-10 sm:py-16">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 rounded-full bg-[#7b539f]/20 blur-md" />
+              <div className="relative flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-[#7b539f] to-[#9467c8] text-white shadow-lg">
+                <AnimatedCheck size={40} className="shrink-0 text-white" />
+              </div>
+            </div>
+            <h3 className="font-serif text-2xl font-bold text-ink sm:text-3xl">Message sent successfully</h3>
+            <p className="mt-3 max-w-sm text-sm text-ink-muted leading-relaxed">
+              Thank you for reaching out. Your note has been received and we will respond to your email shortly.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={submit} noValidate className="lilac-stagger flex flex-col gap-6">
+            <div className="mb-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#b79ddb]/30 bg-[#7b539f]/10 px-3.5 py-1 font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7b539f] backdrop-blur shadow-sm">
+                <span className="text-[#f3d98a]">❀</span> Get in touch
+              </span>
+              <h2 className="mt-3.5 font-serif text-3xl font-bold text-ink sm:text-4xl tracking-tight">
+                Send us a note
+              </h2>
+              <p className="mt-2 text-sm text-ink-muted leading-relaxed">
+                Have questions about the event, tickets, or special accommodations? Drop us a message below.
+              </p>
+            </div>
 
-        <textarea
-          id="contact-message"
-          required
-          rows={5}
-          value={values.message}
-          onChange={(e) => set("message", e.target.value)}
-          aria-invalid={errors.message ? true : undefined}
-          className={
-            "resize-y rounded-field border bg-transparent px-3 py-2 font-sans text-base text-ink " +
-            "focus:outline-none focus:ring-0 " +
-            (errors.message
-              ? "border-red-400 focus:border-red-500"
-              : "border-hairline focus:border-accent")
-          }
-        />
-        {errors.message && (
-          <p className="font-sans text-xs text-red-600">{errors.message}</p>
+            <TextField
+              label="Your name"
+              required
+              autoComplete="name"
+              value={values.name}
+              onChange={(e) => set("name", e.target.value)}
+              error={errors.name}
+            />
+
+            <div className="flex flex-col gap-1">
+              <TextField
+                label="Email address"
+                required
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                value={values.email}
+                onChange={(e) => set("email", e.target.value)}
+                error={errors.email}
+              />
+              {!errors.email && (
+                <p className="pl-1 text-[11px] text-ink-muted/70 font-sans">
+                  We&rsquo;ll only use this to reply to your inquiry.
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="contact-message"
+                  className="font-sans text-sm font-medium text-ink-muted"
+                >
+                  Message <span className="text-[#7b539f]">*</span>
+                </label>
+                <span 
+                  className={`font-sans text-xs transition-colors ${
+                    values.message.length > MAX_MESSAGE_LENGTH ? "text-red-500 font-semibold" : "text-ink-muted/70"
+                  }`}
+                >
+                  {values.message.length}/{MAX_MESSAGE_LENGTH}
+                </span>
+              </div>
+
+              <textarea
+                id="contact-message"
+                required
+                rows={5}
+                maxLength={MAX_MESSAGE_LENGTH}
+                value={values.message}
+                onChange={(e) => set("message", e.target.value)}
+                aria-invalid={errors.message ? true : undefined}
+                aria-describedby={errors.message ? "contact-message-error" : undefined}
+                className={
+                  "resize-y rounded-2xl border bg-white/70 px-4 py-3 font-sans text-base text-ink transition-all duration-200 " +
+                  "focus:outline-none focus:ring-2 focus:ring-[#7b539f]/30 " +
+                  (errors.message
+                    ? "border-red-400 focus:border-red-500 focus:ring-red-400/20 bg-red-50/10"
+                    : "border-hairline hover:border-[#b79ddb]/60 focus:border-[#7b539f]")
+                }
+                placeholder="Write your message here..."
+              />
+
+              {errors.message && (
+                <p id="contact-message-error" className="font-sans text-xs font-medium text-red-600 pl-1">
+                  {errors.message}
+                </p>
+              )}
+            </div>
+
+            {formError && (
+              <div
+                role="alert"
+                className="flex items-center gap-2.5 rounded-2xl bg-red-50 px-4 py-3 font-sans text-sm text-red-700 ring-1 ring-red-200/80 shadow-sm"
+              >
+                <span className="shrink-0 text-red-500 font-bold">⚠</span>
+                <p>{formError}</p>
+              </div>
+            )}
+
+            <Button 
+              type="submit" 
+              loading={busy} 
+              className="self-start rounded-full px-9 py-3.5 bg-gradient-to-r from-[#7b539f] to-[#9467c8] text-white font-medium shadow-[0_12px_30px_-10px_rgba(110,80,160,0.55)] hover:shadow-[0_16px_36px_-10px_rgba(110,80,160,0.75)] transition-all duration-300 hover:-translate-y-0.5"
+            >
+              Send message
+            </Button>
+          </form>
         )}
       </div>
-
-      {formError && (
-        <p
-          role="alert"
-          className="rounded-field bg-red-50 px-3 py-2 font-sans text-sm text-red-700 ring-1 ring-red-200"
-        >
-          {formError}
-        </p>
-      )}
-
-      <Button type="submit" loading={busy} className="self-start">
-        Send message
-      </Button>
-    </form>
+    </div>
   );
 }

@@ -13,6 +13,7 @@ import { getPublicDrawUnlocked } from "@/lib/app-config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAvailability } from "@/lib/tickets";
 import { ArtistFrame } from "@/components/ui/decor/ArtistFrame";
+import { CtaBanner } from "@/components/ui/decor/CtaBanner";
 
 export const metadata: Metadata = {
   title: { absolute: "Lilac — the annual company event" },
@@ -173,6 +174,15 @@ export default async function HomePage() {
             ))}
           </div>
         </section>
+        
+        <Reveal >
+          <CtaBanner
+            drawUnlocked={drawUnlocked}
+            ticketsOpen={availability.salesOpen && availability.left > 0}
+            seatsLeft={availability.left}
+          />
+        </Reveal>
+
       </div>
     </SiteFrame>
   );
