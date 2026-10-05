@@ -34,7 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="bg-wash min-h-dvh text-ink">
         {children}
-        <MayathraFloat />
+        {/* <MayathraFloat /> */}
       </body>
     </html>
   );

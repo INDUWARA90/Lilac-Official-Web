@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const SIZES = [
   ["XS", "46", "66"],
@@ -17,8 +17,8 @@ type Unit = "cm" | "in";
 const fmt = (cm: string, unit: Unit) => (unit === "cm" ? cm : (Number(cm) / 2.54).toFixed(1));
 
 /** Transparent PNG/WebP files in /public/images. Leave as "" to use the drawn SVG shirt. */
-const FRONT_IMG = "/images/tshirt-front.png";
-const BACK_IMG = "/images/tshirt-back.png";
+const FRONT_IMG = "";
+const BACK_IMG = "";
 
 const SHIRT = "M77 35 101 22h38l24 13 48 30-23 39-25-13v132H77V91l-25 13L29 65l48-30Z";
 const SLICES = 14;
@@ -30,6 +30,18 @@ const VIEWS = [
   { label: "Side", angle: 90 },
   { label: "Back", angle: 180 },
 ] as const;
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeToReducedMotion(onChange: () => void) {
+  const mediaQuery = window.matchMedia(REDUCED_MOTION_QUERY);
+  mediaQuery.addEventListener("change", onChange);
+  return () => mediaQuery.removeEventListener("change", onChange);
+}
+
+function getReducedMotionSnapshot() {
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
+}
 
 /* ---------- SVG fallback faces ---------- */
 function FrontSvg() {
@@ -63,18 +75,19 @@ function BackSvg() {
 /* ---------- 3D shirt ---------- */
 function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: boolean }) {
   const [angle, setAngle] = useState(-24);
-  const [auto, setAuto] = useState(true);
+  const prefersReducedMotion = useSyncExternalStore(
+    subscribeToReducedMotion,
+    getReducedMotionSnapshot,
+    () => false,
+  );
+  const [auto, setAuto] = useState<boolean | null>(null);
   const [dragging, setDragging] = useState(false);
   const lastX = useRef(0);
-
-  // Turn off the idle spin for reduced-motion users
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setAuto(false);
-  }, []);
+  const autoEnabled = auto ?? !prefersReducedMotion;
 
   // Gentle idle spin
   useEffect(() => {
-    if (!auto || dragging) return;
+    if (!autoEnabled || dragging) return;
     let raf = 0;
     const tick = () => {
       setAngle((a) => a + 0.45);
@@ -82,7 +95,7 @@ function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: b
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [auto, dragging]);
+  }, [autoEnabled, dragging]);
 
   const goTo = (target: number) => {
     setAuto(false);
@@ -282,16 +295,16 @@ function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: b
         ))}
         <button
           type="button"
-          onClick={() => setAuto((a) => !a)}
-          aria-pressed={auto}
+          onClick={() => setAuto((current) => !(current ?? !prefersReducedMotion))}
+          aria-pressed={autoEnabled}
           className={
             "rounded-full px-4 py-1.5 font-sans text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b79ddb] " +
-            (auto
+            (autoEnabled
               ? "bg-gradient-to-r from-[#8e5fc7] to-[#7c52b3] text-white shadow-sm"
               : "border border-[#b79ddb]/50 bg-white/70 text-ink-muted hover:border-accent hover:text-accent-strong")
           }
         >
-          {auto ? "❚❚ Pause" : "↻ 360° spin"}
+          {autoEnabled ? "❚❚ Pause" : "↻ 360° spin"}
         </button>
       </div>
     </div>

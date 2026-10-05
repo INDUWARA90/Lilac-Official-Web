@@ -86,8 +86,9 @@ export default async function HomePage() {
           </HeroItem>
           <HeroItem>
             <p className="mx-auto mt-4 max-w-md font-sans text-base leading-relaxed text-ink-muted">
-              Watch this year&rsquo;s sponsor films, enter the draw, and you could be
-              one of our winners. It takes about a minute.
+              Join the Event & Enjoy the Experience! 🎉
+              Join us, enjoy the event, and make unforgettable memories with us. Explore, participate, and have fun throughout the experience!
+
             </p>
           </HeroItem>
           <HeroItem className="mt-8 flex flex-wrap justify-center gap-3">
