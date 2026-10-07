@@ -4,7 +4,9 @@ import { requireTshirtAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { TshirtOrderFilters } from "@/components/admin/TshirtOrderFilters";
+import { TshirtNavigationToggle } from "@/components/admin/TshirtNavigationToggle";
 import { TSHIRT_ORDER_STATUS, TSHIRT_STATUS_LABEL, type TshirtOrderStatus } from "@/lib/tshirts-shared";
+import { getTshirtSettings } from "@/lib/tshirts";
 import { formatLkr } from "@/lib/tickets-shared";
 import { formatDate } from "@/lib/format";
 export const metadata: Metadata = { title: "T-shirt orders", robots: { index: false } };
@@ -15,6 +17,7 @@ type SearchParams = { q?: string; status?: string };
 export default async function AdminTshirts({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const session = await requireTshirtAccess();
   const params = await searchParams;
+  const tshirtSettings = await getTshirtSettings();
   const search = (params.q ?? "").trim().slice(0, 80).replace(/[^a-zA-Z0-9@._+\-/ ]/g, "");
   const status = TSHIRT_ORDER_STATUS.includes(params.status as TshirtOrderStatus)
     ? params.status as TshirtOrderStatus
@@ -62,6 +65,12 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
         <Summary label="Paid orders" value={loadError ? "—" : String(sales?.length ?? 0)} />
         <Summary label="Awaiting review" value={loadError ? "—" : String(awaiting ?? 0)} />
       </div>
+
+      {session.role === "admin" && (
+        <div className="mt-5">
+          <TshirtNavigationToggle initialVisible={tshirtSettings.tshirtLinkVisible} />
+        </div>
+      )}
 
       <TshirtOrderFilters
         key={`${search}|${status}`}

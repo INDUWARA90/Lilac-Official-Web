@@ -74,7 +74,7 @@ export function TicketStatusLookup() {
 
   return (
     <div className="flex flex-col gap-8">
-      <form onSubmit={submit} noValidate className="lilac-stagger flex flex-col gap-6">
+      <form onSubmit={submit} noValidate className="lailac-stagger flex flex-col gap-6">
         <TextField
           label="Phone or email"
           required
@@ -100,7 +100,7 @@ export function TicketStatusLookup() {
       </form>
 
       {results && (
-        <div className="lilac-stagger flex flex-col gap-4">
+        <div className="lailac-stagger flex flex-col gap-4">
           {results.map((r, i) => (
             <Reveal key={r.reference} delay={i * 100}>
               <PurchaseCard purchase={r} />
@@ -114,7 +114,7 @@ export function TicketStatusLookup() {
 
 function PurchaseCard({ purchase }: { purchase: Purchase }) {
   return (
-    <div className="lilac-magic-card lilac-hover-lift p-5">
+    <div className="lailac-magic-card lailac-hover-lift p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg text-ink">{purchase.reference}</h2>
         <StatusPill status={purchase.status} />
@@ -178,7 +178,7 @@ function StatusPill({ status }: { status: TicketPurchaseStatus }) {
         ? "bg-red-50 text-red-700"
         : "bg-canvas-raised text-ink-muted";
   return (
-    <span className={`lilac-pop rounded-pill px-3 py-1 font-sans text-xs font-semibold ${tone}`}>
+    <span className={`lailac-pop rounded-pill px-3 py-1 font-sans text-xs font-semibold ${tone}`}>
       {PURCHASE_STATUS_LABEL[status]}
     </span>
   );

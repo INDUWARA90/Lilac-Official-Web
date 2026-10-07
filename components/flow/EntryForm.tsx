@@ -18,7 +18,7 @@ const EMPTY: EntryValues = {
   district: "",
 };
 
-const DRAFT_KEY = "lilac-entry-draft";
+const DRAFT_KEY = "lailac-entry-draft";
 const DRAFT_MAX_AGE_MS = 30 * 60 * 1000; // ignore a draft older than this
 
 /**

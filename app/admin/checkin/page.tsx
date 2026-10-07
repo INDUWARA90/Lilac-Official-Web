@@ -151,7 +151,7 @@ export default async function AdminCheckinPage({
               <th className="py-2 font-medium">Action</th>
             </tr>
           </thead>
-          <tbody className="lilac-rows">
+          <tbody className="lailac-rows">
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-6 text-center text-ink-muted">

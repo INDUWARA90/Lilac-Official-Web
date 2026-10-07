@@ -39,5 +39,5 @@ export async function GET() {
   ]);
 
   const stamp = new Date().toISOString().slice(0, 10);
-  return csvResponse(`lilac-ticket-purchases-${stamp}.csv`, toCsv(headers, rows));
+  return csvResponse(`lailac-ticket-purchases-${stamp}.csv`, toCsv(headers, rows));
 }

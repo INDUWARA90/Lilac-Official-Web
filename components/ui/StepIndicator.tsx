@@ -23,7 +23,7 @@ export function StepIndicator({ current }: { current: FlowStep }) {
                 className={
                   "flex size-5 items-center justify-center rounded-pill text-[10px] font-semibold " +
                   (active
-                    ? "lilac-glow-pulse bg-accent text-white"
+                    ? "lailac-glow-pulse bg-accent text-white"
                     : done
                       ? "bg-accent text-white"
                       : "text-ink-muted ring-1 ring-hairline")

@@ -15,7 +15,7 @@ export default function TermsPage() {
           </span>
           <h1 className="mt-4 text-3xl text-ink">Terms</h1>
           <p className="mt-3 font-sans text-base leading-relaxed text-ink-muted">
-            The rules for entering the Lilac draw. This is a draft outline and
+            The rules for entering the Lailac draw. This is a draft outline and
             is not the final terms.
           </p>
         </Reveal>

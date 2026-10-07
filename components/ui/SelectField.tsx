@@ -58,7 +58,7 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
           ))}
         </select>
         {error ? (
-          <p key={error} id={`${id}-error`} className="lilac-error-in font-sans text-xs text-red-600">
+          <p key={error} id={`${id}-error`} className="lailac-error-in font-sans text-xs text-red-600">
             {error}
           </p>
         ) : hint ? (

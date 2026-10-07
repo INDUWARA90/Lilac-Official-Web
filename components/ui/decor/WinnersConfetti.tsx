@@ -12,8 +12,8 @@ export function WinnersConfetti() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     try {
-      if (sessionStorage.getItem("lilac_winners_confetti")) return;
-      sessionStorage.setItem("lilac_winners_confetti", "1");
+      if (sessionStorage.getItem("lailac_winners_confetti")) return;
+      sessionStorage.setItem("lailac_winners_confetti", "1");
     } catch {
       // sessionStorage unavailable — fine, just fire once per mount.
     }

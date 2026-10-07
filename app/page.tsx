@@ -12,11 +12,12 @@ import { Marquee } from "@/components/ui/decor/Marquee";
 import { getPublicDrawUnlocked } from "@/lib/app-config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAvailability } from "@/lib/tickets";
+import { getTshirtLinkVisible } from "@/lib/tshirts";
 import { ArtistFrame } from "@/components/ui/decor/ArtistFrame";
 import { CtaBanner } from "@/components/ui/decor/CtaBanner";
 
 export const metadata: Metadata = {
-  title: { absolute: "Lilac — the annual company event" },
+  title: { absolute: "Lailac — the annual company event" },
 };
 
 // Same ISR pattern as /results and /tickets — a cheap, always-fresh-enough
@@ -59,16 +60,17 @@ const FEATURED_ARTISTS = [
 
 export default async function HomePage() {
   const db = createAdminClient();
-  const [{ count: verifiedCount }, availability, drawUnlocked] = await Promise.all([
+  const [{ count: verifiedCount }, availability, drawUnlocked, tshirtLinkVisible] = await Promise.all([
     db.from("entries").select("*", { count: "exact", head: true }).eq("verified", true),
     getAvailability(),
     getPublicDrawUnlocked(),
+    getTshirtLinkVisible(),
   ]);
 
   return (
     <SiteFrame>
       <div className="py-14">
-        <HeroStagger className="lilac-float text-center">
+        <HeroStagger className="lailac-float text-center">
           <HeroItem>
             <p className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">
               The Chapter of event{' '}
@@ -80,7 +82,7 @@ export default async function HomePage() {
           <HeroItem className="relative mt-4 inline-block">
             <Sparkle size={22} gold className="absolute -top-3 -left-7" delay={0.2} />
             <Sparkle size={16} className="absolute -top-1 -right-6" delay={1.4} />
-            <span lang="si" className="font-sinhala lilac-gradient-text text-5xl sm:text-6xl font-bold">
+            <span lang="si" className="font-sinhala lailac-gradient-text text-5xl sm:text-6xl font-bold">
               ලයිලැක්
             </span>
           </HeroItem>
@@ -106,11 +108,13 @@ export default async function HomePage() {
                 </Link>
               </Magnetic>
             )}
-            <Magnetic>
-              <Link href="/tshirts">
-                <Button variant="magic">T-shirt Order</Button>
-              </Link>
-            </Magnetic>
+            {tshirtLinkVisible && (
+              <Magnetic>
+                <Link href="/tshirts">
+                  <Button variant="magic">T-shirt Order</Button>
+                </Link>
+              </Magnetic>
+            )}
           </HeroItem>
 
           {verifiedCount !== null && verifiedCount > 0 && (
@@ -131,7 +135,7 @@ export default async function HomePage() {
         <FlowerDivider className="my-12" />
 
         <section className="relative py-2">
-          {/* ambient lilac backdrop */}
+          {/* ambient lailac backdrop */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[75%] w-full max-w-5xl -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(190,160,235,0.28),transparent_70%)] blur-3xl"
@@ -145,7 +149,7 @@ export default async function HomePage() {
               <p className="font-sans text-xs font-semibold uppercase tracking-[0.25em] text-ink-muted">
                 The lineup
               </p>
-              <h2 className="lilac-gradient-text mt-3 font-serif text-3xl font-bold sm:text-4xl">
+              <h2 className="lailac-gradient-text mt-3 font-serif text-3xl font-bold sm:text-4xl">
                 Artists coming to the event
               </h2>
               <p className="mx-auto mt-3 max-w-md font-sans text-sm leading-relaxed text-ink-muted">

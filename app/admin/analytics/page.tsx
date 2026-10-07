@@ -41,7 +41,7 @@ export default async function AnalyticsPage() {
         {siteStats.map((s, i) => (
           <div
             key={s.label}
-            className="lilac-enter rounded-card border border-hairline p-4"
+            className="lailac-enter rounded-card border border-hairline p-4"
             style={{ animationDelay: `${i * 70}ms` }}
           >
             <div className="font-sans text-xl font-semibold text-ink">
@@ -69,7 +69,7 @@ export default async function AnalyticsPage() {
                 <th className="py-2 font-medium">Completion</th>
               </tr>
             </thead>
-            <tbody className="lilac-rows">
+            <tbody className="lailac-rows">
               {data.perAd.map((a) => (
                 <tr key={a.id} className="border-b border-hairline">
                   <td className="py-2 pr-4 text-ink">{a.title}</td>

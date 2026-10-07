@@ -40,7 +40,7 @@ export function MayathraLogo({ className = "" }: { className?: string }) {
           priority
           className="h-full w-full scale-[1.85] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.92]"
         />
-        {/* gentle lilac wash */}
+        {/* gentle lailac wash */}
         <span className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-[#7c52b3]/10 via-transparent to-white/20" />
         {/* light sweep on hover */}
         <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/45 to-transparent transition-transform duration-1000 ease-out group-hover:translate-x-full" />

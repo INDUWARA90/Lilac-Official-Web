@@ -52,7 +52,7 @@ export function TicketPurchaseDetails({
 
   return (
     <>
-      <div className="lilac-magic-card p-5 sm:p-7 space-y-5">
+      <div className="lailac-magic-card p-5 sm:p-7 space-y-5">
         <h3 className="font-serif text-base text-ink font-medium pb-1 border-b border-hairline">Attendee Details</h3>
 
         <SelectField
@@ -159,7 +159,7 @@ export function TicketPurchaseDetails({
         </div>
       </div>
 
-      <div className="lilac-magic-card relative overflow-hidden flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 sm:p-6 bg-gradient-to-r from-canvas-raised via-canvas-raised to-accent/10 border border-accent/30 shadow-sm">
+      <div className="lailac-magic-card relative overflow-hidden flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 sm:p-6 bg-gradient-to-r from-canvas-raised via-canvas-raised to-accent/10 border border-accent/30 shadow-sm">
         <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-accent/10 rounded-full blur-2xl pointer-events-none" />
 
         <div>

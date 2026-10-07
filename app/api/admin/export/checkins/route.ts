@@ -49,5 +49,5 @@ export async function GET() {
   });
 
   const stamp = new Date().toISOString().slice(0, 10);
-  return csvResponse(`lilac-checkins-${stamp}.csv`, toCsv(headers, rows));
+  return csvResponse(`lailac-checkins-${stamp}.csv`, toCsv(headers, rows));
 }

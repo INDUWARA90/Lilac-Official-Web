@@ -24,8 +24,8 @@ const variants: Record<Variant, string> = {
   ghost: "text-accent-strong hover:bg-accent-wash active:scale-[0.97]",
   // The primary/CTA look for the fairytale theme's key actions (Continue,
   // Submit entry, Buy tickets) — gradient fill + a light sweep + press-scale,
-  // see .lilac-btn-magic in app/globals.css.
-  magic: "lilac-btn-magic border-0 text-white disabled:hover:shadow-none",
+  // see .lailac-btn-magic in app/globals.css.
+  magic: "lailac-btn-magic border-0 text-white disabled:hover:shadow-none",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(

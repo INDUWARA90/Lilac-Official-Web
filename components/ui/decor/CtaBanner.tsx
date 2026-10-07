@@ -60,7 +60,7 @@ export function CtaBanner({
 
         {/* Heading */}
         <h2 className="mt-5 font-serif text-3xl font-bold leading-tight drop-shadow-sm sm:text-5xl">
-          {isSoldOut ? "Lilac night is fully booked" : "Be part of the Lilac night"}
+          {isSoldOut ? "Lailac night is fully booked" : "Be part of the Lailac night"}
         </h2>
 
         {/* Subtitle description */}

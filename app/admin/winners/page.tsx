@@ -51,7 +51,7 @@ export default async function WinnersPage() {
                 <th className="py-2 font-medium"></th>
               </tr>
             </thead>
-            <tbody className="lilac-rows">
+            <tbody className="lailac-rows">
               {(winners ?? []).map((w) => {
                 const e = byId.get(w.entry_id);
                 return (

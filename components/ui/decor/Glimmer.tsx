@@ -27,7 +27,7 @@ export function Glimmer() {
       {DOTS.map((d, i) => (
         <span
           key={i}
-          className={"lilac-glimmer" + (d.mobile ? "" : " hidden sm:block")}
+          className={"lailac-glimmer" + (d.mobile ? "" : " hidden sm:block")}
           style={
             {
               top: d.top,

@@ -21,11 +21,11 @@ import type { TicketPurchaseRow, TicketRow, TicketSettingsRow } from "@/lib/supa
 const REF_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"; // no I L O U
 const TICKET_LINKS_TAG = "ticket-links-visible";
 
-/** Human-readable purchase reference, e.g. LILAC-7K2M9. */
+/** Human-readable purchase reference, e.g. LAILAC-7K2M9. */
 function newReference(): string {
   let s = "";
   for (let i = 0; i < 6; i++) s += REF_ALPHABET[randomInt(REF_ALPHABET.length)];
-  return `LILAC-${s}`;
+  return `LAILAC-${s}`;
 }
 
 /** Opaque per-ticket token that goes in the QR code (128 bits). */
@@ -299,7 +299,7 @@ export async function approvePurchase(
     try {
       const attachments = await Promise.all(
         created.map(async (t, i) => ({
-          filename: `lilac-ticket-${i + 1}.png`,
+          filename: `lailac-ticket-${i + 1}.png`,
           contentType: "image/png",
           contentId: `qr-ticket-${i}`, // matches the `cid` below — shows inline, not just attached
           base64Content: (

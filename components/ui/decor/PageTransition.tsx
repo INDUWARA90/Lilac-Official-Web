@@ -11,7 +11,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div key={pathname} className="lilac-enter">
+    <div key={pathname} className="lailac-enter">
       {children}
     </div>
   );

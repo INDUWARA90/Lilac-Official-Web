@@ -15,7 +15,7 @@ export function Faq({ items }: { items: readonly FaqItem[] }) {
   const base = useId();
 
   return (
-    <div className="lilac-magic-card divide-y divide-hairline overflow-hidden">
+    <div className="lailac-magic-card divide-y divide-hairline overflow-hidden">
       {items.map((item, i) => {
         const isOpen = open === i;
         const panelId = `${base}-panel-${i}`;

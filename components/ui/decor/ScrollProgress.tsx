@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 /**
- * A thin lilac bar pinned to the top of the viewport that fills as the page
+ * A thin lailac bar pinned to the top of the viewport that fills as the page
  * is scrolled — updated at most once per animation frame without a motion
  * runtime or React re-render on each scroll event.
  */

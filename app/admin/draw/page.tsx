@@ -61,7 +61,7 @@ export default async function DrawPage() {
               <th className="py-2 font-medium">Winners</th>
             </tr>
           </thead>
-          <tbody className="lilac-rows">
+          <tbody className="lailac-rows">
             {(draws ?? []).map((d) => (
               <tr key={d.id} className="border-b border-hairline">
                 <td className="py-2">{formatDateTime(d.drawn_at)}</td>

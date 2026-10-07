@@ -38,7 +38,7 @@ export function AdminDashboardView({
         {funnel.map((f, i) => (
           <div
             key={f.label}
-            className="lilac-enter rounded-card border border-hairline p-4"
+            className="lailac-enter rounded-card border border-hairline p-4"
             style={{ animationDelay: `${i * 70}ms` }}
           >
             <div className="font-sans text-2xl font-semibold text-ink">
@@ -53,7 +53,7 @@ export function AdminDashboardView({
         {summaryStats.map((stat, i) => (
           <div
             key={stat.label}
-            className="lilac-enter rounded-card border border-hairline p-4"
+            className="lailac-enter rounded-card border border-hairline p-4"
             style={{ animationDelay: `${i * 70}ms` }}
           >
             <div className="font-sans text-xl font-semibold text-ink">
@@ -130,7 +130,7 @@ function Breakdown({ title, data }: BreakdownData) {
             </div>
             <div className="mt-1 h-1.5 overflow-hidden rounded-pill bg-canvas-raised">
               <div
-                className="lilac-bar-grow h-full rounded-pill bg-accent/50"
+                className="lailac-bar-grow h-full rounded-pill bg-accent/50"
                 style={{ width: `${(count / max) * 100}%`, "--bar-delay": `${index * 60}ms` } as React.CSSProperties}
               />
             </div>

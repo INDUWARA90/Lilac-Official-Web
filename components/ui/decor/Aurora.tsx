@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 /**
  * Large, slow-drifting blurred color blobs behind the page — the "aurora
  * meadow" wow-layer, sitting behind FloatingPetals and .bg-wash. Fixed +
- * transform-only animation (see .lilac-aurora-blob in app/globals.css), so
+ * transform-only animation (see .lailac-aurora-blob in app/globals.css), so
  * it's cheap even though it's visually rich. A curated layout, not
  * Math.random(), for the same deterministic-SSR reason as FloatingPetals.
  */
@@ -19,7 +19,7 @@ export function Aurora() {
       {BLOBS.map((b, i) => (
         <span
           key={i}
-          className="lilac-aurora-blob"
+          className="lailac-aurora-blob"
           style={
             {
               top: b.top,

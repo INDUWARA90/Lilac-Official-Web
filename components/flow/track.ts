@@ -9,7 +9,7 @@ export function track(
   adId?: string,
 ): void {
   try {
-    const key = `lilac_tracked_${type}${adId ? `_${adId}` : ""}`;
+    const key = `lailac_tracked_${type}${adId ? `_${adId}` : ""}`;
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, "1");
   } catch {

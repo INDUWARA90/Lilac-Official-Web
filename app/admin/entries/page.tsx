@@ -90,7 +90,7 @@ export default async function EntriesPage({
               <th className="py-2 font-medium">Entered</th>
             </tr>
           </thead>
-          <tbody className="lilac-rows">
+          <tbody className="lailac-rows">
             {(entries ?? []).length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-6 text-center text-ink-muted">

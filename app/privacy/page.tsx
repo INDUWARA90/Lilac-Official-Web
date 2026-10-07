@@ -15,7 +15,7 @@ export default function PrivacyPage() {
           </span>
           <h1 className="mt-4 text-3xl text-ink">Privacy policy</h1>
           <p className="mt-3 font-sans text-base leading-relaxed text-ink-muted">
-            How we handle the information you provide when entering the Lilac
+            How we handle the information you provide when entering the Lailac
             draw. The wording below is a draft outline, not final legal copy.
           </p>
         </Reveal>

@@ -62,7 +62,7 @@ export function TicketPassCard({ ticket, purchaseReference, purchaseStatus, qr }
       ctx.fillStyle = "rgba(255,255,255,0.85)";
       ctx.font = "bold 36px Arial, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("LILAC EVENT PASS", canvas.width / 2, 120);
+      ctx.fillText("LAILAC EVENT PASS", canvas.width / 2, 120);
 
       ctx.fillStyle = "#ffffff";
       ctx.font = "bold 64px Georgia, serif";
@@ -141,11 +141,11 @@ export function TicketPassCard({ ticket, purchaseReference, purchaseStatus, qr }
   }
 
   return (
-    <div className="lilac-magic-card lilac-float relative mx-auto max-w-md overflow-hidden border border-accent/25 px-6 py-10 shadow-md sm:px-8">
+    <div className="lailac-magic-card lailac-float relative mx-auto max-w-md overflow-hidden border border-accent/25 px-6 py-10 shadow-md sm:px-8">
       <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-accent/15 blur-3xl" />
       <Sparkle size={18} gold className="absolute left-6 top-5" delay={0.4} />
       <Sparkle size={14} className="absolute right-6 top-6 opacity-80" delay={1.3} />
-      <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3.5 py-1 font-sans text-xs font-semibold uppercase tracking-wider text-accent-strong"><Sparkle size={12} gold />Lilac Event Pass</div>
+      <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3.5 py-1 font-sans text-xs font-semibold uppercase tracking-wider text-accent-strong"><Sparkle size={12} gold />Lailac Event Pass</div>
       <h1 className="font-serif text-3xl font-semibold tracking-tight text-ink">{ticket.seat_label}</h1>
       <div className="mt-1.5 flex flex-wrap items-center justify-center gap-2 font-sans text-sm text-ink-muted"><span className="font-medium text-ink">{ticket.holder_name}</span><span>·</span><span className="font-mono uppercase tracking-wider">{purchaseReference}</span></div>
       {valid ? <div className="mt-6 flex flex-col items-center">{qr && <div className="rounded-card bg-white p-3 shadow-xs ring-1 ring-hairline">

@@ -34,7 +34,7 @@ export function EntryExperience({
       <StepIndicator current={STEP_FOR_PHASE[phase]} />
 
       {phase === "watch" && (
-        <div key="watch" className="lilac-enter">
+        <div key="watch" className="lailac-enter">
           <AdsStep
             ads={ads}
             onDone={() => {
@@ -46,7 +46,7 @@ export function EntryExperience({
       )}
 
       {phase === "enter" && (
-        <div key="enter" className="lilac-enter">
+        <div key="enter" className="lailac-enter">
           <EntryForm
             adSession={adSession}
             onSubmitted={(r) => {
@@ -58,7 +58,7 @@ export function EntryExperience({
       )}
 
       {phase === "done" && (
-        <div key="done" className="lilac-enter">
+        <div key="done" className="lailac-enter">
           <SuccessCelebration firstName={firstName} />
         </div>
       )}

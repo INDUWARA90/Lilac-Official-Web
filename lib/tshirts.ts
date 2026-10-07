@@ -1,14 +1,57 @@
 import "server-only";
 import { randomInt } from "node:crypto";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { TSHIRT_RECEIPT_BUCKET } from "@/lib/tshirts-shared";
 
 const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+const TSHIRT_LINKS_TAG = "tshirt-link-visible";
 function reference() { let s = ""; for (let i = 0; i < 6; i++) s += ALPHABET[randomInt(ALPHABET.length)]; return `TS-${s}`; }
 
 export async function getTshirtSettings() {
-  const { data } = await createAdminClient().from("tshirt_settings").select("price_lkr, sales_open").eq("id", "default").maybeSingle();
-  return { priceLkr: data?.price_lkr ?? 2500, salesOpen: data?.sales_open ?? true };
+  const { data, error } = await createAdminClient().from("tshirt_settings").select("price_lkr, sales_open, tshirt_link_visible").eq("id", "default").maybeSingle();
+  if (error) console.error(`T-shirt settings lookup failed: ${error.code ?? "unknown"}`);
+  return {
+    priceLkr: data?.price_lkr ?? 2500,
+    salesOpen: data?.sales_open ?? true,
+    tshirtLinkVisible: data?.tshirt_link_visible ?? true,
+  };
+}
+
+async function fetchTshirtLinkVisible(): Promise<boolean> {
+  const { data, error } = await createAdminClient()
+    .from("tshirt_settings")
+    .select("tshirt_link_visible")
+    .eq("id", "default")
+    .maybeSingle();
+  if (error) {
+    console.error(`T-shirt link visibility lookup failed: ${error.code ?? "unknown"}`);
+    return true;
+  }
+  return data?.tshirt_link_visible ?? true;
+}
+
+export const getTshirtLinkVisible = unstable_cache(fetchTshirtLinkVisible, [TSHIRT_LINKS_TAG], {
+  tags: [TSHIRT_LINKS_TAG],
+  revalidate: 60,
+});
+
+export async function updateTshirtLinkVisible(visible: boolean, by: string): Promise<boolean> {
+  const { error } = await createAdminClient()
+    .from("tshirt_settings")
+    .update({
+      tshirt_link_visible: visible,
+      updated_at: new Date().toISOString(),
+      updated_by: by,
+    })
+    .eq("id", "default");
+  if (error) {
+    console.error(`T-shirt link visibility update failed: ${error.code ?? "unknown"}`);
+    return false;
+  }
+  revalidatePath("/");
+  revalidateTag(TSHIRT_LINKS_TAG, { expire: 0 });
+  return true;
 }
 
 export async function createTshirtOrder(input: { name: string; registrationNumber: string; faculty: string; email: string; phone: string; items: Array<{ size: string; color: string }>; receiptPath: string }) {

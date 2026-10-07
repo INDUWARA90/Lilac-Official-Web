@@ -11,8 +11,8 @@ export default function EnterLoading() {
   return (
     <SiteFrame>
       <div className="py-12">
-        <div className="lilac-skeleton aspect-video w-full rounded-card bg-canvas-raised" />
-        <div className="mt-6 lilac-skeleton h-4 w-2/3 rounded-card bg-canvas-raised" />
+        <div className="lailac-skeleton aspect-video w-full rounded-card bg-canvas-raised" />
+        <div className="mt-6 lailac-skeleton h-4 w-2/3 rounded-card bg-canvas-raised" />
       </div>
     </SiteFrame>
   );

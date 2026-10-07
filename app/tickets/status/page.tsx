@@ -32,7 +32,7 @@ export default function TicketStatusPage() {
           </div>
 
           {/* Form Card Container */}
-          <div className="lilac-magic-card p-6 sm:p-8 relative overflow-hidden border border-accent/20 shadow-sm">
+          <div className="lailac-magic-card p-6 sm:p-8 relative overflow-hidden border border-accent/20 shadow-sm">
             <Sparkle size={16} gold className="absolute top-4 right-4 opacity-50" />
             <TicketStatusLookup />
           </div>

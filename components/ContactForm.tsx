@@ -74,7 +74,7 @@ export function ContactForm() {
 
       <div className="relative">
         {done ? (
-          <div className="lilac-enter flex flex-col items-center text-center py-10 sm:py-16">
+          <div className="lailac-enter flex flex-col items-center text-center py-10 sm:py-16">
             <div className="relative mb-6">
               <div className="absolute inset-0 rounded-full bg-[#7b539f]/20 blur-md" />
               <div className="relative flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-[#7b539f] to-[#9467c8] text-white shadow-lg">
@@ -87,7 +87,7 @@ export function ContactForm() {
             </p>
           </div>
         ) : (
-          <form onSubmit={submit} noValidate className="lilac-stagger flex flex-col gap-6">
+          <form onSubmit={submit} noValidate className="lailac-stagger flex flex-col gap-6">
             <div className="mb-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-[#b79ddb]/30 bg-[#7b539f]/10 px-3.5 py-1 font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7b539f] backdrop-blur shadow-sm">
                 <span className="text-[#f3d98a]">❀</span> Get in touch

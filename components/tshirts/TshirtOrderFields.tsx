@@ -60,8 +60,8 @@ export function TshirtOrderFields({
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 }) {
   return (
-    <form onSubmit={onSubmit} noValidate className="lilac-stagger flex min-w-0 flex-col gap-6 sm:gap-8">
-      <div className="lilac-magic-card relative overflow-hidden border border-accent/25 bg-gradient-to-r from-canvas-raised via-canvas-raised to-accent/5 p-4 sm:p-5">
+    <form onSubmit={onSubmit} noValidate className="lailac-stagger flex min-w-0 flex-col gap-6 sm:gap-8">
+      <div className="lailac-magic-card relative overflow-hidden border border-accent/25 bg-gradient-to-r from-canvas-raised via-canvas-raised to-accent/5 p-4 sm:p-5">
         <Sparkle size={16} gold className="absolute right-4 top-4 sm:right-5" />
         <h3 className="mb-1.5 flex items-start gap-2 pr-5 font-serif text-base font-semibold text-ink">
           <span>🛍️</span> T-Shirt Pre-Order Instructions
@@ -87,7 +87,7 @@ export function TshirtOrderFields({
         </div>
       </div>
 
-      <div className="lilac-magic-card space-y-5 border border-accent/20 p-4 sm:p-6 md:p-8">
+      <div className="lailac-magic-card space-y-5 border border-accent/20 p-4 sm:p-6 md:p-8">
         <div className="flex items-center justify-between border-b border-hairline pb-3">
           <h4 className="font-serif text-sm font-semibold text-ink uppercase tracking-wider flex items-center gap-2">
             <span className="flex size-6 items-center justify-center rounded-full bg-accent/10 text-accent-strong text-xs font-mono">1</span>
@@ -148,7 +148,7 @@ export function TshirtOrderFields({
         </div>
       </div>
 
-      <div className="lilac-magic-card space-y-5 border border-accent/20 p-4 sm:p-6 md:p-8">
+      <div className="lailac-magic-card space-y-5 border border-accent/20 p-4 sm:p-6 md:p-8">
         <div className="flex items-center justify-between border-b border-hairline pb-3">
           <h4 className="font-serif text-sm font-semibold text-ink uppercase tracking-wider flex items-center gap-2">
             <span className="flex size-6 items-center justify-center rounded-full bg-accent/10 text-accent-strong text-xs font-mono">2</span>
@@ -221,7 +221,7 @@ export function TshirtOrderFields({
         </div>
       </div>
 
-      <div className="lilac-magic-card flex flex-col items-stretch justify-between gap-4 border border-accent/30 bg-gradient-to-r from-accent/5 via-canvas-raised to-canvas-raised p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-6">
+      <div className="lailac-magic-card flex flex-col items-stretch justify-between gap-4 border border-accent/30 bg-gradient-to-r from-accent/5 via-canvas-raised to-canvas-raised p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-6">
         <div className="text-center sm:text-left">
           <span className="text-xs uppercase tracking-wider text-ink-muted font-semibold block">Total Payment Due</span>
           <div className="mt-0.5 flex flex-wrap items-baseline justify-center gap-x-2 sm:justify-start">

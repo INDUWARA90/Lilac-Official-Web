@@ -17,7 +17,7 @@ export function TicketPurchaseSuccess({
   showStatusLink?: boolean;
 }) {
   return (
-    <div className="lilac-magic-card relative px-6 sm:px-8 py-10 text-center sm:text-left overflow-hidden">
+    <div className="lailac-magic-card relative px-6 sm:px-8 py-10 text-center sm:text-left overflow-hidden">
       <div className="absolute -top-12 -right-12 w-40 h-40 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
 
       <Sparkle size={24} gold className="absolute -top-2 right-6" />

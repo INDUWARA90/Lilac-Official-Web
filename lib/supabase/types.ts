@@ -160,6 +160,7 @@ export type TshirtSettingsRow = {
   id: string;
   price_lkr: number;
   sales_open: boolean;
+  tshirt_link_visible: boolean;
   updated_at: string;
   updated_by: string | null;
 };

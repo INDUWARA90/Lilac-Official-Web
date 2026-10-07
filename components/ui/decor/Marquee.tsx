@@ -2,7 +2,7 @@ import { Sparkle } from "@/components/ui/decor/Sparkle";
 
 /**
  * A slow, endlessly scrolling strip of short phrases separated by sparkles.
- * Pure CSS (`.lilac-marquee-track`) — the list is rendered twice so the loop
+ * Pure CSS (`.lailac-marquee-track`) — the list is rendered twice so the loop
  * is seamless; the duplicate is hidden from assistive tech. Edges fade out.
  */
 export function Marquee({ items }: { items: readonly string[] }) {
@@ -21,8 +21,8 @@ export function Marquee({ items }: { items: readonly string[] }) {
   );
 
   return (
-    <div className="lilac-marquee overflow-hidden" role="presentation">
-      <div className="lilac-marquee-track flex w-max">
+    <div className="lailac-marquee overflow-hidden" role="presentation">
+      <div className="lailac-marquee-track flex w-max">
         {row(false)}
         {row(true)}
       </div>

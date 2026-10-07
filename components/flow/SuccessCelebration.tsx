@@ -44,12 +44,12 @@ export function SuccessCelebration({ firstName }: { firstName: string }) {
     <section className="flex flex-col items-center gap-6 pt-8 text-center">
       <AnimatedCheck size={64} />
       <div className="relative space-y-3">
-        <span aria-hidden className="lilac-ring" />
-        <span aria-hidden className="lilac-ring" style={{ "--ring-delay": "0.6s" } as CSSProperties} />
-        <span aria-hidden className="lilac-ring" style={{ "--ring-delay": "1.2s" } as CSSProperties} />
+        <span aria-hidden className="lailac-ring" />
+        <span aria-hidden className="lailac-ring" style={{ "--ring-delay": "0.6s" } as CSSProperties} />
+        <span aria-hidden className="lailac-ring" style={{ "--ring-delay": "1.2s" } as CSSProperties} />
         <Sparkle size={20} className="absolute -top-3 left-[calc(50%-6rem)]" gold delay={0.3} />
         <Sparkle size={14} className="absolute -top-1 right-[calc(50%-6.5rem)]" delay={1.1} />
-        <h1 className="lilac-gradient-text text-4xl">You&rsquo;re in the draw</h1>
+        <h1 className="lailac-gradient-text text-4xl">You&rsquo;re in the draw</h1>
         <p className="mx-auto max-w-sm font-sans text-sm leading-relaxed text-ink-muted">
           Thank you, {firstName}. Your entry is confirmed. Winners are selected
           after entries close and are notified by email.

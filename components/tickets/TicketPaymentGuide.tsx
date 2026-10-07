@@ -13,7 +13,7 @@ export function TicketPaymentGuide({
   bank: TicketBank;
 }) {
   return (
-    <div className="lilac-magic-card p-5 sm:p-7 space-y-4 relative overflow-hidden">
+    <div className="lailac-magic-card p-5 sm:p-7 space-y-4 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-bl-full pointer-events-none" />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">

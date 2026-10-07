@@ -27,5 +27,5 @@ export async function GET() {
     { headers: ["Site-wide metric", "Value"], rows: siteRows },
     { headers: ["Ad", "Kind", "Times shown", "Times watched", "Completion"], rows: adRows },
   ]);
-  return csvResponse(`lilac-analytics-${stamp}.csv`, csv);
+  return csvResponse(`lailac-analytics-${stamp}.csv`, csv);
 }

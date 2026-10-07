@@ -168,7 +168,7 @@ export function TicketPurchaseForm({
   }
 
   return (
-    <form onSubmit={submit} noValidate className="lilac-stagger flex flex-col gap-6">
+    <form onSubmit={submit} noValidate className="lailac-stagger flex flex-col gap-6">
       <TicketPaymentGuide
         seatingPriceLkr={seatingPriceLkr}
         standingPriceLkr={standingPriceLkr}

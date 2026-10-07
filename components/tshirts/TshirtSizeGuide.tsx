@@ -31,7 +31,7 @@ function FrontSvg() {
       <path d="M101 22c0 23 38 23 38 0" fill="#f8f5fa" stroke="#684786" strokeWidth="3" />
       <path d="M77 35 101 55M163 35 139 55" fill="none" stroke="#8d69b5" strokeWidth="2" />
       <text x="120" y="132" textAnchor="middle" fill="#fff" fontFamily="serif" fontSize="24" fontWeight="bold">
-        LILAC
+        LAILAC
       </text>
       <text x="120" y="153" textAnchor="middle" fill="#fff" fontFamily="sans-serif" fontSize="9" letterSpacing="2">
         OFFICIAL 2026
@@ -123,7 +123,7 @@ function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: b
     <div className="w-full">
       <div
         role="img"
-        aria-label="Interactive 3D preview of the Lilac T-shirt. Drag or use the arrow keys to rotate."
+        aria-label="Interactive 3D preview of the Lailac T-shirt. Drag or use the arrow keys to rotate."
         tabIndex={0}
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId);

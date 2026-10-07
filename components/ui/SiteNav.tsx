@@ -24,9 +24,11 @@ const RESULTS_LINK = { href: "/results", label: "Results" };
 export function SiteNav({
   showResults = false,
   showTickets = true,
+  showTshirts = true,
 }: {
   showResults?: boolean;
   showTickets?: boolean;
+  showTshirts?: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -35,7 +37,10 @@ export function SiteNav({
     : LINKS.filter(
         (link) => link.href !== "/tickets" && link.href !== "/tickets/status",
       );
-  const links = showResults ? [...visibleLinks, RESULTS_LINK] : visibleLinks;
+  const merchLinks = showTshirts
+    ? visibleLinks
+    : visibleLinks.filter((link) => link.href !== "/tshirts");
+  const links = showResults ? [...merchLinks, RESULTS_LINK] : merchLinks;
 
   useEffect(() => {
     if (!open) return;
@@ -61,7 +66,7 @@ export function SiteNav({
           >
             <MenuIcon />
           </button>
-          <Link href="/" aria-label="Lilac — home" className="">
+          <Link href="/" aria-label="Lailac — home" className="">
             <Logo />
           </Link>
         </div>

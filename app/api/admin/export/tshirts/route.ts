@@ -28,5 +28,5 @@ export async function GET() {
     o.order_items?.length ? o.order_items.map((item) => `${item.color} / ${item.size}`).join("; ") : `Size ${o.tshirt_size}; color not recorded`,
     o.quantity, o.amount_lkr, o.status, o.review_note, o.collected_by, o.collected_at, o.created_at,
   ]);
-  return csvResponse(`lilac-tshirt-orders-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(headers, rows));
+  return csvResponse(`lailac-tshirt-orders-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(headers, rows));
 }

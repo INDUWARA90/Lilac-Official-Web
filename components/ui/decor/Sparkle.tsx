@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 
 /**
- * A small twinkling accent (see .lilac-sparkle in app/globals.css). Used
+ * A small twinkling accent (see .lailac-sparkle in app/globals.css). Used
  * sparingly near headings/CTAs/winner names — not a repeating background
  * pattern, just a few placed touches.
  */
@@ -27,7 +27,7 @@ export function Sparkle({
       width={size}
       height={size}
       fill={gold ? "var(--color-magic-gold)" : "var(--color-accent-soft)"}
-      className={`lilac-sparkle ${className}`}
+      className={`lailac-sparkle ${className}`}
       style={
         {
           "--sparkle-delay": `${delay}s`,

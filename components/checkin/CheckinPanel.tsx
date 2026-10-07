@@ -62,7 +62,7 @@ export function CheckinPanel({ token }: { token: string }) {
   return (
     <div className="mt-6 flex flex-col gap-3">
       {error && (
-        <p key={error} className="lilac-error-in rounded-field bg-red-50 px-3 py-2 font-sans text-sm text-red-700">
+        <p key={error} className="lailac-error-in rounded-field bg-red-50 px-3 py-2 font-sans text-sm text-red-700">
           {error}
         </p>
       )}

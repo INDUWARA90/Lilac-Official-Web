@@ -2,7 +2,7 @@ import { Sparkle } from "@/components/ui/decor/Sparkle";
 
 export function TshirtOrderSuccess({ reference, email }: { reference: string; email: string }) {
   return (
-    <div className="lilac-magic-card relative overflow-hidden border border-accent/30 p-5 text-center shadow-md sm:p-8 md:p-10">
+    <div className="lailac-magic-card relative overflow-hidden border border-accent/30 p-5 text-center shadow-md sm:p-8 md:p-10">
       <div className="absolute -top-16 -right-16 w-48 h-48 bg-accent/15 rounded-full blur-3xl pointer-events-none" />
       <Sparkle size={24} gold className="absolute top-6 right-6" />
 

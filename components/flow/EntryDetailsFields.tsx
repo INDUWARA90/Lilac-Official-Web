@@ -54,7 +54,7 @@ export function EntryDetailsFields({
         </p>
       </div>
 
-      <form onSubmit={onSubmit} noValidate className="lilac-stagger mt-8 flex flex-col gap-6">
+      <form onSubmit={onSubmit} noValidate className="lailac-stagger mt-8 flex flex-col gap-6">
         <TextField
           label="Full name"
           required
@@ -150,7 +150,7 @@ export function EntryDetailsFields({
           .{" "}
           <span className="font-semibold text-ink">
             If I am selected as a winner, my full name will be published publicly
-            on the Lilac results page.
+            on the Lailac results page.
           </span>
         </Checkbox>
 

@@ -2,8 +2,8 @@ import type { CSSProperties } from "react";
 
 /**
  * Ambient background layer for the fairytale theme — a handful of small
- * lavender petals drifting slowly down the page (see .lilac-petal /
- * lilac-petal-fall in app/globals.css). Pure CSS animation, no JS timers, no
+ * lavender petals drifting slowly down the page (see .lailac-petal /
+ * lailac-petal-fall in app/globals.css). Pure CSS animation, no JS timers, no
  * canvas/particle library. A curated, hand-picked layout rather than
  * Math.random() so a Server Component render is fully deterministic (no
  * hydration mismatch risk) and the scatter always looks intentional.
@@ -46,7 +46,7 @@ function Petal({
     <svg
       viewBox="0 0 24 24"
       fill={tone}
-      className={"lilac-petal" + (mobile ? "" : " hidden sm:block")}
+      className={"lailac-petal" + (mobile ? "" : " hidden sm:block")}
       style={
         {
           "--petal-left": left,

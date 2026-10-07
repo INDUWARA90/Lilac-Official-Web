@@ -68,7 +68,7 @@ export default async function ResultsPage() {
                   key={w.id}
                   as="li"
                   delay={i * 80}
-                  className={`lilac-magic-card lilac-hover-lift flex items-center gap-2 px-4 py-3 font-sans text-sm text-ink${i === 0 ? " lilac-shine" : ""}`}
+                  className={`lailac-magic-card lailac-hover-lift flex items-center gap-2 px-4 py-3 font-sans text-sm text-ink${i === 0 ? " lailac-shine" : ""}`}
                 >
                   <Sparkle size={13} gold={i % 3 === 0} />
                   {w.name}

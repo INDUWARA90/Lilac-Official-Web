@@ -48,7 +48,7 @@ export default async function TicketsPage() {
                 availability: availability.standing,
               },
             ] as const).map(({ label, price, availability: typeAvailability }) => (
-              <div key={label} className="lilac-magic-card lilac-shine">
+              <div key={label} className="lailac-magic-card lailac-shine">
                 <div className="px-5 py-4">
                   <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
                     {label}
@@ -99,7 +99,7 @@ export default async function TicketsPage() {
             />
           </div>
         ) : (
-          <p className="lilac-magic-card mt-8 px-4 py-3 font-sans text-sm text-ink">
+          <p className="lailac-magic-card mt-8 px-4 py-3 font-sans text-sm text-ink">
             {availability.salesOpen
               ? "Sorry — tickets are sold out."
               : "Ticket sales are closed."}

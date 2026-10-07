@@ -27,7 +27,7 @@ const SOFT = "#e2d4f3";
 
 type Ids = { petal: string; petalTint: string; bud: string; leaf: string };
 
-/* Photo shape + position per variant. `plain` hides the dashed lilac rings
+/* Photo shape + position per variant. `plain` hides the dashed lailac rings
    (used when the artwork draws its own outline ring). */
 const PHOTO: Record<
   Variant,
@@ -721,7 +721,7 @@ export function ArtistFrame({
           className="absolute inset-0 motion-safe:animate-artist-float"
           style={{ animationDelay: `${floatDelay}s` }}
         >
-          {/* breathing lilac glow */}
+          {/* breathing lailac glow */}
           <div
             aria-hidden="true"
             className="absolute inset-[4%] rounded-full bg-[radial-gradient(circle,rgba(190,160,235,0.45),transparent_70%)] blur-2xl transition-opacity duration-500 motion-safe:animate-[pulse_6s_ease-in-out_infinite] group-hover:opacity-100"

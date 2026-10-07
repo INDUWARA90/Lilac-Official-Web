@@ -174,7 +174,7 @@ export function AdminNav({
             className={
               "group flex items-center gap-3 rounded-field px-3 py-2 font-sans text-sm transition-colors " +
               (active
-                ? "lilac-nav-active bg-accent-wash font-medium text-accent-strong"
+                ? "lailac-nav-active bg-accent-wash font-medium text-accent-strong"
                 : "text-ink-muted hover:bg-canvas-raised hover:text-accent-strong")
             }
           >

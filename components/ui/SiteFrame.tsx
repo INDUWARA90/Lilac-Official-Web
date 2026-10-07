@@ -9,11 +9,13 @@ import { ScrollProgress } from "@/components/ui/decor/ScrollProgress";
 import { BackToTop } from "@/components/ui/decor/BackToTop";
 import { getPublicDrawUnlocked } from "@/lib/app-config";
 import { getTicketLinksVisible } from "@/lib/tickets";
+import { getTshirtLinkVisible } from "@/lib/tshirts";
 
 export async function SiteFrame({ children }: { children: ReactNode }) {
-  const [drawUnlocked, showTicketLinks] = await Promise.all([
+  const [drawUnlocked, showTicketLinks, showTshirtLink] = await Promise.all([
     getPublicDrawUnlocked(),
     getTicketLinksVisible(),
+    getTshirtLinkVisible(),
   ]);
   return (
     <div className="flex min-h-dvh flex-col">
@@ -22,7 +24,7 @@ export async function SiteFrame({ children }: { children: ReactNode }) {
       <FloatingPetals />
       <ScrollProgress />
       <BackToTop />
-      <SiteNav showResults={drawUnlocked} showTickets={showTicketLinks} />
+      <SiteNav showResults={drawUnlocked} showTickets={showTicketLinks} showTshirts={showTshirtLink} />
       
       <main className="flex flex-1 justify-center px-4 pb-20 sm:px-6">
         <div className="w-full max-w-6xl">
