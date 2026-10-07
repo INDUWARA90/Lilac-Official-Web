@@ -273,10 +273,10 @@ function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: b
         />
 
         {/* hint + angle badge */}
-        <span className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-white/85 px-3 py-1 font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted shadow-sm backdrop-blur">
+        <span className="pointer-events-none absolute left-2 top-3 rounded-full bg-white/85 px-2 py-1 font-sans text-[9px] font-semibold uppercase tracking-[0.08em] text-ink-muted shadow-sm backdrop-blur sm:left-1/2 sm:-translate-x-1/2 sm:px-3 sm:text-[10px] sm:tracking-[0.2em]">
           ↔ Drag to rotate
         </span>
-        <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-white/85 px-2.5 py-1 font-sans text-[10px] font-semibold tabular-nums text-ink-muted shadow-sm backdrop-blur">
+        <span className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-white/85 px-2.5 py-1 font-sans text-[10px] font-semibold tabular-nums text-ink-muted shadow-sm backdrop-blur sm:bottom-auto sm:top-3">
           {((Math.round(angle) % 360) + 360) % 360}°
         </span>
       </div>
@@ -345,7 +345,7 @@ export function TshirtSizeGuide() {
       <div className="relative grid gap-8 md:grid-cols-[0.9fr_1.1fr]">
         {/* ---------- left: 3D preview ---------- */}
         <div className="flex flex-col items-center text-center">
-          <p className="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
+          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-muted sm:text-xs sm:tracking-[0.18em]">
             T-shirt preview · 360°
           </p>
           <div className="mt-3 w-full">

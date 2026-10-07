@@ -22,7 +22,7 @@ export async function AdminShell({
   return (
     <div className="min-h-dvh bg-canvas lg:flex">
       <AdminSidebar email={email} role={role} drawUnlocked={drawUnlocked} />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8 lg:px-10">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 lg:px-10">{children}</main>
     </div>
   );
 }

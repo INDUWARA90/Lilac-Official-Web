@@ -56,12 +56,22 @@ export function TshirtOrderForm({ priceLkr }: { priceLkr: number }) {
     setBusy(true);
     setFormError(null);
     try {
+      const details = tshirtOrderSchema.omit({ receiptPath: true }).safeParse(values);
+      if (!details.success) {
+        const out: Errors = {};
+        for (const [k, v] of Object.entries(z.flattenError(details.error).fieldErrors)) {
+          if (v?.[0]) out[k] = v[0];
+        }
+        setErrors(out);
+        return;
+      }
+
       const uploaded = await upload();
       if ("error" in uploaded) {
         setErrors({ receiptPath: uploaded.error });
         return;
       }
-      const parsed = tshirtOrderSchema.safeParse({ ...values, receiptPath: uploaded.path });
+      const parsed = tshirtOrderSchema.safeParse({ ...details.data, receiptPath: uploaded.path });
       if (!parsed.success) {
         const out: Errors = {};
         for (const [k, v] of Object.entries(z.flattenError(parsed.error).fieldErrors)) {
@@ -73,10 +83,10 @@ export function TshirtOrderForm({ priceLkr }: { priceLkr: number }) {
       const res = await fetch("/api/tshirts", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...values, receiptPath: uploaded.path }),
+        body: JSON.stringify(parsed.data),
       });
       const data = (await res.json()) as { ok: boolean; reference?: string; error?: string; fieldErrors?: Record<string, string[]> };
-      if (data.ok && data.reference) {
+      if (res.ok && data.ok && data.reference) {
         setReference(data.reference);
       } else {
         const out: Errors = {};

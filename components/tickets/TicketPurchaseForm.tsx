@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { z } from "zod";
 import { createAnonClient } from "@/lib/supabase/client";
 import { ticketPurchaseSchema } from "@/lib/validation/ticket";
@@ -39,21 +39,27 @@ export function TicketPurchaseForm({
   });
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
   const [errors, setErrors] = useState<TicketFieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ reference: string } | null>(null);
 
-  // Generate a temporary object URL for image previews of the slip
+  // Revoke the current preview URL when the form unmounts.
   useEffect(() => {
-    if (!file || !file.type.startsWith("image/")) {
-      setPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(file);
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
+  }, []);
+
+  function setReceiptFile(selectedFile: File | null) {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    const url =
+      selectedFile?.type.startsWith("image/") ? URL.createObjectURL(selectedFile) : null;
+    previewUrlRef.current = url;
     setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
+    setFile(selectedFile);
+  }
 
   function set<K extends keyof TicketPurchaseValues>(key: K, value: TicketPurchaseValues[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -95,28 +101,35 @@ export function TicketPurchaseForm({
     setFormError(null);
     setBusy(true);
     try {
-      const uploaded = await uploadSlip();
-      if ("error" in uploaded) {
-        setErrors((x) => ({ ...x, slipPath: uploaded.error }));
-        setBusy(false);
+      const details = ticketPurchaseSchema.omit({ slipPath: true }).safeParse(values);
+      if (!details.success) {
+        const flat = z.flattenError(details.error).fieldErrors;
+        const mapped: TicketFieldErrors = {};
+        for (const [k, v] of Object.entries(flat)) if (v?.length) mapped[k] = v[0];
+        setErrors(mapped);
         return;
       }
 
-      const candidate = { ...values, slipPath: uploaded.path };
+      const uploaded = await uploadSlip();
+      if ("error" in uploaded) {
+        setErrors((x) => ({ ...x, slipPath: uploaded.error }));
+        return;
+      }
+
+      const candidate = { ...details.data, slipPath: uploaded.path };
       const parsed = ticketPurchaseSchema.safeParse(candidate);
       if (!parsed.success) {
         const flat = z.flattenError(parsed.error).fieldErrors;
         const mapped: TicketFieldErrors = {};
         for (const [k, v] of Object.entries(flat)) if (v?.length) mapped[k] = v[0];
         setErrors(mapped);
-        setBusy(false);
         return;
       }
 
       const res = await fetch("/api/tickets", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(candidate),
+        body: JSON.stringify(parsed.data),
       });
       const data = (await res.json()) as {
         ok: boolean;
@@ -165,7 +178,7 @@ export function TicketPurchaseForm({
         formError={formError}
         onValueChange={set}
         onFileChange={(selectedFile) => {
-          setFile(selectedFile);
+          setReceiptFile(selectedFile);
           if (errors.slipPath) setErrors((current) => ({ ...current, slipPath: undefined }));
         }}
       />

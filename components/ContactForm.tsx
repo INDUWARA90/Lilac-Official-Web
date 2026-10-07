@@ -57,7 +57,7 @@ export function ContactForm() {
   }
 
   return (
-    <div className="relative mx-auto w-full max-w-2xl overflow-hidden rounded-[2.5rem] border border-[#b79ddb]/40 bg-gradient-to-br from-white/95 via-[#f9f5ff]/90 to-[#f3ebff]/70 p-8 shadow-[0_35px_80px_-25px_rgba(110,80,160,0.3)] backdrop-blur-2xl sm:p-12">
+    <div className="relative mx-auto w-full max-w-2xl overflow-hidden rounded-3xl border border-[#b79ddb]/40 bg-gradient-to-br from-white/95 via-[#f9f5ff]/90 to-[#f3ebff]/70 p-5 shadow-[0_35px_80px_-25px_rgba(110,80,160,0.3)] backdrop-blur-2xl sm:rounded-[2.5rem] sm:p-8 lg:p-12">
       {/* Ambient background glows */}
       <div
         aria-hidden="true"

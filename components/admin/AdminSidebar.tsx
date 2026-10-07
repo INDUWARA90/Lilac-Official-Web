@@ -51,7 +51,7 @@ export function AdminSidebar({
           aria-label="Open menu"
           aria-expanded={open}
           aria-controls="admin-drawer"
-          className="rounded-field border border-hairline p-2 text-ink-muted transition-colors hover:border-accent hover:text-accent-strong"
+          className="min-h-11 min-w-11 rounded-field border border-hairline p-2 text-ink-muted transition-colors hover:border-accent hover:text-accent-strong"
         >
           <MenuIcon />
         </button>
@@ -85,7 +85,7 @@ export function AdminSidebar({
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Close menu"
-            className="rounded-field border border-hairline p-2 text-ink-muted transition-colors hover:border-accent hover:text-accent-strong"
+            className="min-h-11 min-w-11 rounded-field border border-hairline p-2 text-ink-muted transition-colors hover:border-accent hover:text-accent-strong"
           >
             <CloseIcon />
           </button>
