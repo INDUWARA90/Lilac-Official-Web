@@ -50,7 +50,6 @@ const toggleClass =
 
 const VIEWS = [
   { label: "Front", angle: 0 },
-  { label: "Side", angle: 90 },
   { label: "Back", angle: 180 },
 ] as const;
 
