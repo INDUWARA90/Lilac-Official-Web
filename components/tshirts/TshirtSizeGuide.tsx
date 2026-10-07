@@ -3,18 +3,16 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const SIZES = [
-  ["XS", "46", "66"],
-  ["S", "48", "68"],
-  ["M", "51", "71"],
-  ["L", "54", "74"],
-  ["XL", "57", "77"],
-  ["XXL", "60", "80"],
-  ["XXXL", "63", "83"],
+  ["M", "20", "26.5", "9.5"],
+  ["L", "22", "28", "10"],
+  ["XL", "24", "29", "11"],
+  ["XXL", "26", "31", "12"],
 ] as const;
 
 type Unit = "cm" | "in";
 
-const fmt = (cm: string, unit: Unit) => (unit === "cm" ? cm : (Number(cm) / 2.54).toFixed(1));
+const fmt = (inches: string, unit: Unit) =>
+  unit === "in" ? inches : (Number(inches) * 2.54).toFixed(1);
 
 /** Transparent PNG/WebP files in /public/images. Leave as "" to use the drawn SVG shirt. */
 const FRONT_IMG = "";
@@ -223,7 +221,7 @@ function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: b
                 <FrontSvg />
               )}
 
-              {/* measurement overlay (A = chest, B = length) */}
+              {/* measurement overlay (A = chest, B = length, C = sleeve) */}
               <svg
                 viewBox="0 0 240 250"
                 aria-hidden
@@ -235,12 +233,16 @@ function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: b
                   <path d="M77 93v14M163 93v14" />
                   <path d="M14 22V224" strokeDasharray="5 4" />
                   <path d="M7 22h14M7 224h14" />
+                  <path d="m169 44 28 18" strokeDasharray="4 3" />
+                  <path d="m166 49 6-9M194 67l6-9" />
                 </g>
                 <circle cx="120" cy="100" r="9" fill="#7c52b3" />
                 <circle cx="14" cy="123" r="9" fill="#7c52b3" />
+                <circle cx="190" cy="81" r="9" fill="#7c52b3" />
                 <g fill="#fff" fontFamily="sans-serif" fontSize="10" fontWeight="bold" textAnchor="middle">
                   <text x="120" y="103.5">A</text>
                   <text x="14" y="126.5">B</text>
+                  <text x="190" y="84.5">C</text>
                 </g>
               </svg>
             </div>
@@ -315,8 +317,8 @@ function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: b
 
 /** Replace these standard garment measurements with the supplier's final chart before sales open. */
 export function TshirtSizeGuide() {
-  const [sizeIndex, setSizeIndex] = useState(2); // M
-  const [unit, setUnit] = useState<Unit>("cm");
+  const [sizeIndex, setSizeIndex] = useState(0); // M
+  const [unit, setUnit] = useState<Unit>("in");
   const [showMeasure, setShowMeasure] = useState(true);
 
   const maxChest = Number(SIZES[SIZES.length - 1][1]);
@@ -413,13 +415,14 @@ export function TshirtSizeGuide() {
             <table className="w-full table-fixed border-collapse font-sans text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-hairline bg-accent-wash/50 text-left text-[10px] uppercase tracking-wide text-ink-muted sm:text-xs">
-                  <th className="w-[24%] px-2 py-2 font-semibold sm:px-3 sm:py-2.5">Size</th>
-                  <th className="w-[40%] px-2 py-2 font-semibold sm:px-3 sm:py-2.5">Chest ({unit})</th>
-                  <th className="w-[36%] px-2 py-2 font-semibold sm:px-3 sm:py-2.5">Length ({unit})</th>
+                  <th className="w-[20%] px-2 py-2 font-semibold sm:px-3 sm:py-2.5">Size</th>
+                  <th className="w-[26%] px-2 py-2 font-semibold sm:px-3 sm:py-2.5">Chest ({unit})</th>
+                  <th className="w-[27%] px-2 py-2 font-semibold sm:px-3 sm:py-2.5">Length ({unit})</th>
+                  <th className="w-[27%] px-2 py-2 font-semibold sm:px-3 sm:py-2.5">Sleeve ({unit})</th>
                 </tr>
               </thead>
               <tbody>
-                {SIZES.map(([s, c, l], i) => {
+                {SIZES.map(([s, c, l, sleeve], i) => {
                   const active = i === sizeIndex;
                   return (
                     <tr
@@ -455,6 +458,7 @@ export function TshirtSizeGuide() {
                         </div>
                       </td>
                       <td className="px-2 py-2 tabular-nums sm:px-3 sm:py-2.5">{fmt(l, unit)}</td>
+                      <td className="px-2 py-2 tabular-nums sm:px-3 sm:py-2.5">{fmt(sleeve, unit)}</td>
                     </tr>
                   );
                 })}
@@ -465,7 +469,8 @@ export function TshirtSizeGuide() {
           <p className="mt-3 font-sans text-xs text-ink-muted">
             <span className="font-semibold text-ink">A</span> Chest is measured across the front, under the
             arms. <span className="font-semibold text-ink">B</span> Length runs from the top of the shoulder
-            to the hem.
+            to the hem. <span className="font-semibold text-ink">C</span> Sleeve runs from the shoulder seam
+            to the sleeve opening.
           </p>
         </div>
       </div>
