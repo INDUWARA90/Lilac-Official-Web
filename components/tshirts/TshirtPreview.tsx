@@ -16,35 +16,6 @@ const SHIRT_IMAGES: Record<ShirtColor, Record<ShirtSide, string>> = {
   },
 };
 
-const ARTWORK_BOUNDS: Record<
-  ShirtColor,
-  Record<ShirtSide, { left: number; top: number; width: number; height: number }>
-> = {
-  white: {
-    front: { left: 24 / 707, top: 55 / 707, width: 592 / 707, height: 586 / 707 },
-    back: { left: 145 / 764, top: 78 / 764, width: 581 / 764, height: 592 / 764 },
-  },
-  black: {
-    front: { left: 31 / 773, top: 95 / 773, width: 592 / 773, height: 587 / 773 },
-    back: { left: 96 / 715, top: 66 / 715, width: 581 / 715, height: 592 / 715 },
-  },
-};
-
-function imageStyle(color: ShirtColor, side: ShirtSide) {
-  const bounds = ARTWORK_BOUNDS[color][side];
-  const target = { left: 0.09, top: 0.08, width: 0.82, height: 0.82 };
-  const width = target.width / bounds.width * 100;
-  const height = target.height / bounds.height * 100;
-
-  return {
-    position: "absolute" as const,
-    left: `${(target.left - bounds.left / bounds.width * target.width) * 100}%`,
-    top: `${(target.top - bounds.top / bounds.height * target.height) * 100}%`,
-    width: `${width}%`,
-    height: `${height}%`,
-  };
-}
-
 const toggleClass =
   "rounded-full px-3 py-1.5 font-sans text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b79ddb]";
 
@@ -169,7 +140,7 @@ export function TshirtPreview({ sizeIndex }: { sizeIndex: number }) {
                 src={SHIRT_IMAGES[color].front}
                 alt=""
                 draggable={false}
-                style={imageStyle(color, "front")}
+                className="absolute inset-0 h-full w-full object-contain"
               />
             </div>
             <div
@@ -181,7 +152,7 @@ export function TshirtPreview({ sizeIndex }: { sizeIndex: number }) {
                 src={SHIRT_IMAGES[color].back}
                 alt=""
                 draggable={false}
-                style={imageStyle(color, "back")}
+                className="absolute inset-0 h-full w-full object-contain"
               />
             </div>
           </div>
