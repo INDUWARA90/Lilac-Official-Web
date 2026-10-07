@@ -71,13 +71,15 @@ export default async function TicketsPage() {
             ))}
           </div>
         </Reveal>
-        <p className="mt-3 font-sans text-sm text-ink-muted">
-          Already bought a ticket?{" "}
-          <Link href="/tickets/status" className="text-accent-strong underline">
-            Check your ticket
-          </Link>
-          .
-        </p>
+        {availability.ticketLinksVisible && (
+          <p className="mt-3 font-sans text-sm text-ink-muted">
+            Already bought a ticket?{" "}
+            <Link href="/tickets/status" className="text-accent-strong underline">
+              Check your ticket
+            </Link>
+            .
+          </p>
+        )}
 
         {canBuy ? (
           <div className="mt-8">
@@ -86,6 +88,7 @@ export default async function TicketsPage() {
               standingPriceLkr={settings.standingPriceLkr}
               seatingLeft={availability.seating.left}
               standingLeft={availability.standing.left}
+              ticketLinksVisible={availability.ticketLinksVisible}
               bank={{
                 name: settings.bankName,
                 accountName: settings.bankAccountName,

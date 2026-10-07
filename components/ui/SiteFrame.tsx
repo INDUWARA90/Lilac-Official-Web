@@ -9,9 +9,13 @@ import { CursorTrail } from "@/components/ui/decor/CursorTrail";
 import { ScrollProgress } from "@/components/ui/decor/ScrollProgress";
 import { BackToTop } from "@/components/ui/decor/BackToTop";
 import { getPublicDrawUnlocked } from "@/lib/app-config";
+import { getTicketLinksVisible } from "@/lib/tickets";
 
 export async function SiteFrame({ children }: { children: ReactNode }) {
-  const drawUnlocked = await getPublicDrawUnlocked();
+  const [drawUnlocked, showTicketLinks] = await Promise.all([
+    getPublicDrawUnlocked(),
+    getTicketLinksVisible(),
+  ]);
   return (
     <div className="flex min-h-dvh flex-col">
       <Aurora />
@@ -20,7 +24,7 @@ export async function SiteFrame({ children }: { children: ReactNode }) {
       <CursorTrail />
       <ScrollProgress />
       <BackToTop />
-      <SiteNav showResults={drawUnlocked} />
+      <SiteNav showResults={drawUnlocked} showTickets={showTicketLinks} />
       
       <main className="flex flex-1 justify-center px-4 pb-20 sm:px-6">
         <div className="w-full max-w-6xl">

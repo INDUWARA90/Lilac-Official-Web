@@ -14,6 +14,7 @@ export function TicketSettingsForm({ current }: { current: TicketSettings }) {
     seatingCapacity: String(current.seatingCapacity),
     standingCapacity: String(current.standingCapacity),
     salesOpen: current.salesOpen,
+    ticketLinksVisible: current.ticketLinksVisible,
     bankName: current.bankName,
     bankAccountName: current.bankAccountName,
     bankAccountNumber: current.bankAccountNumber,
@@ -44,6 +45,7 @@ export function TicketSettingsForm({ current }: { current: TicketSettings }) {
           seatingCapacity: Number(v.seatingCapacity) || 0,
           standingCapacity: Number(v.standingCapacity) || 0,
           salesOpen: v.salesOpen,
+          ticketLinksVisible: v.ticketLinksVisible,
           bankName: v.bankName,
           bankAccountName: v.bankAccountName,
           bankAccountNumber: v.bankAccountNumber,
@@ -102,6 +104,16 @@ export function TicketSettingsForm({ current }: { current: TicketSettings }) {
           className="accent-accent"
         />
         Sales open
+      </label>
+
+      <label className="flex items-center gap-2 font-sans text-sm text-ink">
+        <input
+          type="checkbox"
+          checked={v.ticketLinksVisible}
+          onChange={(e) => set("ticketLinksVisible", e.target.checked)}
+          className="accent-accent"
+        />
+        Show ticket purchase and status links on the public site
       </label>
 
       <hr className="border-hairline" />

@@ -6,6 +6,8 @@ import { SelectField } from "@/components/ui/SelectField";
 import { Sparkle } from "@/components/ui/decor/Sparkle";
 import { TSHIRT_SIZES } from "@/lib/tshirts-shared";
 import { formatLkr } from "@/lib/tickets-shared";
+import { CopyButton } from "@/components/ui/decor/CopyButton";
+import type { TicketBank } from "@/components/tickets/ticket-purchase-types";
 
 export type TshirtOrderValues = {
   name: string;
@@ -40,6 +42,7 @@ export function TshirtOrderFields({
   busy,
   formError,
   total,
+  bank,
   onValueChange,
   onFileChange,
   onSubmit,
@@ -50,6 +53,7 @@ export function TshirtOrderFields({
   busy: boolean;
   formError: string | null;
   total: number;
+  bank: TicketBank;
   onValueChange: SetOrderValue;
   onFileChange: (file: File | null) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
@@ -64,6 +68,22 @@ export function TshirtOrderFields({
         <p className="font-sans text-xs sm:text-sm text-ink-muted leading-relaxed">
           Complete the bank payment first, upload your transfer receipt slip below, and select your correct faculty from the dropdown for manual verification.
         </p>
+        <div className="mt-4 rounded-field border border-hairline bg-white/70 p-3 font-sans text-xs text-ink sm:p-4 sm:text-sm">
+          <p className="mb-2 font-semibold text-ink">Bank details</p>
+          {bank.name && <p className="font-semibold">{bank.name}</p>}
+          {bank.accountName && <p><span className="text-ink-muted">Account name:</span> {bank.accountName}</p>}
+          {bank.accountNumber && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span><span className="text-ink-muted">Account number:</span> <strong>{bank.accountNumber}</strong></span>
+              <CopyButton text={bank.accountNumber} label="Copy account" />
+            </div>
+          )}
+          {bank.branch && <p><span className="text-ink-muted">Branch:</span> {bank.branch}</p>}
+          {bank.instructions && <p className="mt-2 border-t border-hairline pt-2 text-ink-muted">{bank.instructions}</p>}
+          {!bank.name && !bank.accountNumber && (
+            <p className="text-red-600">Bank details are currently unavailable — please contact the organiser.</p>
+          )}
+        </div>
       </div>
 
       <div className="lilac-magic-card space-y-5 border border-accent/20 p-4 sm:p-6 md:p-8">

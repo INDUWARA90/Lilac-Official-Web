@@ -99,11 +99,13 @@ export default async function HomePage() {
                 </Link>
               </Magnetic>
             )}
-            <Magnetic>
-              <Link href="/tickets">
-                <Button variant="magic">Buy event tickets</Button>
-              </Link>
-            </Magnetic>
+            {availability.ticketLinksVisible && (
+              <Magnetic>
+                <Link href="/tickets">
+                  <Button variant="magic">Buy event tickets</Button>
+                </Link>
+              </Magnetic>
+            )}
             <Magnetic>
               <Link href="/tshirts">
                 <Button variant="magic">T-shirt Order</Button>
@@ -185,6 +187,7 @@ export default async function HomePage() {
           <CtaBanner
             drawUnlocked={drawUnlocked}
             ticketsOpen={availability.salesOpen && availability.left > 0}
+            ticketLinksVisible={availability.ticketLinksVisible}
             seatsLeft={availability.left}
           />
         </Reveal>

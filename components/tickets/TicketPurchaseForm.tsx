@@ -22,12 +22,14 @@ export function TicketPurchaseForm({
   standingPriceLkr,
   seatingLeft,
   standingLeft,
+  ticketLinksVisible,
   bank,
 }: {
   seatingPriceLkr: number;
   standingPriceLkr: number;
   seatingLeft: number;
   standingLeft: number;
+  ticketLinksVisible: boolean;
   bank: TicketBank;
 }) {
   const [values, setValues] = useState<TicketPurchaseValues>({
@@ -155,7 +157,14 @@ export function TicketPurchaseForm({
   }
 
   if (done) {
-    return <TicketPurchaseSuccess reference={done.reference} email={values.email} quantity={values.quantity} />;
+    return (
+      <TicketPurchaseSuccess
+        reference={done.reference}
+        email={values.email}
+        quantity={values.quantity}
+        showStatusLink={ticketLinksVisible}
+      />
+    );
   }
 
   return (

@@ -7,10 +7,17 @@ import { tshirtOrderSchema } from "@/lib/validation/tshirt";
 import { TshirtOrderSuccess } from "@/components/tshirts/TshirtOrderSuccess";
 import { TshirtOrderFields, type TshirtOrderValues } from "@/components/tshirts/TshirtOrderFields";
 import { ALLOWED_RECEIPT_TYPES, MAX_RECEIPT_BYTES } from "@/lib/tshirts-shared";
+import type { TicketBank } from "@/components/tickets/ticket-purchase-types";
 
 type Errors = Partial<Record<string, string>>;
 
-export function TshirtOrderForm({ priceLkr }: { priceLkr: number }) {
+export function TshirtOrderForm({
+  priceLkr,
+  bank,
+}: {
+  priceLkr: number;
+  bank: TicketBank;
+}) {
   const [values, setValues] = useState<TshirtOrderValues>({
     name: "",
     registrationNumber: "",
@@ -115,6 +122,7 @@ export function TshirtOrderForm({ priceLkr }: { priceLkr: number }) {
       busy={busy}
       formError={formError}
       total={total}
+      bank={bank}
       onValueChange={set}
       onFileChange={(selectedFile) => {
         setFile(selectedFile);

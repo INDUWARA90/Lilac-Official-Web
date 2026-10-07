@@ -34,6 +34,7 @@ export type TicketSettings = {
   seatingCapacity: number;
   standingCapacity: number;
   salesOpen: boolean;
+  ticketLinksVisible: boolean;
   bankName: string;
   bankAccountName: string;
   bankAccountNumber: string;
@@ -48,6 +49,7 @@ export type TicketAvailability = {
   taken: number;
   left: number;
   salesOpen: boolean;
+  ticketLinksVisible: boolean;
 };
 
 export type TicketTypeAvailability = {

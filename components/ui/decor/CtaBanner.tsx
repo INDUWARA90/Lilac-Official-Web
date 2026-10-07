@@ -7,6 +7,8 @@ type CtaBannerProps = {
   drawUnlocked?: boolean;
   /** Show the "Buy tickets" button */
   ticketsOpen?: boolean;
+  /** Show public links to ticket purchases */
+  ticketLinksVisible?: boolean;
   /** Seats left, shown as a small note when provided */
   seatsLeft?: number;
   /** Threshold under which the seat counter becomes "urgent" */
@@ -17,6 +19,7 @@ type CtaBannerProps = {
 export function CtaBanner({
   drawUnlocked = false,
   ticketsOpen = true,
+  ticketLinksVisible = true,
   seatsLeft,
   urgencyThreshold = 5,
   className = "",
@@ -69,7 +72,7 @@ export function CtaBanner({
 
         {/* Action Buttons */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          {!isSoldOut && (
+          {ticketLinksVisible && !isSoldOut && (
             <Magnetic>
               <Link href="/tickets">
                 <span className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-white px-7 py-3 font-sans text-sm font-semibold text-[#5d3a85] shadow-[0_14px_30px_-12px_rgba(0,0,0,0.5)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-12px_rgba(0,0,0,0.55)]">

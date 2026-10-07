@@ -1,6 +1,6 @@
 import "server-only";
 import { randomBytes, randomInt } from "node:crypto";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { publicEnv } from "@/lib/env";
@@ -19,6 +19,7 @@ import type { TicketPurchaseRow, TicketRow, TicketSettingsRow } from "@/lib/supa
 // ---- ids ------------------------------------------------------------------
 
 const REF_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"; // no I L O U
+const TICKET_LINKS_TAG = "ticket-links-visible";
 
 /** Human-readable purchase reference, e.g. LILAC-7K2M9. */
 function newReference(): string {
@@ -56,6 +57,7 @@ export async function getTicketSettings(): Promise<TicketSettings> {
     seatingCapacity: data?.seating_capacity ?? 100,
     standingCapacity: data?.standing_capacity ?? 100,
     salesOpen: data?.sales_open ?? true,
+    ticketLinksVisible: data?.ticket_links_visible ?? true,
     bankName: data?.bank_name ?? "",
     bankAccountName: data?.bank_account_name ?? "",
     bankAccountNumber: data?.bank_account_number ?? "",
@@ -64,12 +66,30 @@ export async function getTicketSettings(): Promise<TicketSettings> {
   };
 }
 
+async function fetchTicketLinksVisible(): Promise<boolean> {
+  const { data, error } = await createAdminClient()
+    .from("ticket_settings")
+    .select("ticket_links_visible")
+    .eq("id", "default")
+    .maybeSingle();
+  if (error) {
+    console.error(`ticket link visibility lookup failed: ${error.code ?? "unknown"}`);
+    return true;
+  }
+  return data?.ticket_links_visible ?? true;
+}
+
+export const getTicketLinksVisible = unstable_cache(fetchTicketLinksVisible, [TICKET_LINKS_TAG], {
+  tags: [TICKET_LINKS_TAG],
+  revalidate: 60,
+});
+
 export async function getAvailability(): Promise<TicketAvailability> {
   const db = createAdminClient();
   const [{ data: settings }, { data: live }] = await Promise.all([
     db
       .from("ticket_settings")
-      .select("seating_capacity, standing_capacity, sales_open")
+      .select("seating_capacity, standing_capacity, sales_open, ticket_links_visible")
       .eq("id", "default")
       .maybeSingle(),
     fetchAll((from, to) =>
@@ -99,6 +119,7 @@ export async function getAvailability(): Promise<TicketAvailability> {
     taken: seatingTaken + standingTaken,
     left: seatingLeft + standingLeft,
     salesOpen: settings?.sales_open ?? true,
+    ticketLinksVisible: settings?.ticket_links_visible ?? true,
   };
 }
 
@@ -115,6 +136,7 @@ export async function updateTicketSettings(
   if (patch.seatingCapacity !== undefined) row.seating_capacity = patch.seatingCapacity;
   if (patch.standingCapacity !== undefined) row.standing_capacity = patch.standingCapacity;
   if (patch.salesOpen !== undefined) row.sales_open = patch.salesOpen;
+  if (patch.ticketLinksVisible !== undefined) row.ticket_links_visible = patch.ticketLinksVisible;
   if (patch.bankName !== undefined) row.bank_name = patch.bankName;
   if (patch.bankAccountName !== undefined) row.bank_account_name = patch.bankAccountName;
   if (patch.bankAccountNumber !== undefined) row.bank_account_number = patch.bankAccountNumber;
@@ -127,6 +149,10 @@ export async function updateTicketSettings(
     .eq("id", "default");
   if (!error) {
     revalidatePath("/tickets"); // price/capacity/sales-open changed — see app/tickets/page.tsx (ISR)
+    revalidatePath("/");
+    revalidateTag(TICKET_LINKS_TAG, { expire: 0 });
+  } else {
+    console.error(`ticket settings update failed: ${error.code ?? "unknown"}`);
   }
   return !error;
 }

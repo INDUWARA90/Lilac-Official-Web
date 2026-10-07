@@ -110,6 +110,7 @@ export type TicketSettingsRow = {
   seating_capacity: number;
   standing_capacity: number;
   sales_open: boolean;
+  ticket_links_visible: boolean;
   bank_name: string;
   bank_account_name: string;
   bank_account_number: string;

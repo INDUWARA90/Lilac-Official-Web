@@ -9,10 +9,12 @@ export function TicketPurchaseSuccess({
   reference,
   email,
   quantity,
+  showStatusLink = true,
 }: {
   reference: string;
   email: string;
   quantity: string;
+  showStatusLink?: boolean;
 }) {
   return (
     <div className="lilac-magic-card relative px-6 sm:px-8 py-10 text-center sm:text-left overflow-hidden">
@@ -55,16 +57,18 @@ export function TicketPurchaseSuccess({
             </p>
           </div>
 
-          <div className="flex items-start gap-2.5">
-            <span className="text-accent-strong font-bold mt-0.5">•</span>
-            <p className="text-left">
-              You can track your approval progress anytime via our{" "}
-              <Link href="/tickets/status" className="text-accent-strong underline underline-offset-4 font-medium hover:opacity-80 transition-opacity">
-                Ticket Status Portal
-              </Link>{" "}
-              using your phone number or email address.
-            </p>
-          </div>
+          {showStatusLink && (
+            <div className="flex items-start gap-2.5">
+              <span className="text-accent-strong font-bold mt-0.5">•</span>
+              <p className="text-left">
+                You can track your approval progress anytime via our{" "}
+                <Link href="/tickets/status" className="text-accent-strong underline underline-offset-4 font-medium hover:opacity-80 transition-opacity">
+                  Ticket Status Portal
+                </Link>{" "}
+                using your phone number or email address.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

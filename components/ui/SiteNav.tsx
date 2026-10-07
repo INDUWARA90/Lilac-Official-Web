@@ -21,10 +21,21 @@ const RESULTS_LINK = { href: "/results", label: "Results" };
  * sidebar). The full link list is only shown from `xl` up; below that a
  * hamburger keeps the header from overflowing and opens the same link list.
  */
-export function SiteNav({ showResults = false }: { showResults?: boolean }) {
+export function SiteNav({
+  showResults = false,
+  showTickets = true,
+}: {
+  showResults?: boolean;
+  showTickets?: boolean;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const links = showResults ? [...LINKS, RESULTS_LINK] : LINKS;
+  const visibleLinks = showTickets
+    ? LINKS
+    : LINKS.filter(
+        (link) => link.href !== "/tickets" && link.href !== "/tickets/status",
+      );
+  const links = showResults ? [...visibleLinks, RESULTS_LINK] : visibleLinks;
 
   useEffect(() => {
     if (!open) return;
