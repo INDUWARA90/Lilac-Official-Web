@@ -12,6 +12,7 @@
  */
 
 export type EmailStatus = "pending" | "sending" | "sent" | "failed";
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type EntryRow = {
   id: string;
@@ -167,6 +168,7 @@ export type TshirtOrderStatusDb = "pending_review" | "payment_collected" | "reje
 export type TshirtOrderRow = {
   id: string; reference: string; name: string; registration_number: string; faculty: string;
   email: string; phone: string; tshirt_size: string; quantity: number; amount_lkr: number;
+  order_items: { size: string; color: string }[] | null;
   receipt_path: string; status: TshirtOrderStatusDb; review_note: string | null;
   collected_by: string | null; collected_at: string | null; created_at: string; updated_at: string;
 };
@@ -256,7 +258,7 @@ export type Database = {
         Returns: { purchase_id: string; purchase_reference: string }[];
       };
       create_tshirt_order: {
-        Args: { p_name: string; p_registration_number: string; p_faculty: string; p_email: string; p_phone: string; p_tshirt_size: string; p_quantity: number; p_receipt_path: string; p_reference: string };
+        Args: { p_name: string; p_registration_number: string; p_faculty: string; p_email: string; p_phone: string; p_order_items: Json; p_receipt_path: string; p_reference: string };
         Returns: string;
       };
       create_entry: {

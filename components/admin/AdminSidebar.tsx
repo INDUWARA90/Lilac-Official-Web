@@ -16,7 +16,7 @@ export function AdminSidebar({
   drawUnlocked,
 }: {
   email: string;
-  role: "admin" | "ticket_manager";
+  role: "admin" | "ticket_manager" | "tshirt_manager";
   drawUnlocked: boolean;
 }) {
   const [open, setOpen] = useState(false);

@@ -24,7 +24,7 @@ Built as an academic/demo project — see the note at the end of
 | Data / Storage        | Supabase (Postgres + Storage; service-role key server-side)                    |
 | Styling               | Tailwind CSS, utility classes only — every component hand-built, no component library |
 | Transactional email   | Mailjet (free tier) — e-ticket delivery, winner mail, contact forwarding       |
-| Admin auth            | Email + password → HMAC-signed 24h cookie. Two roles: full admin (`ADMIN_EMAIL`) and an optional, more limited ticket manager (`TICKET_MANAGER_EMAIL`) — see `lib/auth.ts` |
+| Admin auth            | Email + password → HMAC-signed 24h cookie. Full admin plus optional ticket and T-shirt manager logins — see `lib/auth.ts` |
 | Door-staff check-in   | Separate shared-code login (`CHECKIN_ACCESS_CODE`) scoped to check-in only     |
 | Abuse control          | Durable per-IP/per-key rate limiting via a Postgres RPC (`lib/rate-limit.ts`, fails open) |
 | Hosting                | Vercel                                                                         |
@@ -50,6 +50,7 @@ values for now.
 - `ADMIN_EMAIL`, `ADMIN_PASSWORD` — full-admin credentials for `/admin/login`
 - `ADMIN_SESSION_SECRET` — `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 - `TICKET_MANAGER_EMAIL`, `TICKET_MANAGER_PASSWORD` — optional second login, scoped to ticket review + check-in only
+- `TSHIRT_MANAGER_EMAIL`, `TSHIRT_MANAGER_PASSWORD` — optional login scoped to T-shirt order search, filters, review, and export
 - `AD_SESSION_SECRET` — optional, falls back to `ADMIN_SESSION_SECRET`
 - `CHECKIN_ACCESS_CODE` — shared code that unlocks the door-staff check-in pages
 - `CHECKIN_SESSION_SECRET` — optional, falls back to `ADMIN_SESSION_SECRET`; set a real value in production

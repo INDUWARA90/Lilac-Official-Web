@@ -14,7 +14,7 @@ export async function AdminShell({
   children,
 }: {
   email: string;
-  role?: "admin" | "ticket_manager";
+  role?: "admin" | "ticket_manager" | "tshirt_manager";
   children: ReactNode;
 }) {
   const drawUnlocked = await getDrawUnlocked();

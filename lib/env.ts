@@ -55,6 +55,10 @@ export const serverEnv = {
   ticketManagerEmail: clean(process.env.TICKET_MANAGER_EMAIL).toLowerCase(),
   ticketManagerPassword: clean(process.env.TICKET_MANAGER_PASSWORD),
 
+  // T-shirt manager: an optional login scoped to T-shirt orders only.
+  tshirtManagerEmail: clean(process.env.TSHIRT_MANAGER_EMAIL).toLowerCase(),
+  tshirtManagerPassword: clean(process.env.TSHIRT_MANAGER_PASSWORD),
+
   // Signs the ad-watch session token (proves the sponsor ads were served and
   // that enough time elapsed before an entry). Falls back to the admin secret
   // so no new env var is strictly required.

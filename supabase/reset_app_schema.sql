@@ -39,6 +39,7 @@ drop function if exists public.generate_ticket_code() cascade;
 drop function if exists public.create_ticket_purchase(text, text, text, integer, text, text) cascade;
 drop function if exists public.create_ticket_purchase(text, text, text, text, integer, text, text) cascade;
 drop function if exists public.create_tshirt_order(text, text, text, text, text, text, integer, text, text) cascade;
+drop function if exists public.create_tshirt_order(text, text, text, text, text, jsonb, text, text) cascade;
 drop function if exists public.create_entry(text, text, text, text, text, text, text, text, timestamptz) cascade;
 drop function if exists public.create_event(text) cascade;
 drop function if exists public.create_event(text, uuid) cascade;

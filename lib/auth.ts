@@ -7,7 +7,7 @@ import { requireServer, serverEnv } from "@/lib/env";
 /**
  * Admin session — a single signed cookie, no external session store.
  *
- * Two logins share this one cookie/session shape, distinguished by `role`:
+ * Operator logins share this one cookie/session shape, distinguished by `role`:
  *   - "admin"          — ADMIN_EMAIL / ADMIN_PASSWORD. Full access.
  *   - "ticket_manager" — TICKET_MANAGER_EMAIL / TICKET_MANAGER_PASSWORD
  *                        (optional — unset means this login doesn't exist).
@@ -15,6 +15,8 @@ import { requireServer, serverEnv } from "@/lib/env";
  *                        admin page/route uses `requireFullAdmin()` to shut
  *                        this role out. See app/api/admin/login/route.ts for
  *                        how the submitted email picks the role.
+ *   - "tshirt_manager" — TSHIRT_MANAGER_EMAIL / TSHIRT_MANAGER_PASSWORD
+ *                        (optional). Scoped only to T-shirt order review.
  *
  * On success we drop an `admin_session` cookie holding `{ email, role, exp }`
  * signed with HMAC-SHA256. Every admin page/route calls `requireAdmin()` /
@@ -24,7 +26,7 @@ import { requireServer, serverEnv } from "@/lib/env";
 export const ADMIN_COOKIE = "admin_session";
 const SESSION_MS = 24 * 60 * 60 * 1000;
 
-export type AdminRole = "admin" | "ticket_manager";
+export type AdminRole = "admin" | "ticket_manager" | "tshirt_manager";
 
 export interface AdminSession {
   email: string;
@@ -44,7 +46,7 @@ export function passwordMatches(candidate: string, expected: string): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-/** Build the cookie value for a freshly authenticated admin/ticket-manager. */
+/** Build the cookie value for a freshly authenticated operator. */
 export function createSessionValue(session: AdminSession): {
   value: string;
   maxAgeSeconds: number;
@@ -76,13 +78,14 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     if (typeof data.exp !== "number" || Date.now() > data.exp) return null;
 
     const email = data.email.toLowerCase();
-    // Re-derive the role from the current env config rather than trusting the
-    // cookie's own `role` claim at face value — if TICKET_MANAGER_EMAIL is
-    // ever removed/rotated, existing ticket-manager cookies stop resolving to
-    // any known account instead of silently keeping stale access.
+    // Re-derive the role from current env config so rotated credentials revoke
+    // existing operator cookies rather than preserving stale access.
     if (email === serverEnv.adminEmail) return { email, role: "admin" };
     if (serverEnv.ticketManagerEmail && email === serverEnv.ticketManagerEmail) {
       return { email, role: "ticket_manager" };
+    }
+    if (serverEnv.tshirtManagerEmail && email === serverEnv.tshirtManagerEmail) {
+      return { email, role: "tshirt_manager" };
     }
     return null;
   } catch {
@@ -90,17 +93,25 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   }
 }
 
-/** Guard for admin PAGES. Redirects to login when not signed in as anyone. */
+/** Guard for ticket/check-in admin pages; redirects scoped T-shirt managers away. */
 export async function requireAdmin(): Promise<AdminSession> {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
+  if (session.role === "tshirt_manager") redirect("/admin/tshirts");
+  return session;
+}
+
+/** Guard for the T-shirt area, available to full admins and T-shirt managers. */
+export async function requireTshirtAccess(): Promise<AdminSession> {
+  const session = await getAdminSession();
+  if (!session) redirect("/admin/login");
+  if (session.role === "ticket_manager") redirect("/admin/tickets");
   return session;
 }
 
 /**
  * Guard for pages/actions reserved for the full admin only. A signed-in
- * ticket manager is bounced to their own home (`/admin/tickets`) rather than
- * the login page — they ARE authenticated, just not authorised for this.
+ * scoped manager is bounced to its own area rather than the login page.
  */
 export async function requireFullAdmin(): Promise<AdminSession> {
   const session = await requireAdmin();

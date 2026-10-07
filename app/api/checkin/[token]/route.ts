@@ -26,7 +26,9 @@ export async function POST(
   }
 
   const [checkinOk, adminSession] = await Promise.all([hasCheckinSession(), getAdminSession()]);
-  if (!checkinOk && !adminSession) return json({ ok: false, error: "Not authorised." }, 401);
+  if (adminSession?.role === "tshirt_manager" || (!checkinOk && !adminSession)) {
+    return json({ ok: false, error: "Not authorised." }, 401);
+  }
   const by = adminSession?.email ?? "door-staff";
 
   const { token } = await params;

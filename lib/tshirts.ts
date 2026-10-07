@@ -11,14 +11,14 @@ export async function getTshirtSettings() {
   return { priceLkr: data?.price_lkr ?? 2500, salesOpen: data?.sales_open ?? true };
 }
 
-export async function createTshirtOrder(input: { name: string; registrationNumber: string; faculty: string; email: string; phone: string; size: string; quantity: number; receiptPath: string }) {
+export async function createTshirtOrder(input: { name: string; registrationNumber: string; faculty: string; email: string; phone: string; items: Array<{ size: string; color: string }>; receiptPath: string }) {
   const db = createAdminClient();
   const { data: files } = await db.storage.from(TSHIRT_RECEIPT_BUCKET).list("", { search: input.receiptPath });
   if (!files?.some((file) => file.name === input.receiptPath)) return { ok: false as const, error: "Your receipt upload was not found. Please attach it again." };
   const ref = reference();
   const { error } = await db.rpc("create_tshirt_order", {
     p_name: input.name, p_registration_number: input.registrationNumber, p_faculty: input.faculty,
-    p_email: input.email, p_phone: input.phone, p_tshirt_size: input.size, p_quantity: input.quantity,
+    p_email: input.email, p_phone: input.phone, p_order_items: input.items,
     p_receipt_path: input.receiptPath, p_reference: ref,
   });
   if (error) return { ok: false as const, error: error.message.includes("SALES_CLOSED") ? "T-shirt orders are currently closed." : "Could not place your order. Please try again." };

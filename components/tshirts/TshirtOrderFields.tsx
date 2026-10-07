@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { SelectField } from "@/components/ui/SelectField";
 import { Sparkle } from "@/components/ui/decor/Sparkle";
-import { TSHIRT_SIZES } from "@/lib/tshirts-shared";
+import { MAX_TSHIRT_ORDER_QUANTITY, TSHIRT_COLORS, TSHIRT_SIZES } from "@/lib/tshirts-shared";
 import { formatLkr } from "@/lib/tickets-shared";
 import { CopyButton } from "@/components/ui/decor/CopyButton";
 import type { TicketBank } from "@/components/tickets/ticket-purchase-types";
@@ -15,8 +15,7 @@ export type TshirtOrderValues = {
   faculty: string;
   email: string;
   phone: string;
-  size: string;
-  quantity: string;
+  items: Array<{ size: string; color: string }>;
 };
 
 type Errors = Partial<Record<string, string>>;
@@ -44,6 +43,7 @@ export function TshirtOrderFields({
   total,
   bank,
   onValueChange,
+  onItemChange,
   onFileChange,
   onSubmit,
 }: {
@@ -55,6 +55,7 @@ export function TshirtOrderFields({
   total: number;
   bank: TicketBank;
   onValueChange: SetOrderValue;
+  onItemChange: (index: number, key: "size" | "color", value: string) => void;
   onFileChange: (file: File | null) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 }) {
@@ -158,22 +159,38 @@ export function TshirtOrderFields({
         <div className="space-y-5 pt-1">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <SelectField
-              label="T-shirt size"
-              required
-              placeholder="Select size"
-              options={TSHIRT_SIZES}
-              value={values.size}
-              onChange={(e) => onValueChange("size", e.target.value)}
-              error={errors.size}
-            />
-            <SelectField
               label="Quantity"
               required
-              options={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]}
-              value={values.quantity}
-              onChange={(e) => onValueChange("quantity", e.target.value)}
-              error={errors.quantity}
+              options={Array.from({ length: MAX_TSHIRT_ORDER_QUANTITY }, (_, i) => String(i + 1))}
+              value={String(values.items.length)}
+              onChange={(e) => onValueChange("items", e.target.value)}
+              error={errors.items}
             />
+          </div>
+          <div className="space-y-4">
+            {values.items.map((item, index) => (
+              <div key={index} className="grid grid-cols-1 gap-4 rounded-field border border-hairline bg-canvas-raised p-4 sm:grid-cols-2">
+                <p className="font-sans text-sm font-semibold text-ink sm:col-span-2">T-shirt {index + 1}</p>
+                <SelectField
+                  label="T-shirt size"
+                  required
+                  placeholder="Select size"
+                  options={TSHIRT_SIZES}
+                  value={item.size}
+                  onChange={(e) => onItemChange(index, "size", e.target.value)}
+                  error={errors[`items.${index}.size`]}
+                />
+                <SelectField
+                  label="Color"
+                  required
+                  placeholder="Select color"
+                  options={TSHIRT_COLORS}
+                  value={item.color}
+                  onChange={(e) => onItemChange(index, "color", e.target.value)}
+                  error={errors[`items.${index}.color`]}
+                />
+              </div>
+            ))}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -209,7 +226,7 @@ export function TshirtOrderFields({
           <span className="text-xs uppercase tracking-wider text-ink-muted font-semibold block">Total Payment Due</span>
           <div className="mt-0.5 flex flex-wrap items-baseline justify-center gap-x-2 sm:justify-start">
             <span className="font-serif text-2xl font-bold text-accent-strong sm:text-3xl">{formatLkr(total)}</span>
-            <span className="text-xs text-ink-muted">({values.quantity || 1} item{Number(values.quantity) > 1 ? "s" : ""})</span>
+            <span className="text-xs text-ink-muted">({values.items.length} item{values.items.length > 1 ? "s" : ""})</span>
           </div>
         </div>
 

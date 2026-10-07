@@ -11,6 +11,15 @@ import type { TicketBank } from "@/components/tickets/ticket-purchase-types";
 
 type Errors = Partial<Record<string, string>>;
 
+function errorsFrom(error: z.ZodError): Errors {
+  const errors: Errors = {};
+  for (const issue of error.issues) {
+    const key = issue.path.join(".");
+    if (key && !errors[key]) errors[key] = issue.message;
+  }
+  return errors;
+}
+
 export function TshirtOrderForm({
   priceLkr,
   bank,
@@ -24,8 +33,7 @@ export function TshirtOrderForm({
     faculty: "",
     email: "",
     phone: "",
-    size: "",
-    quantity: "1",
+    items: [{ size: "", color: "" }],
   });
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Errors>({});
@@ -33,11 +41,31 @@ export function TshirtOrderForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [reference, setReference] = useState<string | null>(null);
 
-  const total = useMemo(() => priceLkr * (Number(values.quantity) || 1), [priceLkr, values.quantity]);
+  const total = useMemo(() => priceLkr * values.items.length, [priceLkr, values.items.length]);
 
   function set(key: keyof typeof values, value: string) {
-    setValues((v) => ({ ...v, [key]: value }));
-    setErrors((e) => ({ ...e, [key]: undefined }));
+    if (key === "items") {
+      setValues((v) => {
+        const quantity = Number(value);
+        const items = [...v.items];
+        while (items.length < quantity) items.push({ size: "", color: "" });
+        return { ...v, items: items.slice(0, quantity) };
+      });
+      setErrors((current) => Object.fromEntries(
+        Object.entries(current).filter(([errorKey]) => !errorKey.startsWith("items")),
+      ));
+    } else {
+      setValues((v) => ({ ...v, [key]: value }));
+      setErrors((current) => ({ ...current, [key]: undefined }));
+    }
+  }
+
+  function setItem(index: number, key: "size" | "color", value: string) {
+    setValues((v) => ({
+      ...v,
+      items: v.items.map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value } : item),
+    }));
+    setErrors((current) => ({ ...current, [`items.${index}.${key}`]: undefined, items: undefined }));
   }
 
   async function upload() {
@@ -65,11 +93,7 @@ export function TshirtOrderForm({
     try {
       const details = tshirtOrderSchema.omit({ receiptPath: true }).safeParse(values);
       if (!details.success) {
-        const out: Errors = {};
-        for (const [k, v] of Object.entries(z.flattenError(details.error).fieldErrors)) {
-          if (v?.[0]) out[k] = v[0];
-        }
-        setErrors(out);
+        setErrors(errorsFrom(details.error));
         return;
       }
 
@@ -80,11 +104,7 @@ export function TshirtOrderForm({
       }
       const parsed = tshirtOrderSchema.safeParse({ ...details.data, receiptPath: uploaded.path });
       if (!parsed.success) {
-        const out: Errors = {};
-        for (const [k, v] of Object.entries(z.flattenError(parsed.error).fieldErrors)) {
-          if (v?.[0]) out[k] = v[0];
-        }
-        setErrors(out);
+        setErrors(errorsFrom(parsed.error));
         return;
       }
       const res = await fetch("/api/tshirts", {
@@ -124,6 +144,7 @@ export function TshirtOrderForm({
       total={total}
       bank={bank}
       onValueChange={set}
+      onItemChange={setItem}
       onFileChange={(selectedFile) => {
         setFile(selectedFile);
         setErrors((current) => ({ ...current, receiptPath: undefined }));

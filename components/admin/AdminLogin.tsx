@@ -23,9 +23,9 @@ export function AdminLogin() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = (await res.json()) as { ok: boolean; error?: string };
+      const data = (await res.json()) as { ok: boolean; error?: string; redirectTo?: string };
       if (data.ok) {
-        router.push("/admin");
+        router.push(data.redirectTo ?? "/admin");
         router.refresh();
       } else {
         setError(data.error ?? "Sign in failed.");

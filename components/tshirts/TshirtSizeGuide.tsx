@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-
-const SIZES = [
-  ["M", "20", "26.5", "9.5"],
-  ["L", "22", "28", "10"],
-  ["XL", "24", "29", "11"],
-  ["XXL", "26", "31", "12"],
-] as const;
+import { TSHIRT_SIZE_CHART } from "@/lib/tshirts-shared";
 
 type Unit = "cm" | "in";
 
@@ -321,7 +315,7 @@ export function TshirtSizeGuide() {
   const [unit, setUnit] = useState<Unit>("in");
   const [showMeasure, setShowMeasure] = useState(true);
 
-  const maxChest = Number(SIZES[SIZES.length - 1][1]);
+  const maxChest = Number(TSHIRT_SIZE_CHART[TSHIRT_SIZE_CHART.length - 1][1]);
 
   return (
     <section className="relative mt-6 overflow-hidden rounded-card border border-[#b79ddb]/40 bg-canvas-raised p-4 shadow-[0_24px_60px_-34px_rgba(110,80,160,0.5)] sm:mt-8 sm:p-7">
@@ -422,7 +416,7 @@ export function TshirtSizeGuide() {
                 </tr>
               </thead>
               <tbody>
-                {SIZES.map(([s, c, l, sleeve], i) => {
+                {TSHIRT_SIZE_CHART.map(([s, c, l, sleeve], i) => {
                   const active = i === sizeIndex;
                   return (
                     <tr

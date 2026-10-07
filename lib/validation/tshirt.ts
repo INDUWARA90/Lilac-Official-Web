@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { normalizeLkPhone } from "@/lib/validation/entry";
-import { TSHIRT_SIZES } from "@/lib/tshirts-shared";
+import { MAX_TSHIRT_ORDER_QUANTITY, TSHIRT_COLORS, TSHIRT_SIZES } from "@/lib/tshirts-shared";
 
 export const tshirtOrderSchema = z.object({
   name: z.string().trim().min(2, "Please enter your full name.").max(120),
@@ -29,7 +29,9 @@ export const tshirtOrderSchema = z.object({
       }
       return normalized;
     }),
-  size: z.enum(TSHIRT_SIZES, { error: "Please select a T-shirt size." }),
-  quantity: z.coerce.number().int().min(1).max(10),
+  items: z.array(z.object({
+    size: z.enum(TSHIRT_SIZES, { error: "Please select a T-shirt size." }),
+    color: z.enum(TSHIRT_COLORS, { error: "Please select a T-shirt color." }),
+  })).min(1).max(MAX_TSHIRT_ORDER_QUANTITY),
   receiptPath: z.string().min(1).max(300),
 });

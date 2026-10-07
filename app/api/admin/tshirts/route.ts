@@ -6,6 +6,9 @@ const schema = z.object({ action: z.enum(["collect", "reject"]), orderId: z.uuid
 export async function POST(req: Request) {
   const session = await getAdminSession();
   if (!session) return Response.json({ ok: false, error: "Not signed in." }, { status: 401 });
+  if (session.role !== "admin" && session.role !== "tshirt_manager") {
+    return Response.json({ ok: false, error: "Not authorised." }, { status: 403 });
+  }
   const input = schema.safeParse(await req.json().catch(() => null));
   if (!input.success) return Response.json({ ok: false, error: "Invalid request." }, { status: 400 });
   const result = await reviewTshirtOrder(input.data.orderId, input.data.action, session.email, input.data.note);
