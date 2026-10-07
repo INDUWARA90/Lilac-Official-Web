@@ -3,20 +3,19 @@ import Link from "next/link";
 import { requireTshirtAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { TSHIRT_COLORS, TSHIRT_ORDER_STATUS, TSHIRT_SIZES, TSHIRT_STATUS_LABEL, type TshirtOrderStatus } from "@/lib/tshirts-shared";
+import { TshirtOrderFilters } from "@/components/admin/TshirtOrderFilters";
+import { TSHIRT_ORDER_STATUS, TSHIRT_STATUS_LABEL, type TshirtOrderStatus } from "@/lib/tshirts-shared";
 import { formatLkr } from "@/lib/tickets-shared";
 import { formatDate } from "@/lib/format";
 export const metadata: Metadata = { title: "T-shirt orders", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
-type SearchParams = { q?: string; size?: string; color?: string; status?: string };
+type SearchParams = { q?: string; status?: string };
 
 export default async function AdminTshirts({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const session = await requireTshirtAccess();
   const params = await searchParams;
-  const search = (params.q ?? "").trim().slice(0, 80).replace(/[^a-zA-Z0-9@._+\- ]/g, "");
-  const size = TSHIRT_SIZES.find((value) => value === params.size) ?? "";
-  const color = TSHIRT_COLORS.find((value) => value === params.color) ?? "";
+  const search = (params.q ?? "").trim().slice(0, 80).replace(/[^a-zA-Z0-9@._+\-/ ]/g, "");
   const status = TSHIRT_ORDER_STATUS.includes(params.status as TshirtOrderStatus)
     ? params.status as TshirtOrderStatus
     : "";
@@ -27,23 +26,19 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
     .select("id, reference, name, registration_number, faculty, tshirt_size, quantity, order_items, amount_lkr, status, created_at")
     .order("created_at", { ascending: false });
   if (status) query = query.eq("status", status);
-  if (size) {
-    query = query.or(`order_items.cs.[{"size":"${size}"}],and(order_items.is.null,tshirt_size.eq.${size})`);
-  }
-  if (color) query = query.contains("order_items", [{ color }]);
   if (search) {
     const term = `%${search}%`;
     query = query.or(
       `reference.ilike.${term},name.ilike.${term},registration_number.ilike.${term},email.ilike.${term}`,
     );
   }
+  const orderResult = await query;
 
-  const [{ data: rows, error }, { data: sales }, { count: awaiting }] = await Promise.all([
-    query,
+  const [{ data: sales, error: salesError }, { count: awaiting, error: awaitingError }] = await Promise.all([
     db.from("tshirt_orders").select("quantity, amount_lkr").eq("status", "payment_collected"),
     db.from("tshirt_orders").select("id", { count: "exact", head: true }).eq("status", "pending_review"),
   ]);
-  if (error) throw new Error("Could not load T-shirt orders.");
+  const loadError = orderResult.error ?? salesError ?? awaitingError;
 
   const shirtsSold = (sales ?? []).reduce((sum, order) => sum + order.quantity, 0);
   const revenue = (sales ?? []).reduce((sum, order) => sum + order.amount_lkr, 0);
@@ -62,27 +57,25 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Summary label="Revenue collected" value={formatLkr(revenue)} />
-        <Summary label="T-shirts sold" value={String(shirtsSold)} />
-        <Summary label="Paid orders" value={String(sales?.length ?? 0)} />
-        <Summary label="Awaiting review" value={String(awaiting ?? 0)} />
+        <Summary label="Revenue collected" value={loadError ? "—" : formatLkr(revenue)} />
+        <Summary label="T-shirts sold" value={loadError ? "—" : String(shirtsSold)} />
+        <Summary label="Paid orders" value={loadError ? "—" : String(sales?.length ?? 0)} />
+        <Summary label="Awaiting review" value={loadError ? "—" : String(awaiting ?? 0)} />
       </div>
 
-      <form action="/admin/tshirts" method="get" className="mt-5 grid gap-3 rounded-card border border-hairline p-4 sm:grid-cols-2 lg:grid-cols-4">
-        <label className="font-sans text-xs font-medium text-ink-muted">
-          Search buyer / reference
-          <input name="q" defaultValue={search} placeholder="Name, email, registration, reference" className="mt-1 block min-h-10 w-full rounded-field border border-hairline bg-canvas px-3 text-sm text-ink" />
-        </label>
-        <FilterSelect name="size" label="T-shirt size" value={size} options={TSHIRT_SIZES} />
-        <FilterSelect name="color" label="Color" value={color} options={TSHIRT_COLORS} />
-        <FilterSelect name="status" label="Order status" value={status} options={TSHIRT_ORDER_STATUS.map((value) => value)} labels={TSHIRT_STATUS_LABEL} />
-        <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
-          <button type="submit" className="min-h-10 rounded-field bg-accent px-4 font-sans text-sm font-semibold text-white hover:bg-accent-strong">Search / filter</button>
-          <Link href="/admin/tshirts" className="inline-flex min-h-10 items-center rounded-field border border-hairline px-4 font-sans text-sm text-ink-muted hover:border-accent">Clear</Link>
-        </div>
-      </form>
+      <TshirtOrderFilters
+        key={`${search}|${status}`}
+        initialQuery={search}
+        initialStatus={status}
+        statuses={TSHIRT_ORDER_STATUS.map((value) => ({ value, label: TSHIRT_STATUS_LABEL[value] }))}
+      />
 
       <div className="mt-5 overflow-x-auto">
+        {loadError && (
+          <p role="alert" className="mb-4 rounded-field border border-red-200 bg-red-50 p-3 font-sans text-sm text-red-700">
+            Could not load T-shirt data{loadError.message ? `: ${loadError.message}` : "."}
+          </p>
+        )}
         <table className="w-full border-collapse font-sans text-sm">
           <thead>
             <tr className="border-b border-hairline text-left text-ink-muted">
@@ -96,7 +89,7 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
             </tr>
           </thead>
           <tbody>
-            {(rows ?? []).map((order) => (
+            {(orderResult.data ?? []).map((order) => (
               <tr key={order.id} className="border-b border-hairline">
                 <td className="py-2 pr-3"><Link href={`/admin/tshirts/${order.id}`} className="font-mono text-xs text-accent-strong hover:underline">{order.reference}</Link></td>
                 <td className="py-2 pr-3">{order.name}</td>
@@ -107,7 +100,7 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
                 <td className="py-2 text-ink-muted">{formatDate(order.created_at)}</td>
               </tr>
             ))}
-            {!rows?.length && <tr><td colSpan={7} className="py-6 text-center text-ink-muted">No matching T-shirt orders.</td></tr>}
+            {!orderResult.data?.length && !loadError && <tr><td colSpan={7} className="py-6 text-center text-ink-muted">No matching T-shirt orders.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -117,28 +110,4 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
 
 function Summary({ label, value }: { label: string; value: string }) {
   return <div className="rounded-card border border-hairline p-4"><p className="font-sans text-lg font-semibold text-ink">{value}</p><p className="mt-1 font-sans text-xs text-ink-muted">{label}</p></div>;
-}
-
-function FilterSelect({
-  name,
-  label,
-  value,
-  options,
-  labels,
-}: {
-  name: string;
-  label: string;
-  value: string;
-  options: readonly string[];
-  labels?: Record<string, string>;
-}) {
-  return (
-    <label className="font-sans text-xs font-medium text-ink-muted">
-      {label}
-      <select name={name} defaultValue={value} className="mt-1 block min-h-10 w-full rounded-field border border-hairline bg-canvas px-3 text-sm text-ink">
-        <option value="">All</option>
-        {options.map((option) => <option key={option} value={option}>{labels?.[option] ?? option}</option>)}
-      </select>
-    </label>
-  );
 }
