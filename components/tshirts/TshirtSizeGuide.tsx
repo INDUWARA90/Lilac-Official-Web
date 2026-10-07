@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TSHIRT_SIZE_CHART } from "@/lib/tshirts-shared";
 
 type Unit = "cm" | "in";
@@ -22,18 +22,6 @@ const VIEWS = [
   { label: "Side", angle: 90 },
   { label: "Back", angle: 180 },
 ] as const;
-
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
-function subscribeToReducedMotion(onChange: () => void) {
-  const mediaQuery = window.matchMedia(REDUCED_MOTION_QUERY);
-  mediaQuery.addEventListener("change", onChange);
-  return () => mediaQuery.removeEventListener("change", onChange);
-}
-
-function getReducedMotionSnapshot() {
-  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
-}
 
 /* ---------- SVG fallback faces ---------- */
 function FrontSvg() {
@@ -67,22 +55,38 @@ function BackSvg() {
 /* ---------- 3D shirt ---------- */
 function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: boolean }) {
   const [angle, setAngle] = useState(-24);
-  const prefersReducedMotion = useSyncExternalStore(
-    subscribeToReducedMotion,
-    getReducedMotionSnapshot,
-    () => false,
-  );
-  const [auto, setAuto] = useState<boolean | null>(null);
+  const angleRef = useRef(-24);
+  const rotationRef = useRef<HTMLDivElement>(null);
+  const shadowRef = useRef<HTMLDivElement>(null);
+  const angleBadgeRef = useRef<HTMLSpanElement>(null);
+  const [auto, setAuto] = useState(false);
   const [dragging, setDragging] = useState(false);
   const lastX = useRef(0);
-  const autoEnabled = auto ?? !prefersReducedMotion;
+  const autoEnabled = auto;
 
-  // Gentle idle spin
+  const updateAngle = (update: (current: number) => number) => {
+    const nextAngle = update(angleRef.current);
+    angleRef.current = nextAngle;
+    setAngle(nextAngle);
+  };
+
+  // Update transforms directly so React does not re-render the 3D model per frame.
   useEffect(() => {
     if (!autoEnabled || dragging) return;
     let raf = 0;
     const tick = () => {
-      setAngle((a) => a + 0.45);
+      const nextAngle = angleRef.current + 0.45;
+      angleRef.current = nextAngle;
+      if (rotationRef.current) {
+        rotationRef.current.style.transform = `rotateX(-8deg) rotateY(${nextAngle}deg)`;
+      }
+      if (shadowRef.current) {
+        const scale = 0.55 + 0.45 * Math.abs(Math.cos((nextAngle * Math.PI) / 180));
+        shadowRef.current.style.transform = `translateX(-50%) scaleX(${scale})`;
+      }
+      if (angleBadgeRef.current) {
+        angleBadgeRef.current.textContent = `${((Math.round(nextAngle) % 360) + 360) % 360}°`;
+      }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -91,11 +95,11 @@ function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: b
 
   const goTo = (target: number) => {
     setAuto(false);
-    setAngle((a) => a + ((((target - a) % 360) + 540) % 360) - 180);
+    updateAngle((current) => current + ((((target - current) % 360) + 540) % 360) - 180);
   };
 
   const shadowScale = 0.55 + 0.45 * Math.abs(Math.cos((angle * Math.PI) / 180));
-  const smooth = !dragging && !auto;
+  const smooth = !dragging && !autoEnabled;
   const sizeScale = 0.86 + sizeIndex * 0.035; // the shirt grows with each size
 
   // the side edge takes the silhouette of the front image
@@ -130,18 +134,18 @@ function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: b
           if (!dragging) return;
           const dx = e.clientX - lastX.current;
           lastX.current = e.clientX;
-          setAngle((a) => a + dx * 0.8);
+          updateAngle((current) => current + dx * 0.8);
         }}
         onPointerUp={() => setDragging(false)}
         onPointerCancel={() => setDragging(false)}
         onKeyDown={(e) => {
           if (e.key === "ArrowLeft") {
             setAuto(false);
-            setAngle((a) => a - 20);
+            updateAngle((current) => current - 20);
           }
           if (e.key === "ArrowRight") {
             setAuto(false);
-            setAngle((a) => a + 20);
+            updateAngle((current) => current + 20);
           }
         }}
         className={
@@ -152,6 +156,7 @@ function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: b
       >
         {/* glow + stage ring */}
         <div
+          ref={shadowRef}
           aria-hidden
           className="pointer-events-none absolute inset-x-8 top-10 h-44 rounded-full bg-[radial-gradient(circle,rgba(190,160,235,0.45),transparent_70%)] blur-2xl"
         />
@@ -174,6 +179,7 @@ function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: b
         >
           {/* rotation */}
           <div
+            ref={rotationRef}
             className="relative h-full w-full [transform-style:preserve-3d]"
             style={{
               transform: `rotateX(-8deg) rotateY(${angle}deg)`,
@@ -272,7 +278,7 @@ function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: b
         <span className="pointer-events-none absolute left-2 top-3 rounded-full bg-white/85 px-2 py-1 font-sans text-[9px] font-semibold uppercase tracking-[0.08em] text-ink-muted shadow-sm backdrop-blur sm:left-1/2 sm:-translate-x-1/2 sm:px-3 sm:text-[10px] sm:tracking-[0.2em]">
           ↔ Drag to rotate
         </span>
-        <span className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-white/85 px-2.5 py-1 font-sans text-[10px] font-semibold tabular-nums text-ink-muted shadow-sm backdrop-blur sm:bottom-auto sm:top-3">
+        <span ref={angleBadgeRef} className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-white/85 px-2.5 py-1 font-sans text-[10px] font-semibold tabular-nums text-ink-muted shadow-sm backdrop-blur sm:bottom-auto sm:top-3">
           {((Math.round(angle) % 360) + 360) % 360}°
         </span>
       </div>
@@ -291,7 +297,14 @@ function Shirt3D({ sizeIndex, showMeasure }: { sizeIndex: number; showMeasure: b
         ))}
         <button
           type="button"
-          onClick={() => setAuto((current) => !(current ?? !prefersReducedMotion))}
+          onClick={() => {
+            if (autoEnabled) {
+              setAngle(angleRef.current);
+              setAuto(false);
+            } else {
+              setAuto(true);
+            }
+          }}
           aria-pressed={autoEnabled}
           className={
             "rounded-full px-4 py-1.5 font-sans text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b79ddb] " +

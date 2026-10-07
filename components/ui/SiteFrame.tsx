@@ -5,7 +5,6 @@ import { Aurora } from "@/components/ui/decor/Aurora";
 import { FloatingPetals } from "@/components/ui/decor/FloatingPetals";
 import { Glimmer } from "@/components/ui/decor/Glimmer";
 import { PageTransition } from "@/components/ui/decor/PageTransition";
-import { CursorTrail } from "@/components/ui/decor/CursorTrail";
 import { ScrollProgress } from "@/components/ui/decor/ScrollProgress";
 import { BackToTop } from "@/components/ui/decor/BackToTop";
 import { getPublicDrawUnlocked } from "@/lib/app-config";
@@ -21,7 +20,6 @@ export async function SiteFrame({ children }: { children: ReactNode }) {
       <Aurora />
       <Glimmer />
       <FloatingPetals />
-      <CursorTrail />
       <ScrollProgress />
       <BackToTop />
       <SiteNav showResults={drawUnlocked} showTickets={showTicketLinks} />

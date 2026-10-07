@@ -65,7 +65,7 @@ body {
     radial-gradient(ellipse 70% 45% at 15% -8%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 60%),
     radial-gradient(ellipse 55% 40% at 105% 5%, color-mix(in srgb, var(--color-blush) 75%, transparent), transparent 60%),
     radial-gradient(ellipse 65% 45% at 50% 115%, color-mix(in srgb, var(--color-accent-wash) 90%, transparent), transparent 60%);
-  background-attachment: fixed;
+  background-attachment: scroll;
   background-repeat: no-repeat;
 }
 
