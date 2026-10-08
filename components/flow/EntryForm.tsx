@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { EntryDetailsFields, type EntryValues } from "@/components/flow/EntryDetailsFields";
+import { FormErrorToast } from "@/components/ui/FormErrorToast";
 import { entryInputSchema } from "@/lib/validation/entry";
 import { z } from "zod";
 
@@ -105,7 +106,9 @@ export function EntryForm({
     const parsed = entryInputSchema.safeParse(candidate);
     if (!parsed.success) {
       const flat = z.flattenError(parsed.error).fieldErrors;
-      setErrors(mapFirst(flat));
+      const fieldErrors = mapFirst(flat);
+      setErrors(fieldErrors);
+      setFormError(Object.values(fieldErrors)[0] ?? "Please check the form and try again.");
       return;
     }
 
@@ -130,8 +133,11 @@ export function EntryForm({
         });
         return;
       }
-      if (data.fieldErrors) setErrors(mapFirst(data.fieldErrors));
-      setFormError(data.error ?? "Something went wrong. Please try again.");
+      const fieldErrors = data.fieldErrors ? mapFirst(data.fieldErrors) : {};
+      if (data.fieldErrors) setErrors(fieldErrors);
+      setFormError(
+        Object.values(fieldErrors)[0] ?? data.error ?? "Something went wrong. Please try again.",
+      );
     } catch {
       setFormError("We couldn't reach the server. Please check your connection and try again.");
     } finally {
@@ -140,19 +146,21 @@ export function EntryForm({
   }
 
   return (
-    <EntryDetailsFields
-      values={values}
-      errors={errors}
-      consent={consent}
-      formError={formError}
-      submitting={submitting}
-      onValueChange={set}
-      onConsentChange={(checked) => {
-        setConsent(checked);
-        if (errors.consent) setErrors((current) => ({ ...current, consent: undefined }));
-      }}
-      onSubmit={handleSubmit}
-    />
+    <>
+      <FormErrorToast message={formError} onDismiss={() => setFormError(null)} />
+      <EntryDetailsFields
+        values={values}
+        errors={errors}
+        consent={consent}
+        submitting={submitting}
+        onValueChange={set}
+        onConsentChange={(checked) => {
+          setConsent(checked);
+          if (errors.consent) setErrors((current) => ({ ...current, consent: undefined }));
+        }}
+        onSubmit={handleSubmit}
+      />
+    </>
   );
 }
 

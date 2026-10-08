@@ -7,6 +7,7 @@ import { ticketPurchaseSchema } from "@/lib/validation/ticket";
 import { TicketPaymentGuide } from "@/components/tickets/TicketPaymentGuide";
 import { TicketPurchaseDetails } from "@/components/tickets/TicketPurchaseDetails";
 import { TicketPurchaseSuccess } from "@/components/tickets/TicketPurchaseSuccess";
+import { FormErrorToast } from "@/components/ui/FormErrorToast";
 import {
   ALLOWED_SLIP_TYPES,
   MAX_SLIP_BYTES,
@@ -109,12 +110,14 @@ export function TicketPurchaseForm({
         const mapped: TicketFieldErrors = {};
         for (const [k, v] of Object.entries(flat)) if (v?.length) mapped[k] = v[0];
         setErrors(mapped);
+        setFormError(Object.values(mapped)[0] ?? "Please check the form and try again.");
         return;
       }
 
       const uploaded = await uploadSlip();
       if ("error" in uploaded) {
         setErrors((x) => ({ ...x, slipPath: uploaded.error }));
+        setFormError(uploaded.error);
         return;
       }
 
@@ -125,6 +128,7 @@ export function TicketPurchaseForm({
         const mapped: TicketFieldErrors = {};
         for (const [k, v] of Object.entries(flat)) if (v?.length) mapped[k] = v[0];
         setErrors(mapped);
+        setFormError(Object.values(mapped)[0] ?? "Please check the form and try again.");
         return;
       }
 
@@ -147,6 +151,10 @@ export function TicketPurchaseForm({
         const mapped: TicketFieldErrors = {};
         for (const [k, v] of Object.entries(data.fieldErrors)) if (v?.length) mapped[k] = v[0];
         setErrors(mapped);
+        setFormError(
+          Object.values(mapped)[0] ?? data.error ?? "Something went wrong. Please try again.",
+        );
+        return;
       }
       setFormError(data.error ?? "Something went wrong. Please try again.");
     } catch {
@@ -168,29 +176,31 @@ export function TicketPurchaseForm({
   }
 
   return (
-    <form onSubmit={submit} noValidate className="lailac-stagger flex flex-col gap-6">
-      <TicketPaymentGuide
-        seatingPriceLkr={seatingPriceLkr}
-        standingPriceLkr={standingPriceLkr}
-        bank={bank}
-      />
-      <TicketPurchaseDetails
-        values={values}
-        seatingPriceLkr={seatingPriceLkr}
-        standingPriceLkr={standingPriceLkr}
-        seatingLeft={seatingLeft}
-        standingLeft={standingLeft}
-        errors={errors}
-        file={file}
-        previewUrl={previewUrl}
-        busy={busy}
-        formError={formError}
-        onValueChange={set}
-        onFileChange={(selectedFile) => {
-          setReceiptFile(selectedFile);
-          if (errors.slipPath) setErrors((current) => ({ ...current, slipPath: undefined }));
-        }}
-      />
-    </form>
+    <>
+      <FormErrorToast message={formError} onDismiss={() => setFormError(null)} />
+      <form onSubmit={submit} noValidate className="lailac-stagger flex flex-col gap-6">
+        <TicketPaymentGuide
+          seatingPriceLkr={seatingPriceLkr}
+          standingPriceLkr={standingPriceLkr}
+          bank={bank}
+        />
+        <TicketPurchaseDetails
+          values={values}
+          seatingPriceLkr={seatingPriceLkr}
+          standingPriceLkr={standingPriceLkr}
+          seatingLeft={seatingLeft}
+          standingLeft={standingLeft}
+          errors={errors}
+          file={file}
+          previewUrl={previewUrl}
+          busy={busy}
+          onValueChange={set}
+          onFileChange={(selectedFile) => {
+            setReceiptFile(selectedFile);
+            if (errors.slipPath) setErrors((current) => ({ ...current, slipPath: undefined }));
+          }}
+        />
+      </form>
+    </>
   );
 }

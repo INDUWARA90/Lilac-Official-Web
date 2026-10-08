@@ -39,7 +39,6 @@ export function TshirtOrderFields({
   errors,
   file,
   busy,
-  formError,
   total,
   bank,
   onValueChange,
@@ -51,7 +50,6 @@ export function TshirtOrderFields({
   errors: Errors;
   file: File | null;
   busy: boolean;
-  formError: string | null;
   total: number;
   bank: TicketBank;
   onValueChange: SetOrderValue;
@@ -235,11 +233,6 @@ export function TshirtOrderFields({
         </Button>
       </div>
 
-      {formError && (
-        <p role="alert" className="rounded-field bg-red-50 px-4 py-3 font-sans text-sm text-red-700 ring-1 ring-red-200">
-          {formError}
-        </p>
-      )}
     </form>
   );
 }

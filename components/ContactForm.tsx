@@ -7,6 +7,7 @@ import { AnimatedCheck } from "@/components/ui/decor/AnimatedCheck";
 import { Sparkle } from "@/components/ui/decor/Sparkle";
 import { TextField } from "@/components/ui/TextField";
 import { contactInputSchema } from "@/lib/validation/contact";
+import { FormErrorToast } from "@/components/ui/FormErrorToast";
 
 type FieldErrors = Partial<Record<string, string>>;
 
@@ -36,6 +37,7 @@ export function ContactForm() {
       const mapped: FieldErrors = {};
       for (const [k, v] of Object.entries(flat)) if (v?.length) mapped[k] = v[0];
       setErrors(mapped);
+      setFormError(Object.values(mapped)[0] ?? "Please check the form and try again.");
       return;
     }
 
@@ -46,9 +48,22 @@ export function ContactForm() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(candidate),
       });
-      const data = (await res.json()) as { ok: boolean; error?: string };
+      const data = (await res.json()) as {
+        ok: boolean;
+        error?: string;
+        fieldErrors?: Record<string, string[]>;
+      };
       if (data.ok) setDone(true);
-      else setFormError(data.error ?? "Something went wrong. Please try again.");
+      else {
+        const fieldErrors: FieldErrors = {};
+        for (const [key, messages] of Object.entries(data.fieldErrors ?? {})) {
+          if (messages?.[0]) fieldErrors[key] = messages[0];
+        }
+        if (Object.keys(fieldErrors).length) setErrors(fieldErrors);
+        setFormError(
+          Object.values(fieldErrors)[0] ?? data.error ?? "Something went wrong. Please try again.",
+        );
+      }
     } catch {
       setFormError("We couldn't reach the server. Please try again.");
     } finally {
@@ -58,6 +73,7 @@ export function ContactForm() {
 
   return (
     <div className="relative mx-auto w-full max-w-2xl overflow-hidden rounded-3xl border border-[#b79ddb]/40 bg-gradient-to-br from-white/95 via-[#f9f5ff]/90 to-[#f3ebff]/70 p-5 shadow-[0_35px_80px_-25px_rgba(110,80,160,0.3)] backdrop-blur-2xl sm:rounded-[2.5rem] sm:p-8 lg:p-12">
+      <FormErrorToast message={formError} onDismiss={() => setFormError(null)} />
       {/* Ambient background glows */}
       <div
         aria-hidden="true"
@@ -169,16 +185,6 @@ export function ContactForm() {
                 </p>
               )}
             </div>
-
-            {formError && (
-              <div
-                role="alert"
-                className="flex items-center gap-2.5 rounded-2xl bg-red-50 px-4 py-3 font-sans text-sm text-red-700 ring-1 ring-red-200/80 shadow-sm"
-              >
-                <span className="shrink-0 text-red-500 font-bold">⚠</span>
-                <p>{formError}</p>
-              </div>
-            )}
 
             <Button 
               type="submit" 

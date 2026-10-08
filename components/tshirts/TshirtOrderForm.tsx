@@ -6,6 +6,7 @@ import { createAnonClient } from "@/lib/supabase/client";
 import { tshirtOrderSchema } from "@/lib/validation/tshirt";
 import { TshirtOrderSuccess } from "@/components/tshirts/TshirtOrderSuccess";
 import { TshirtOrderFields, type TshirtOrderValues } from "@/components/tshirts/TshirtOrderFields";
+import { FormErrorToast } from "@/components/ui/FormErrorToast";
 import { ALLOWED_RECEIPT_TYPES, MAX_RECEIPT_BYTES } from "@/lib/tshirts-shared";
 import type { TicketBank } from "@/components/tickets/ticket-purchase-types";
 
@@ -93,18 +94,23 @@ export function TshirtOrderForm({
     try {
       const details = tshirtOrderSchema.omit({ receiptPath: true }).safeParse(values);
       if (!details.success) {
-        setErrors(errorsFrom(details.error));
+        const fieldErrors = errorsFrom(details.error);
+        setErrors(fieldErrors);
+        setFormError(Object.values(fieldErrors)[0] ?? "Please check the form and try again.");
         return;
       }
 
       const uploaded = await upload();
       if ("error" in uploaded) {
         setErrors({ receiptPath: uploaded.error });
+        setFormError(uploaded.error ?? "The receipt upload failed. Please try again.");
         return;
       }
       const parsed = tshirtOrderSchema.safeParse({ ...details.data, receiptPath: uploaded.path });
       if (!parsed.success) {
-        setErrors(errorsFrom(parsed.error));
+        const fieldErrors = errorsFrom(parsed.error);
+        setErrors(fieldErrors);
+        setFormError(Object.values(fieldErrors)[0] ?? "Please check the form and try again.");
         return;
       }
       const res = await fetch("/api/tshirts", {
@@ -121,7 +127,9 @@ export function TshirtOrderForm({
           if (v?.[0]) out[k] = v[0];
         }
         setErrors(out);
-        setFormError(data.error ?? "Something went wrong. Please try again.");
+        setFormError(
+          Object.values(out)[0] ?? data.error ?? "Something went wrong. Please try again.",
+        );
       }
     } catch {
       setFormError("We couldn't reach the server. Please try again.");
@@ -135,21 +143,23 @@ export function TshirtOrderForm({
   }
 
   return (
-    <TshirtOrderFields
-      values={values}
-      errors={errors}
-      file={file}
-      busy={busy}
-      formError={formError}
-      total={total}
-      bank={bank}
-      onValueChange={set}
-      onItemChange={setItem}
-      onFileChange={(selectedFile) => {
-        setFile(selectedFile);
-        setErrors((current) => ({ ...current, receiptPath: undefined }));
-      }}
-      onSubmit={submit}
-    />
+    <>
+      <FormErrorToast message={formError} onDismiss={() => setFormError(null)} />
+      <TshirtOrderFields
+        values={values}
+        errors={errors}
+        file={file}
+        busy={busy}
+        total={total}
+        bank={bank}
+        onValueChange={set}
+        onItemChange={setItem}
+        onFileChange={(selectedFile) => {
+          setFile(selectedFile);
+          setErrors((current) => ({ ...current, receiptPath: undefined }));
+        }}
+        onSubmit={submit}
+      />
+    </>
   );
 }

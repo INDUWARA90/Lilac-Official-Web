@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { Reveal } from "@/components/ui/decor/Reveal";
 import { ticketStatusLookupSchema } from "@/lib/validation/ticket";
+import { FormErrorToast } from "@/components/ui/FormErrorToast";
 import {
   PURCHASE_STATUS_LABEL,
   type TicketPurchaseStatus,
@@ -48,6 +49,7 @@ export function TicketStatusLookup() {
       const mapped: FieldErrors = {};
       for (const [k, v] of Object.entries(flat)) if (v?.length) mapped[k] = v[0];
       setErrors(mapped);
+      setFormError(Object.values(mapped)[0] ?? "Please check the form and try again.");
       return;
     }
     setErrors({});
@@ -74,6 +76,7 @@ export function TicketStatusLookup() {
 
   return (
     <div className="flex flex-col gap-8">
+      <FormErrorToast message={formError} onDismiss={() => setFormError(null)} />
       <form onSubmit={submit} noValidate className="lailac-stagger flex flex-col gap-6">
         <TextField
           label="Phone or email"
@@ -86,14 +89,6 @@ export function TicketStatusLookup() {
           }}
           error={errors.contact}
         />
-        {formError && (
-          <p
-            role="alert"
-            className="rounded-field bg-red-50 px-3 py-2 font-sans text-sm text-red-700 ring-1 ring-red-200"
-          >
-            {formError}
-          </p>
-        )}
         <Button type="submit" variant="magic" loading={busy} className="self-start">
           Check status
         </Button>

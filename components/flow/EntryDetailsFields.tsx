@@ -29,7 +29,6 @@ export function EntryDetailsFields({
   values,
   errors,
   consent,
-  formError,
   submitting,
   onValueChange,
   onConsentChange,
@@ -38,7 +37,6 @@ export function EntryDetailsFields({
   values: EntryValues;
   errors: FieldErrors;
   consent: boolean;
-  formError: string | null;
   submitting: boolean;
   onValueChange: SetEntryValue;
   onConsentChange: (consent: boolean) => void;
@@ -155,15 +153,6 @@ export function EntryDetailsFields({
         </Checkbox>
 
         <div className="flex flex-col gap-4">
-          {formError && (
-            <p
-              role="alert"
-              className="rounded-field bg-red-50 px-3 py-2 font-sans text-sm text-red-700 ring-1 ring-red-200"
-            >
-              {formError}
-            </p>
-          )}
-
           <Button type="submit" variant="magic" loading={submitting} className="self-start">
             Submit entry
           </Button>

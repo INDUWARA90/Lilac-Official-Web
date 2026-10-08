@@ -21,7 +21,6 @@ export function TicketPurchaseDetails({
   file,
   previewUrl,
   busy,
-  formError,
   onValueChange,
   onFileChange,
 }: {
@@ -34,7 +33,6 @@ export function TicketPurchaseDetails({
   file: File | null;
   previewUrl: string | null;
   busy: boolean;
-  formError: string | null;
   onValueChange: TicketValueSetter;
   onFileChange: (file: File | null) => void;
 }) {
@@ -181,15 +179,6 @@ export function TicketPurchaseDetails({
           </p>
         </div>
       </div>
-
-      {formError && (
-        <p
-          role="alert"
-          className="rounded-field bg-red-50 px-4 py-3 font-sans text-sm text-red-700 ring-1 ring-red-200"
-        >
-          {formError}
-        </p>
-      )}
 
       <Button type="submit" variant="magic" loading={busy} className="w-full sm:w-auto self-start py-3 px-8 text-base">
         Submit ticket request
