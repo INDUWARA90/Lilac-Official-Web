@@ -66,7 +66,7 @@ export function SiteNav({
           >
             <MenuIcon />
           </button>
-          <Link href="/" aria-label="Lailac — home" className="">
+          <Link href="/" aria-label="Lilac — home" className="">
             <Logo />
           </Link>
         </div>

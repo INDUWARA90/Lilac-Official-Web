@@ -17,7 +17,7 @@ import { ArtistFrame } from "@/components/ui/decor/ArtistFrame";
 import { CtaBanner } from "@/components/ui/decor/CtaBanner";
 
 export const metadata: Metadata = {
-  title: { absolute: "Lailac — the annual company event" },
+  title: { absolute: "Lilac — the annual company event" },
 };
 
 // Same ISR pattern as /results and /tickets — a cheap, always-fresh-enough
@@ -32,7 +32,7 @@ const MARQUEE = [
   "Exclusive sponsor highlights",
   "Prizes revealed weekly",
   "Secure your ticket today",
-  "See you at Lailac",
+  "See you at Lilac",
 ] as const;
 
 const FEATURED_ARTISTS = [
@@ -153,7 +153,7 @@ export default async function HomePage() {
                 Artists coming to the event
               </h2>
               <p className="mx-auto mt-3 max-w-md font-sans text-sm leading-relaxed text-ink-muted">
-                Meet the artists joining us at Lailac concert this year.
+                Meet the artists joining us at Lilac concert this year.
               </p>
 
               {/* flourish */}
@@ -189,10 +189,10 @@ export default async function HomePage() {
         
         <Reveal className="mt-10" >
           <CtaBanner
-            drawUnlocked={drawUnlocked}
-            ticketsOpen={availability.salesOpen && availability.left > 0}
-            ticketLinksVisible={availability.ticketLinksVisible}
-            seatsLeft={availability.left}
+            // drawUnlocked={drawUnlocked}
+            // ticketsOpen={availability.salesOpen && availability.left > 0}
+            // ticketLinksVisible={availability.ticketLinksVisible}
+            // seatsLeft={availability.left}
           />
         </Reveal>
 

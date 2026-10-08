@@ -16,7 +16,7 @@ export default async function TshirtsPage() {
     <div className="py-8 sm:py-12">
       <h1 className="text-3xl text-ink sm:text-4xl">Official T-shirt</h1>
       <p className="mt-3 font-sans text-sm text-ink-muted sm:text-base">
-        Order your Lailac T-shirt for{" "}
+        Order your Lilac T-shirt for{" "}
         <strong className="text-ink">{formatLkr(settings.priceLkr)}</strong> each.
       </p>
       <TshirtSizeGuide />

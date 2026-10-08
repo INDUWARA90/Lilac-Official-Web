@@ -34,7 +34,7 @@ export async function SiteFrame({ children }: { children: ReactNode }) {
 
       <footer className="flex justify-center border-t border-hairline px-4 py-8 sm:px-6">
         <div className="flex w-full max-w-[560px] flex-col gap-3 font-sans text-xs text-ink-muted sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} Lailac. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} Lilac. All rights reserved.</span>
           <nav className="flex flex-wrap gap-x-4 gap-y-1">
             <Link href="/about" className="hover:text-accent-strong">
               About us

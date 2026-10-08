@@ -150,7 +150,7 @@ export function EntryDetailsFields({
           .{" "}
           <span className="font-semibold text-ink">
             If I am selected as a winner, my full name will be published publicly
-            on the Lailac results page.
+            on the Lilac results page.
           </span>
         </Checkbox>
 

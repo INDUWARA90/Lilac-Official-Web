@@ -4,7 +4,7 @@ export function Logo({ className = "h-7 w-auto" }: { className?: string }) {
   return (
     <Image
       src="/Lailac.png"
-      alt="Lailac"
+      alt="Lilac"
       width={270}
       height={90}
       sizes="90px"
