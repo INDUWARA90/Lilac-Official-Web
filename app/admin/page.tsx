@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { requireFullAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getDrawUnlocked } from "@/lib/app-config";
+import { getArtistRevealVisible, getDrawUnlocked } from "@/lib/app-config";
 import { getAvailability, getTicketSettings } from "@/lib/tickets";
 import { fetchAll } from "@/lib/supabase/fetch-all";
 import { formatLkr } from "@/lib/tickets-shared";
 import { AdminDashboardView } from "@/components/admin/AdminDashboardView";
+import { ARTIST_LINEUP } from "@/lib/artist-lineup";
 
 export const metadata: Metadata = { title: "Dashboard", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -41,6 +42,7 @@ export default async function AdminDashboard() {
     entries24h,
     entries7d,
     drawUnlocked,
+    artistRevealVisible,
     ticketsPending,
     ticketsIssued,
     ticketsCheckedIn,
@@ -57,6 +59,7 @@ export default async function AdminDashboard() {
     db.from("entries").select("id", head).gte("created_at", dayAgo),
     db.from("entries").select("id", head).gte("created_at", weekAgo),
     getDrawUnlocked(),
+    getArtistRevealVisible(),
     db.from("ticket_purchases").select("id", head).eq("status", "pending_review"),
     db.from("tickets").select("id", head),
     db.from("tickets").select("id", head).not("checked_in_at", "is", null),
@@ -93,6 +96,8 @@ export default async function AdminDashboard() {
   return (
     <AdminDashboardView
       email={session.email}
+      artistLineup={ARTIST_LINEUP}
+      artistRevealVisible={artistRevealVisible}
       funnel={funnel}
       summaryStats={[
         { label: "Entries last 24h", value: entries24h.count ?? 0 },

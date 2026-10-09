@@ -2,12 +2,16 @@ import Link from "next/link";
 import { CountUp } from "@/components/ui/decor/CountUp";
 import { DrawLock } from "@/components/admin/DrawLock";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { ArtistRevealToggle } from "@/components/admin/ArtistRevealToggle";
+import type { ArtistLineupEntry } from "@/lib/artist-lineup";
 
 type BreakdownData = { title: string; data: [string, number][] };
 type TicketCard = { label: string; value: string | number; sub?: string; href: string };
 
 export function AdminDashboardView({
   email,
+  artistLineup,
+  artistRevealVisible,
   funnel,
   summaryStats,
   breakdowns,
@@ -18,6 +22,8 @@ export function AdminDashboardView({
   drawUnlocked,
 }: {
   email: string;
+  artistLineup: readonly ArtistLineupEntry[];
+  artistRevealVisible: boolean;
   funnel: { label: string; value: number; sub: string }[];
   summaryStats: { label: string; value: number }[];
   breakdowns: BreakdownData[];
@@ -93,6 +99,19 @@ export function AdminDashboardView({
         {buyers} confirmed purchase{buyers === 1 ? "" : "s"} · Seating {seatingPrice} /
         Standing {standingPrice}.
       </p>
+
+      <h2 className="mt-8 font-sans text-sm font-semibold uppercase tracking-wider text-ink-muted">
+        Public artist photos
+      </h2>
+      <ArtistRevealToggle initialVisible={artistRevealVisible} />
+      <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+        {artistLineup.map((artist) => (
+          <li key={artist.name} className="rounded-card border border-hairline p-4">
+            <div className="font-sans text-sm font-semibold text-ink">{artist.name}</div>
+            <div className="mt-1 font-sans text-xs text-ink-muted">{artist.role}</div>
+          </li>
+        ))}
+      </ul>
 
       <h2 className="mt-8 font-sans text-sm font-semibold uppercase tracking-wider text-ink-muted">
         Winner draw

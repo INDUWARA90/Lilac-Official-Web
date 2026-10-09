@@ -100,6 +100,7 @@ export type AdRow = {
 export type AppConfigRow = {
   id: string;
   draw_unlocked: boolean;
+  artist_reveal_visible: boolean;
   updated_at: string;
   updated_by: string | null;
 };

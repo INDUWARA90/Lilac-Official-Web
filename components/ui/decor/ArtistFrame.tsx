@@ -685,6 +685,7 @@ export function ArtistFrame({
   className = "",
   floatDelay = 0,
   name,
+  isShadow = false,
 }: {
   src: string;
   alt: string;
@@ -692,6 +693,7 @@ export function ArtistFrame({
   className?: string;
   floatDelay?: number;
   name?: string;
+  isShadow?: boolean;
 }) {
   const uid = useId().replace(/:/g, "");
   const ids: Ids = {
@@ -743,7 +745,9 @@ export function ArtistFrame({
 
           {/* photo */}
           <div
-            className={`absolute ${inset} overflow-hidden bg-white shadow-[0_24px_48px_-18px_rgba(110,80,160,0.6),0_0_0_4px_#fff,0_0_0_5px_rgba(183,157,219,0.45)] transition-shadow duration-500 group-hover:shadow-[0_32px_60px_-18px_rgba(110,80,160,0.75),0_0_0_4px_#fff,0_0_0_5px_rgba(148,103,200,0.7)]`}
+            className={`absolute ${inset} overflow-hidden ${
+              isShadow ? "bg-[#f0e8f8]" : "bg-white"
+            } shadow-[0_24px_48px_-18px_rgba(110,80,160,0.6),0_0_0_4px_#fff,0_0_0_5px_rgba(183,157,219,0.45)] transition-shadow duration-500 group-hover:shadow-[0_32px_60px_-18px_rgba(110,80,160,0.75),0_0_0_4px_#fff,0_0_0_5px_rgba(148,103,200,0.7)]`}
             style={{ borderRadius: radius }}
           >
             <img
@@ -751,13 +755,27 @@ export function ArtistFrame({
               alt={alt}
               loading="lazy"
               decoding="async"
-              className="h-full w-full object-cover saturate-[0.95] transition-transform duration-700 ease-out group-hover:scale-[1.08] group-hover:saturate-110"
+              className={`h-full w-full transition-transform duration-700 ease-out group-hover:scale-[1.04] ${
+                isShadow
+                  ? "object-contain mix-blend-multiply contrast-125"
+                  : "object-cover saturate-[0.95] group-hover:saturate-110"
+              }`}
             />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-[#7c52b3]/15 via-transparent to-white/20" />
+            <div
+              className={`pointer-events-none absolute inset-0 ${
+                isShadow
+                  ? "bg-gradient-to-br from-[#9467c8]/10 via-transparent to-[#b79ddb]/20"
+                  : "bg-gradient-to-tr from-[#7c52b3]/15 via-transparent to-white/20"
+              }`}
+            />
             {/* bottom fade for depth */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#4a2f7a]/20 to-transparent" />
+            {!isShadow && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#4a2f7a]/20 to-transparent" />
+            )}
             {/* light sweep */}
-            <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-1000 ease-out group-hover:translate-x-full" />
+            {!isShadow && (
+              <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-1000 ease-out group-hover:translate-x-full" />
+            )}
           </div>
 
           {/* florals */}

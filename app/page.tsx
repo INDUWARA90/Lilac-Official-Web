@@ -9,12 +9,13 @@ import { CountUp } from "@/components/ui/decor/CountUp";
 import { HeroItem, HeroStagger } from "@/components/ui/decor/Hero";
 import { Magnetic } from "@/components/ui/decor/Magnetic";
 import { Marquee } from "@/components/ui/decor/Marquee";
-import { getPublicDrawUnlocked } from "@/lib/app-config";
+import { getPublicArtistRevealVisible, getPublicDrawUnlocked } from "@/lib/app-config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAvailability } from "@/lib/tickets";
 import { getTshirtLinkVisible } from "@/lib/tshirts";
-import { ArtistFrame } from "@/components/ui/decor/ArtistFrame";
 import { CtaBanner } from "@/components/ui/decor/CtaBanner";
+import { ARTIST_LINEUP } from "@/lib/artist-lineup";
+import { ArtistFrame } from "@/components/ui/decor/ArtistFrame";
 
 export const metadata: Metadata = {
   title: { absolute: "Lilac — the annual company event" },
@@ -35,36 +36,14 @@ const MARQUEE = [
   "See you at Lilac",
 ] as const;
 
-const FEATURED_ARTISTS = [
-  {
-    name: "Imesh Sandeepa",
-    imageUrl: "https://res.cloudinary.com/dkj7pc9xo/image/upload/v1791103924/hiayhtrwwhsqgd0sdfrq.jpg",
-    variant: "poppy"
-  },
-  {
-    name: "Uvindu Ayshcharya",
-    imageUrl: "https://res.cloudinary.com/dkj7pc9xo/image/upload/v1791105203/lmdbcgn7ko0iddb7jzy8.jpg",
-    variant: "gypsophila"
-  },
-  {
-    name: "Chathurya Sandabarana",
-    imageUrl: "https://res.cloudinary.com/dkj7pc9xo/image/upload/v1791105074/hf3sgsktnbrs3cjppvne.jpg",
-    variant: "clematis"
-  },
-  {
-    name: "Yesha Frenando",
-    imageUrl: "https://res.cloudinary.com/dkj7pc9xo/image/upload/v1791106009/h13xoqhpicyqm7iivew0.jpg",
-    variant: "lavender"
-  },
-] as const;
-
 export default async function HomePage() {
   const db = createAdminClient();
-  const [{ count: verifiedCount }, availability, drawUnlocked, tshirtLinkVisible] = await Promise.all([
+  const [{ count: verifiedCount }, availability, drawUnlocked, tshirtLinkVisible, artistRevealVisible] = await Promise.all([
     db.from("entries").select("*", { count: "exact", head: true }).eq("verified", true),
     getAvailability(),
     getPublicDrawUnlocked(),
     getTshirtLinkVisible(),
+    getPublicArtistRevealVisible(),
   ]);
 
   return (
@@ -135,58 +114,58 @@ export default async function HomePage() {
         <FlowerDivider className="my-12" />
 
         <section className="relative py-2">
-          {/* ambient lailac backdrop */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[75%] w-full max-w-5xl -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(190,160,235,0.28),transparent_70%)] blur-3xl"
-          />
-
-          <Reveal>
-            <div className="relative mx-auto max-w-2xl px-4 text-center">
-              <Sparkle size={18} gold className="absolute -top-2 left-[8%]" delay={0.3} />
-              <Sparkle size={13} className="absolute top-8 right-[10%]" delay={1.2} />
-
-              <p className="font-sans text-xs font-semibold uppercase tracking-[0.25em] text-ink-muted">
-                The lineup
-              </p>
-              <h2 className="lailac-gradient-text mt-3 font-serif text-3xl font-bold sm:text-4xl">
-                Artists coming to the event
-              </h2>
-              <p className="mx-auto mt-3 max-w-md font-sans text-sm leading-relaxed text-ink-muted">
-                Meet the artists joining us at Lilac concert this year.
-              </p>
-
-              {/* flourish */}
-              <div className="mt-5 flex items-center justify-center gap-3 text-[#a67fd4]" aria-hidden="true">
-                <span className="h-px w-16 bg-gradient-to-r from-transparent to-[#b79ddb]/60" />
-                <span className="text-base">❀</span>
-                <span className="h-px w-16 bg-gradient-to-l from-transparent to-[#b79ddb]/60" />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[75%] w-full max-w-5xl -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(190,160,235,0.28),transparent_70%)] blur-3xl"
+            />
+            <Reveal>
+              <div className="relative mx-auto max-w-2xl px-4 text-center">
+                <Sparkle size={18} gold className="absolute -top-2 left-[8%]" delay={0.3} />
+                <Sparkle size={13} className="absolute top-8 right-[10%]" delay={1.2} />
+                <p className="font-sans text-xs font-semibold uppercase tracking-[0.25em] text-ink-muted">
+                  The lineup
+                </p>
+                <h2 className="lailac-gradient-text mt-3 font-serif text-3xl font-bold sm:text-4xl">
+                  Artists coming to the event
+                </h2>
+                <p className="mx-auto mt-3 max-w-md font-sans text-sm leading-relaxed text-ink-muted">
+                  Meet the artists joining us at Lilac concert this year.
+                </p>
+                <div className="mt-5 flex items-center justify-center gap-3 text-[#a67fd4]" aria-hidden="true">
+                  <span className="h-px w-16 bg-gradient-to-r from-transparent to-[#b79ddb]/60" />
+                  <span className="text-base">❀</span>
+                  <span className="h-px w-16 bg-gradient-to-l from-transparent to-[#b79ddb]/60" />
+                </div>
               </div>
+            </Reveal>
+            <div className="mx-auto mt-10 flex max-w-7xl flex-wrap items-start justify-center gap-y-14 px-2 sm:mt-14 sm:pb-12">
+              {ARTIST_LINEUP.map((artist, index) => (
+                <div
+                  key={artist.id}
+                  className={`flex w-full justify-center sm:w-1/3 ${
+                    index === 0
+                      ? "order-1 sm:order-none"
+                      : index === 1
+                        ? "order-0 sm:order-none"
+                        : "order-2 sm:order-none"
+                  }`}
+                >
+                  <Reveal delay={(index % 3) * 120} className="w-full">
+                    <ArtistFrame
+                      src={artistRevealVisible ? artist.revealedImageUrl : artist.shadowImageUrl}
+                      alt={artistRevealVisible ? artist.name : artist.hiddenName}
+                      name={artistRevealVisible ? artist.name : artist.hiddenName}
+                      variant={artist.variant}
+                      isShadow={!artistRevealVisible}
+                      floatDelay={(index % 3) * 1.2}
+                      className={index % 3 === 1 ? "sm:translate-y-10" : ""}
+                    />
+                  </Reveal>
+                </div>
+              ))}
             </div>
-          </Reveal>
-          <div className="mx-auto mt-10 flex max-w-7xl flex-wrap items-start justify-center gap-y-14 px-2 sm:mt-14 sm:pb-12">
-            {FEATURED_ARTISTS.map((artist, i) => (
-              <div
-                key={artist.name}
-                className={`flex w-full justify-center sm:w-1/3 ${
-                  i === 0 ? "order-1 sm:order-none" : i === 1 ? "order-0 sm:order-none" : "order-2 sm:order-none"
-                }`}
-              >
-                <Reveal delay={(i % 3) * 120} className="w-full">
-                  <ArtistFrame
-                    src={artist.imageUrl}
-                    alt={artist.name}
-                    name={artist.name}
-                    variant={artist.variant}
-                    floatDelay={(i % 3) * 1.2}
-                    className={i % 3 === 1 ? "sm:translate-y-10" : ""}
-                  />
-                </Reveal>
-              </div>
-            ))}
-          </div>
-        </section>
-        
+          </section>
+
         <Reveal className="mt-10" >
           <CtaBanner
             // drawUnlocked={drawUnlocked}

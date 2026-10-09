@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { unstable_cache, revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  */
 
 const DRAW_UNLOCKED_TAG = "draw-unlocked";
+const ARTIST_REVEAL_TAG = "artist-reveal-visible";
 
 async function fetchDrawUnlocked(): Promise<boolean> {
   const { data, error } = await createAdminClient()
@@ -71,5 +72,50 @@ export async function setDrawUnlocked(unlocked: boolean, by: string): Promise<bo
   // away rather than serving up to a year of stale data (the `"max"` profile
   // Next recommends for content where that's fine, which this isn't).
   revalidateTag(DRAW_UNLOCKED_TAG, { expire: 0 });
+  return true;
+}
+
+async function fetchArtistRevealVisible(): Promise<boolean> {
+  const { data, error } = await createAdminClient()
+    .from("app_config")
+    .select("artist_reveal_visible")
+    .eq("id", "default")
+    .maybeSingle();
+  if (error) {
+    console.error("Artist reveal: failed to read app config", error);
+    return false;
+  }
+  return data?.artist_reveal_visible ?? false;
+}
+
+export const getArtistRevealVisible = cache(fetchArtistRevealVisible);
+
+export const getPublicArtistRevealVisible = unstable_cache(
+  fetchArtistRevealVisible,
+  ["artist-reveal-visible"],
+  { tags: [ARTIST_REVEAL_TAG], revalidate: 60 },
+);
+
+export async function setArtistRevealVisible(visible: boolean, by: string): Promise<boolean> {
+  const { data, error } = await createAdminClient()
+    .from("app_config")
+    .upsert(
+      {
+        id: "default",
+        artist_reveal_visible: visible,
+        updated_at: new Date().toISOString(),
+        updated_by: by,
+      },
+      { onConflict: "id" },
+    )
+    .select("artist_reveal_visible")
+    .single();
+  if (error || !data || data.artist_reveal_visible !== visible) {
+    console.error("Artist reveal: failed to persist app config", error);
+    return false;
+  }
+  revalidateTag(ARTIST_REVEAL_TAG, { expire: 0 });
+  revalidatePath("/", "page");
+  revalidatePath("/about", "page");
   return true;
 }

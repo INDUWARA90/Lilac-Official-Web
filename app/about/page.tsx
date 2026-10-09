@@ -3,10 +3,15 @@ import Link from "next/link";
 import { SiteFrame } from "@/components/ui/SiteFrame";
 import { Reveal } from "@/components/ui/decor/Reveal";
 import { Sparkle } from "@/components/ui/decor/Sparkle";
+import { ArtistFrame } from "@/components/ui/decor/ArtistFrame";
+import { getPublicArtistRevealVisible } from "@/lib/app-config";
+import { ARTIST_LINEUP } from "@/lib/artist-lineup";
 
 export const metadata: Metadata = { title: "About us · Lilac Live in Concert" };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const artistRevealVisible = await getPublicArtistRevealVisible();
+
   return (
     <SiteFrame>
       <article className="py-12 sm:py-20">
@@ -73,58 +78,58 @@ export default function AboutPage() {
           </div>
         </Reveal>
 
-        {/* --- ARTIST LINEUP --- */}
-        <Reveal delay={150} className="mt-16">
-          <div className="mb-8">
-            <span className="text-xs font-semibold uppercase tracking-widest text-[#7b539f]">Talent Lineup</span>
-            <h2 className="mt-2 font-serif text-3xl font-bold text-ink">Artists & Special Guests</h2>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* MAIN HEADLINER: UVINDU AYSHCHARYA */}
-            <div className="relative overflow-hidden rounded-3xl border-2 border-[#7b539f]/40 bg-gradient-to-br from-[#7b539f] to-[#5d3a85] p-8 text-white shadow-xl md:col-span-2">
-              <Sparkle size={20} gold className="absolute right-8 top-8" />
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-1 font-sans text-xs font-semibold uppercase tracking-wider backdrop-blur text-[#f3d98a]">
-                <span>✨</span> Headlining Artist & Singer
+        <section className="relative mt-16 py-2">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[75%] w-full max-w-5xl -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(190,160,235,0.28),transparent_70%)] blur-3xl"
+            />
+            <Reveal>
+              <div className="relative mx-auto max-w-2xl px-4 text-center">
+                <Sparkle size={18} gold className="absolute -top-2 left-[8%]" delay={0.3} />
+                <Sparkle size={13} className="absolute top-8 right-[10%]" delay={1.2} />
+                <p className="font-sans text-xs font-semibold uppercase tracking-[0.25em] text-ink-muted">
+                  The lineup
+                </p>
+                <h2 className="lailac-gradient-text mt-3 font-serif text-3xl font-bold sm:text-4xl">
+                  Artists coming to the event
+                </h2>
+                <p className="mx-auto mt-3 max-w-md font-sans text-sm leading-relaxed text-ink-muted">
+                  Meet the artists joining us at Lilac concert this year.
+                </p>
+                <div className="mt-5 flex items-center justify-center gap-3 text-[#a67fd4]" aria-hidden="true">
+                  <span className="h-px w-16 bg-gradient-to-r from-transparent to-[#b79ddb]/60" />
+                  <span className="text-base">❀</span>
+                  <span className="h-px w-16 bg-gradient-to-l from-transparent to-[#b79ddb]/60" />
+                </div>
               </div>
-              <h3 className="mt-4 font-serif text-3xl font-bold tracking-tight sm:text-4xl">Uvindu Ayshcharya</h3>
-              <p className="mt-3 max-w-2xl font-sans text-base leading-relaxed text-white/90">
-                Driving the core of our musical journey, Uvindu brings his exceptional vocals, powerful acoustic performances, and mastery of the stage to headline the evening and power the nonstop music session alongside the band.
-              </p>
+            </Reveal>
+            <div className="mx-auto mt-10 flex max-w-7xl flex-wrap items-start justify-center gap-y-14 px-2 sm:mt-14 sm:pb-12">
+              {ARTIST_LINEUP.map((artist, index) => (
+                <div
+                  key={artist.id}
+                  className={`flex w-full justify-center sm:w-1/3 ${
+                    index === 0
+                      ? "order-1 sm:order-none"
+                      : index === 1
+                        ? "order-0 sm:order-none"
+                        : "order-2 sm:order-none"
+                  }`}
+                >
+                  <Reveal delay={(index % 3) * 120} className="w-full">
+                    <ArtistFrame
+                      src={artistRevealVisible ? artist.revealedImageUrl : artist.shadowImageUrl}
+                      alt={artistRevealVisible ? artist.name : artist.hiddenName}
+                      name={artistRevealVisible ? artist.name : artist.hiddenName}
+                      variant={artist.variant}
+                      isShadow={!artistRevealVisible}
+                      floatDelay={(index % 3) * 1.2}
+                      className={index % 3 === 1 ? "sm:translate-y-10" : ""}
+                    />
+                  </Reveal>
+                </div>
+              ))}
             </div>
-
-            {/* CHATHURYA SADABARANA */}
-            <div className="rounded-3xl border border-hairline bg-surface p-6 shadow-sm transition-all hover:border-[#7b539f]/50">
-              <span className="inline-block rounded-full bg-[#7b539f]/10 px-3 py-1 text-xs font-semibold text-[#7b539f]">Featured Singer & Artist</span>
-              <h4 className="mt-3 font-serif text-xl font-bold text-ink">Chathurya Sadabarana</h4>
-              <p className="mt-2 text-sm text-ink-muted">
-                Brings a captivating vocal presence and soothing musical performances to set the mood for the evening.
-              </p>
-            </div>
-
-            {/* IMESH SANDEEPA */}
-            <div className="rounded-3xl border border-hairline bg-surface p-6 shadow-sm transition-all hover:border-[#7b539f]/50">
-              <span className="inline-block rounded-full bg-[#7b539f]/10 px-3 py-1 text-xs font-semibold text-[#7b539f]">Featured Singer & Artist</span>
-              <h4 className="mt-3 font-serif text-xl font-bold text-ink">Imesh Sandeepa</h4>
-              <p className="mt-2 text-sm text-ink-muted">
-                Brings high energy, powerful vocal delivery, and soulful melodies to both the acoustic and nonstop sets.
-              </p>
-            </div>
-
-            {/* YESHA FERNANDO */}
-            <div className="rounded-3xl border border-hairline bg-surface p-6 shadow-sm transition-all hover:border-[#7b539f]/50 md:col-span-2">
-              <span className="inline-block rounded-full bg-[#7b539f]/10 px-3 py-1 text-xs font-semibold text-[#7b539f]">Special Guest Author</span>
-              <h4 className="mt-3 font-serif text-xl font-bold text-ink">Yesha Fernando</h4>
-              <p className="mt-1 text-sm font-medium text-[#7b539f]">Renowned Author</p>
-              <p className="mt-2 text-sm text-ink-muted">
-                Author of acclaimed literary works including *Lilac, Lilac, Floramar, and Peppermint*.
-              </p>
-            </div>
-          </div>
-          <p className="mt-4 text-center text-xs italic text-ink-muted">
-            (This lineup features top artists who regularly headline major evening concerts. It is a fantastic opportunity for our Mayathra chapter event 🫶🏻)
-          </p>
-        </Reveal>
+          </section>
 
         {/* --- EVENT SCHEDULE TIMELINE --- */}
         <Reveal delay={200} className="mt-16">
@@ -147,7 +152,7 @@ export default function AboutPage() {
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#7b539f]">6:45 PM – 8:00 PM</span>
                 <h4 className="mt-2 font-serif text-lg font-bold text-ink">Acoustic Session</h4>
-                <p className="mt-2 text-sm text-ink-muted">Lyrical and acoustic performances featuring Yesha, Imesh, and Chathurya.</p>
+                <p className="mt-2 text-sm text-ink-muted">Lyrical and acoustic performances by our featured guests.</p>
               </div>
               <div className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-[#7b539f]">Phase 2</div>
             </div>
@@ -165,7 +170,7 @@ export default function AboutPage() {
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#7b539f]">8:15 PM Onwards</span>
                 <h4 className="mt-2 font-serif text-lg font-bold text-ink">Nonstop & Stalls</h4>
-                <p className="mt-2 text-sm text-ink-muted">Uvindu, Imesh, and the band take over with nonstop music alongside food stalls.</p>
+                <p className="mt-2 text-sm text-ink-muted">Our headlining act and band take over with nonstop music alongside food stalls.</p>
               </div>
               <div className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-[#7b539f]">Grand Finale</div>
             </div>
