@@ -2,7 +2,7 @@ import { z } from "zod";
 import { normalizeLkPhone } from "@/lib/validation/entry";
 import { MAX_TSHIRT_ORDER_QUANTITY, TSHIRT_COLORS, TSHIRT_SIZES } from "@/lib/tshirts-shared";
 
-export const tshirtOrderSchema = z.object({
+const tshirtOrderFields = {
   name: z.string().trim().min(2, "Please enter your full name.").max(120),
   registrationNumber: z
     .string()
@@ -33,5 +33,27 @@ export const tshirtOrderSchema = z.object({
     size: z.enum(TSHIRT_SIZES, { error: "Please select a T-shirt size." }),
     color: z.enum(TSHIRT_COLORS, { error: "Please select a T-shirt color." }),
   })).min(1).max(MAX_TSHIRT_ORDER_QUANTITY),
+  paidAmountLkr: z.number().int().min(1000, "Payment must be at least LKR 1,000 per T-shirt."),
+};
+
+function validatePaymentMinimum(
+  order: { items: Array<unknown>; paidAmountLkr: number },
+  ctx: z.RefinementCtx,
+) {
+  const minimum = order.items.length * 1000;
+  if (order.paidAmountLkr < minimum) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["paidAmountLkr"],
+      message: `Pay at least LKR ${minimum.toLocaleString("en-LK")} for ${order.items.length} T-shirt${order.items.length > 1 ? "s" : ""}.`,
+    });
+  }
+}
+
+export const tshirtOrderDetailsSchema = z.object(tshirtOrderFields)
+  .superRefine(validatePaymentMinimum);
+
+export const tshirtOrderSchema = z.object({
+  ...tshirtOrderFields,
   receiptPath: z.string().min(1).max(300),
-});
+}).superRefine(validatePaymentMinimum);

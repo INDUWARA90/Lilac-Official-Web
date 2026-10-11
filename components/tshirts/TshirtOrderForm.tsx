@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { createAnonClient } from "@/lib/supabase/client";
-import { tshirtOrderSchema } from "@/lib/validation/tshirt";
+import { tshirtOrderDetailsSchema, tshirtOrderSchema } from "@/lib/validation/tshirt";
 import { TshirtOrderSuccess } from "@/components/tshirts/TshirtOrderSuccess";
 import { TshirtOrderFields, type TshirtOrderValues } from "@/components/tshirts/TshirtOrderFields";
 import { FormErrorToast } from "@/components/ui/FormErrorToast";
@@ -37,10 +37,12 @@ export function TshirtOrderForm({
     items: [{ size: "", color: "" }],
   });
   const [file, setFile] = useState<File | null>(null);
+  const [paidAmountLkr, setPaidAmountLkr] = useState(1000);
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [reference, setReference] = useState<string | null>(null);
+  const [requestStage, setRequestStage] = useState<"receipt upload" | "order submission">("receipt upload");
 
   const total = useMemo(() => priceLkr * values.items.length, [priceLkr, values.items.length]);
 
@@ -53,8 +55,9 @@ export function TshirtOrderForm({
         return { ...v, items: items.slice(0, quantity) };
       });
       setErrors((current) => Object.fromEntries(
-        Object.entries(current).filter(([errorKey]) => !errorKey.startsWith("items")),
+        Object.entries(current).filter(([errorKey]) => !errorKey.startsWith("items") && errorKey !== "paidAmountLkr"),
       ));
+      setPaidAmountLkr(Number(value) * 1000);
     } else {
       setValues((v) => ({ ...v, [key]: value }));
       setErrors((current) => ({ ...current, [key]: undefined }));
@@ -91,8 +94,18 @@ export function TshirtOrderForm({
     e.preventDefault();
     setBusy(true);
     setFormError(null);
+    if (paidAmountLkr > total) {
+      const message = "Payment cannot be more than the order total.";
+      setErrors((current) => ({ ...current, paidAmountLkr: message }));
+      setFormError(message);
+      setBusy(false);
+      return;
+    }
     try {
-      const details = tshirtOrderSchema.omit({ receiptPath: true }).safeParse(values);
+      const details = tshirtOrderDetailsSchema.safeParse({
+        ...values,
+        paidAmountLkr,
+      });
       if (!details.success) {
         const fieldErrors = errorsFrom(details.error);
         setErrors(fieldErrors);
@@ -113,12 +126,17 @@ export function TshirtOrderForm({
         setFormError(Object.values(fieldErrors)[0] ?? "Please check the form and try again.");
         return;
       }
+      setRequestStage("order submission");
       const res = await fetch("/api/tshirts", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(parsed.data),
       });
-      const data = (await res.json()) as { ok: boolean; reference?: string; error?: string; fieldErrors?: Record<string, string[]> };
+      const data = await res.json().catch(() => null) as { ok: boolean; reference?: string; error?: string; fieldErrors?: Record<string, string[]> } | null;
+      if (!data) {
+        setFormError(`Order submission failed (HTTP ${res.status}). Please try again or contact the organiser.`);
+        return;
+      }
       if (res.ok && data.ok && data.reference) {
         setReference(data.reference);
       } else {
@@ -131,15 +149,27 @@ export function TshirtOrderForm({
           Object.values(out)[0] ?? data.error ?? "Something went wrong. Please try again.",
         );
       }
-    } catch {
-      setFormError("We couldn't reach the server. Please try again.");
+    } catch (error) {
+      console.error(`T-shirt ${requestStage} failed.`, error);
+      setFormError(
+        requestStage === "receipt upload"
+          ? "We couldn't start the receipt upload. Check your connection and try again."
+          : "We couldn't submit your order. Check your connection and try again.",
+      );
     } finally {
       setBusy(false);
     }
   }
 
   if (reference) {
-    return <TshirtOrderSuccess reference={reference} email={values.email} />;
+    return (
+      <TshirtOrderSuccess
+        reference={reference}
+        email={values.email}
+        paidAmountLkr={paidAmountLkr}
+        total={total}
+      />
+    );
   }
 
   return (
@@ -151,6 +181,11 @@ export function TshirtOrderForm({
         file={file}
         busy={busy}
         total={total}
+        paidAmountLkr={paidAmountLkr}
+        onPaidAmountChange={(amount) => {
+          setPaidAmountLkr(amount);
+          setErrors((current) => ({ ...current, paidAmountLkr: undefined }));
+        }}
         bank={bank}
         onValueChange={set}
         onItemChange={setItem}

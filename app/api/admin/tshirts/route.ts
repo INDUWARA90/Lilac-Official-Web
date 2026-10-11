@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getAdminSession } from "@/lib/auth";
 import { reviewTshirtOrder } from "@/lib/tshirts";
 export const dynamic = "force-dynamic";
-const schema = z.object({ action: z.enum(["collect", "reject"]), orderId: z.uuid(), note: z.string().trim().max(500).optional() });
+const schema = z.object({ action: z.enum(["collect", "collect_balance", "reject"]), orderId: z.uuid(), note: z.string().trim().max(500).optional() });
 export async function POST(req: Request) {
   const session = await getAdminSession();
   if (!session) return Response.json({ ok: false, error: "Not signed in." }, { status: 401 });

@@ -19,6 +19,9 @@ export default async function TshirtsPage() {
         Order your Lilac T-shirt for{" "}
         <strong className="text-ink">{formatLkr(settings.priceLkr)}</strong> each.
       </p>
+      <p className="mt-2 font-sans text-sm text-ink-muted sm:text-base">
+        Minimum advance payment: <strong className="text-ink">LKR 1,000 per T-shirt</strong>
+      </p>
       <TshirtSizeGuide />
       {settings.salesOpen ? (
         <div className="mx-auto mt-8 max-w-3xl">

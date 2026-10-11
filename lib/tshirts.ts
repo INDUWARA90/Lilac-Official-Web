@@ -54,7 +54,7 @@ export async function updateTshirtLinkVisible(visible: boolean, by: string): Pro
   return true;
 }
 
-export async function createTshirtOrder(input: { name: string; registrationNumber: string; faculty: string; email: string; phone: string; items: Array<{ size: string; color: string }>; receiptPath: string }) {
+export async function createTshirtOrder(input: { name: string; registrationNumber: string; faculty: string; email: string; phone: string; items: Array<{ size: string; color: string }>; paidAmountLkr: number; receiptPath: string }) {
   const db = createAdminClient();
   const { data: files } = await db.storage.from(TSHIRT_RECEIPT_BUCKET).list("", { search: input.receiptPath });
   if (!files?.some((file) => file.name === input.receiptPath)) return { ok: false as const, error: "Your receipt upload was not found. Please attach it again." };
@@ -62,16 +62,63 @@ export async function createTshirtOrder(input: { name: string; registrationNumbe
   const { error } = await db.rpc("create_tshirt_order", {
     p_name: input.name, p_registration_number: input.registrationNumber, p_faculty: input.faculty,
     p_email: input.email, p_phone: input.phone, p_order_items: input.items,
+    p_paid_amount_lkr: input.paidAmountLkr,
     p_receipt_path: input.receiptPath, p_reference: ref,
   });
-  if (error) return { ok: false as const, error: error.message.includes("SALES_CLOSED") ? "T-shirt orders are currently closed." : "Could not place your order. Please try again." };
+  if (error) {
+    if (error.code === "PGRST202" || error.code === "42883") {
+      console.error(`T-shirt order RPC is unavailable: ${error.code}`);
+      return {
+        ok: false as const,
+        error: "The order system is not fully updated yet. Please contact the organiser.",
+      };
+    }
+    console.error(`T-shirt order creation failed: ${error.code ?? "unknown"}`);
+    return {
+    ok: false as const,
+    error: error.message.includes("SALES_CLOSED")
+      ? "T-shirt orders are currently closed."
+      : error.message.includes("BAD_PAYMENT_AMOUNT")
+        ? "Payment must be at least LKR 1,000 per T-shirt and cannot exceed the order total."
+        : "Could not place your order. Please try again.",
+    };
+  }
   return { ok: true as const, reference: ref };
 }
 
-export async function reviewTshirtOrder(id: string, action: "collect" | "reject", by: string, note = "") {
+export async function reviewTshirtOrder(id: string, action: "collect" | "collect_balance" | "reject", by: string, note = "") {
   const db = createAdminClient();
-  const status = action === "collect" ? "payment_collected" : "rejected";
-  const { data, error } = await db.from("tshirt_orders").update({ status, review_note: note || null, collected_by: by, collected_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", id).eq("status", "pending_review").select("reference").maybeSingle();
+  let currentStatus: "pending_review" | "partially_paid";
+  let status: "partially_paid" | "payment_collected" | "rejected";
+  const values: { status: typeof status; review_note: string | null; collected_by: string; collected_at: string; updated_at: string; paid_amount_lkr?: number } = {
+    status: "rejected",
+    review_note: note || null,
+    collected_by: by,
+    collected_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  if (action === "collect") {
+    const { data: order, error: lookupError } = await db.from("tshirt_orders").select("amount_lkr, paid_amount_lkr").eq("id", id).eq("status", "pending_review").maybeSingle();
+    if (lookupError) return { ok: false, error: "Could not load the order for review." };
+    if (!order) return { ok: false, error: "This order has already been reviewed." };
+    currentStatus = "pending_review";
+    const paidAmountLkr = order.paid_amount_lkr ?? order.amount_lkr;
+    status = paidAmountLkr < order.amount_lkr ? "partially_paid" : "payment_collected";
+    values.paid_amount_lkr = paidAmountLkr;
+  } else if (action === "collect_balance") {
+    const { data: order, error: lookupError } = await db.from("tshirt_orders").select("amount_lkr").eq("id", id).eq("status", "partially_paid").maybeSingle();
+    if (lookupError) return { ok: false, error: "Could not load the order for review." };
+    if (!order) return { ok: false, error: "This order is not awaiting a balance payment." };
+    currentStatus = "partially_paid";
+    status = "payment_collected";
+    values.paid_amount_lkr = order.amount_lkr;
+  } else {
+    currentStatus = "pending_review";
+    status = "rejected";
+  }
+  values.status = status;
+  const { data, error } = await db.from("tshirt_orders").update(values).eq("id", id).eq("status", currentStatus).select("reference").maybeSingle();
   if (error) return { ok: false, error: "Could not update the order." };
   if (!data) return { ok: false, error: "This order has already been reviewed." };
   return { ok: true };

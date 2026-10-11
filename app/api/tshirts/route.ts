@@ -14,6 +14,14 @@ export async function POST(req: Request) {
     }
     return Response.json({ ok: false, error: "Please correct the highlighted fields.", fieldErrors }, { status: 400 });
   }
-  const result = await createTshirtOrder(parsed.data);
-  return Response.json(result, { status: result.ok ? 200 : 400 });
+  try {
+    const result = await createTshirtOrder(parsed.data);
+    return Response.json(result, { status: result.ok ? 200 : 400 });
+  } catch (error) {
+    console.error("T-shirt order creation failed unexpectedly.", error);
+    return Response.json(
+      { ok: false, error: "We couldn't save your order. Please try again shortly." },
+      { status: 500 },
+    );
+  }
 }

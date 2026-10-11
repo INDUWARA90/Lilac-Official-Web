@@ -26,7 +26,7 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
   const db = createAdminClient();
   let query = db
     .from("tshirt_orders")
-    .select("id, reference, name, registration_number, faculty, tshirt_size, quantity, order_items, amount_lkr, status, created_at")
+    .select("id, reference, name, registration_number, faculty, tshirt_size, quantity, order_items, amount_lkr, paid_amount_lkr, status, created_at")
     .order("created_at", { ascending: false });
   if (status) query = query.eq("status", status);
   if (search) {
@@ -38,13 +38,16 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
   const orderResult = await query;
 
   const [{ data: sales, error: salesError }, { count: awaiting, error: awaitingError }] = await Promise.all([
-    db.from("tshirt_orders").select("quantity, amount_lkr").eq("status", "payment_collected"),
+    db.from("tshirt_orders").select("quantity, amount_lkr, paid_amount_lkr, status").in("status", ["partially_paid", "payment_collected"]),
     db.from("tshirt_orders").select("id", { count: "exact", head: true }).eq("status", "pending_review"),
   ]);
   const loadError = orderResult.error ?? salesError ?? awaitingError;
 
   const shirtsSold = (sales ?? []).reduce((sum, order) => sum + order.quantity, 0);
-  const revenue = (sales ?? []).reduce((sum, order) => sum + order.amount_lkr, 0);
+  const revenue = (sales ?? []).reduce(
+    (sum, order) => sum + (order.paid_amount_lkr ?? (order.status === "payment_collected" ? order.amount_lkr : 0)),
+    0,
+  );
   return (
     <AdminShell email={session.email} role={session.role}>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -62,7 +65,7 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Summary label="Revenue collected" value={loadError ? "—" : formatLkr(revenue)} />
         <Summary label="T-shirts sold" value={loadError ? "—" : String(shirtsSold)} />
-        <Summary label="Paid orders" value={loadError ? "—" : String(sales?.length ?? 0)} />
+        <Summary label="Orders with payments" value={loadError ? "—" : String(sales?.length ?? 0)} />
         <Summary label="Awaiting review" value={loadError ? "—" : String(awaiting ?? 0)} />
       </div>
 
@@ -92,7 +95,7 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
               <th className="py-2 pr-3">Buyer</th>
               <th className="py-2 pr-3">Registration / Faculty</th>
               <th className="py-2 pr-3">Shirts</th>
-              <th className="py-2 pr-3">Amount</th>
+              <th className="py-2 pr-3">Paid / total</th>
               <th className="py-2 pr-3">Status</th>
               <th className="py-2">Date</th>
             </tr>
@@ -104,7 +107,10 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
                 <td className="py-2 pr-3">{order.name}</td>
                 <td className="py-2 pr-3 text-ink-muted">{order.registration_number}<br />{order.faculty}</td>
                 <td className="py-2 pr-3">{order.order_items?.length ? order.order_items.map((item, index) => <div key={index}>{item.color} / {item.size}</div>) : `${order.tshirt_size} / ${order.quantity}`}</td>
-                <td className="py-2 pr-3">{formatLkr(order.amount_lkr)}</td>
+                <td className="py-2 pr-3">
+                  {order.paid_amount_lkr === null ? "Not recorded" : formatLkr(order.paid_amount_lkr)}
+                  {" / "}{formatLkr(order.amount_lkr)}
+                </td>
                 <td className="py-2 pr-3">{TSHIRT_STATUS_LABEL[order.status]}</td>
                 <td className="py-2 text-ink-muted">{formatDate(order.created_at)}</td>
               </tr>

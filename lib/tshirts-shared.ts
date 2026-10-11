@@ -10,8 +10,8 @@ export const TSHIRT_SIZE_CHART = [
 ] as const;
 export const TSHIRT_COLORS = ["White", "Black"] as const;
 export const MAX_TSHIRT_ORDER_QUANTITY = 3;
-export const TSHIRT_ORDER_STATUS = ["pending_review", "payment_collected", "rejected", "cancelled"] as const;
+export const TSHIRT_ORDER_STATUS = ["pending_review", "partially_paid", "payment_collected", "rejected", "cancelled"] as const;
 export type TshirtOrderStatus = (typeof TSHIRT_ORDER_STATUS)[number];
 export const TSHIRT_STATUS_LABEL: Record<TshirtOrderStatus, string> = {
-  pending_review: "Awaiting review", payment_collected: "Payment collected", rejected: "Rejected", cancelled: "Cancelled",
+  pending_review: "Awaiting review", partially_paid: "Partially paid", payment_collected: "Payment collected", rejected: "Rejected", cancelled: "Cancelled",
 };
