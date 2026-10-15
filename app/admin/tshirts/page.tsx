@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { TshirtOrderFilters } from "@/components/admin/TshirtOrderFilters";
 import { TshirtNavigationToggle } from "@/components/admin/TshirtNavigationToggle";
+import { TshirtBackupButton } from "@/components/admin/TshirtBackupButton";
 import { TSHIRT_ORDER_STATUS, TSHIRT_STATUS_LABEL, type TshirtOrderStatus } from "@/lib/tshirts-shared";
 import { getTshirtSettings } from "@/lib/tshirts";
 import { formatLkr } from "@/lib/tickets-shared";
@@ -56,9 +57,12 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
           <p className="mt-2 font-sans text-sm text-ink-muted">Review receipts and record payments collected manually.</p>
         </div>
         {session.role !== "ticket_manager" && (
-          <a href="/api/admin/export/tshirts" className="rounded-field border border-hairline px-3 py-1.5 font-sans text-sm text-accent-strong hover:border-accent">
-            Export CSV
-          </a>
+          <div className="flex flex-wrap gap-2">
+            <a href="/api/admin/export/tshirts" className="rounded-field border border-hairline px-3 py-1.5 font-sans text-sm text-accent-strong hover:border-accent">
+              Export CSV
+            </a>
+            <TshirtBackupButton />
+          </div>
         )}
       </div>
 

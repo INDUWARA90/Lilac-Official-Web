@@ -3,7 +3,7 @@ import { requireFullAdmin } from "@/lib/auth";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 
-export const metadata: Metadata = { title: "Export", robots: { index: false } };
+export const metadata: Metadata = { title: "Exports & backup", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
 const GROUPS: { title: string; note: string; items: { href: string; label: string }[] }[] = [
@@ -36,9 +36,10 @@ export default async function ExportPage() {
 
   return (
     <AdminShell email={session.email}>
-      <h1 className="text-2xl text-ink">Export CSV</h1>
+      <h1 className="text-2xl text-ink">Exports &amp; backup</h1>
       <p className="mt-1 font-sans text-sm text-ink-muted">
-        Each link downloads a CSV. Files contain personal data — handle accordingly.
+        Each link downloads a CSV. Files contain personal data — handle accordingly. T-shirt orders
+        and their uploaded receipts can be backed up from the T-shirt orders page.
       </p>
 
       <div className="mt-6 flex flex-col gap-8">
