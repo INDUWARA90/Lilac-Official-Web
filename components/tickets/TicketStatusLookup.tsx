@@ -10,6 +10,7 @@ import { ticketStatusLookupSchema } from "@/lib/validation/ticket";
 import { FormErrorToast } from "@/components/ui/FormErrorToast";
 import {
   PURCHASE_STATUS_LABEL,
+  formatTicketTypeBreakdown,
   type TicketPurchaseStatus,
   type TicketType,
 } from "@/lib/tickets-shared";
@@ -18,21 +19,17 @@ type FieldErrors = Partial<Record<string, string>>;
 
 type Purchase = {
   reference: string;
+  phone: string;
+  email: string;
   status: TicketPurchaseStatus;
-  ticketType: TicketType;
+  ticketTypes: TicketType[];
   quantity: number;
   reviewNote: string | null;
   tickets: { token: string; seatLabel: string }[];
 };
 
-/**
- * The whole replacement for "we'll email you your ticket" — buyers check
- * themselves, anytime, with just the phone or email they bought with. No
- * reference needed, no login, no push notification. Shows every purchase
- * found for that contact (usually one).
- */
 export function TicketStatusLookup() {
-  const [contact, setContact] = useState("");
+  const [lookup, setLookup] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -43,7 +40,7 @@ export function TicketStatusLookup() {
     setFormError(null);
     setResults(null);
 
-    const parsed = ticketStatusLookupSchema.safeParse({ contact });
+    const parsed = ticketStatusLookupSchema.safeParse({ lookup });
     if (!parsed.success) {
       const flat = z.flattenError(parsed.error).fieldErrors;
       const mapped: FieldErrors = {};
@@ -79,15 +76,15 @@ export function TicketStatusLookup() {
       <FormErrorToast message={formError} onDismiss={() => setFormError(null)} />
       <form onSubmit={submit} noValidate className="lailac-stagger flex flex-col gap-6">
         <TextField
-          label="Phone or email"
+          label="Phone, email, or reference number"
           required
-          placeholder="The one you bought your ticket with"
-          value={contact}
+          placeholder="Enter any one of your purchase details"
+          value={lookup}
           onChange={(e) => {
-            setContact(e.target.value);
-            if (errors.contact) setErrors({});
+            setLookup(e.target.value);
+            if (errors.lookup) setErrors({});
           }}
-          error={errors.contact}
+          error={errors.lookup}
         />
         <Button type="submit" variant="magic" loading={busy} className="self-start">
           Check status
@@ -111,11 +108,21 @@ function PurchaseCard({ purchase }: { purchase: Purchase }) {
   return (
     <div className="lailac-magic-card lailac-hover-lift p-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg text-ink">{purchase.reference}</h2>
+        <h2 className="text-lg text-ink">
+          <span className="font-sans text-xs font-medium uppercase tracking-wider text-ink-muted">
+            Reference:
+          </span>{" "}
+          <span className="font-mono">{purchase.reference}</span>
+        </h2>
         <StatusPill status={purchase.status} />
       </div>
+      <div className="mt-3 grid gap-1 rounded-field bg-canvas-raised p-3 font-sans text-sm text-ink-muted">
+        <p><span className="font-medium text-ink">Phone:</span> {purchase.phone}</p>
+        <p><span className="font-medium text-ink">Email:</span> {purchase.email}</p>
+      </div>
       <p className="mt-2 font-sans text-sm capitalize text-ink-muted">
-        {purchase.ticketType} · {purchase.quantity} ticket{purchase.quantity === 1 ? "" : "s"}
+        {formatTicketTypeBreakdown(purchase.ticketTypes)} · {purchase.quantity} ticket
+        {purchase.quantity === 1 ? "" : "s"}
       </p>
 
       {purchase.status === "pending_review" && (

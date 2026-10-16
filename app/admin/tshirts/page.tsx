@@ -38,13 +38,19 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
   }
   const orderResult = await query;
 
-  const [{ data: sales, error: salesError }, { count: awaiting, error: awaitingError }] = await Promise.all([
+  const [
+    { data: sales, error: salesError },
+    { count: awaiting, error: awaitingError },
+    { data: allOrders, error: allOrdersError },
+  ] = await Promise.all([
     db.from("tshirt_orders").select("quantity, amount_lkr, paid_amount_lkr, status").in("status", ["partially_paid", "payment_collected"]),
     db.from("tshirt_orders").select("id", { count: "exact", head: true }).eq("status", "pending_review"),
+    db.from("tshirt_orders").select("quantity"),
   ]);
-  const loadError = orderResult.error ?? salesError ?? awaitingError;
+  const loadError = orderResult.error ?? salesError ?? awaitingError ?? allOrdersError;
 
   const shirtsSold = (sales ?? []).reduce((sum, order) => sum + order.quantity, 0);
+  const shirtsOrdered = (allOrders ?? []).reduce((sum, order) => sum + order.quantity, 0);
   const revenue = (sales ?? []).reduce(
     (sum, order) => sum + (order.paid_amount_lkr ?? (order.status === "payment_collected" ? order.amount_lkr : 0)),
     0,
@@ -66,9 +72,10 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
         )}
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Summary label="Revenue collected" value={loadError ? "—" : formatLkr(revenue)} />
         <Summary label="T-shirts sold" value={loadError ? "—" : String(shirtsSold)} />
+        <Summary label="T-shirts in all orders" value={loadError ? "—" : String(shirtsOrdered)} />
         <Summary label="Orders with payments" value={loadError ? "—" : String(sales?.length ?? 0)} />
         <Summary label="Awaiting review" value={loadError ? "—" : String(awaiting ?? 0)} />
       </div>

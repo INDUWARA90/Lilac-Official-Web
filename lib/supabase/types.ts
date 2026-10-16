@@ -132,9 +132,12 @@ export type TicketPurchaseRow = {
   id: string;
   reference: string;
   name: string;
+  registration_number: string;
+  faculty: string;
   email: string;
   phone: string;
-  ticket_type: "seating" | "standing";
+  ticket_type: "seating" | "standing" | "mixed";
+  ticket_types: ("seating" | "standing")[];
   quantity: number;
   amount_lkr: number;
   slip_path: string;
@@ -243,6 +246,10 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      get_ticket_capacity_totals: {
+        Args: Record<PropertyKey, never>;
+        Returns: { seating_taken: number; standing_taken: number }[];
+      };
       rl_hit: {
         Args: { p_key: string; p_limit: number; p_window_ms: number };
         Returns: boolean;
@@ -250,9 +257,11 @@ export type Database = {
       create_ticket_purchase: {
         Args: {
           p_name: string;
+          p_registration_number: string;
+          p_faculty: string;
           p_email: string;
           p_phone: string;
-          p_ticket_type: "seating" | "standing";
+          p_ticket_types: ("seating" | "standing")[];
           p_quantity: number;
           p_slip_path: string;
           p_reference: string;

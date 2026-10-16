@@ -4,12 +4,7 @@ import { getPurchaseStatus } from "@/lib/tickets";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
 
-/**
- * POST /api/tickets/status — buyer self-service lookup by phone or email
- * alone, no reference, no login. The entire replacement for the old "we'll
- * email you" flow: nothing is pushed to the buyer, they check whenever they
- * like. Returns every purchase for that contact (usually one).
- */
+/** POST /api/tickets/status — buyer lookup by phone, email, or reference. */
 export const dynamic = "force-dynamic";
 
 const json = (b: unknown, s = 200) => Response.json(b, { status: s });
@@ -32,10 +27,13 @@ export async function POST(req: Request) {
     );
   }
 
-  const purchases = await getPurchaseStatus(parsed.data.contact);
+  const purchases = await getPurchaseStatus(parsed.data.lookup);
   if (purchases.length === 0) {
     return json(
-      { ok: false, error: "We couldn't find a purchase with that phone number or email." },
+      {
+        ok: false,
+        error: "We couldn't find a purchase with that phone number, email, or reference.",
+      },
       404,
     );
   }

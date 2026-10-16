@@ -7,7 +7,11 @@ import { slipDownloadUrl } from "@/lib/tickets";
 import { ticketUrl } from "@/lib/tickets";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { formatLkr, PURCHASE_STATUS_LABEL } from "@/lib/tickets-shared";
+import {
+  formatLkr,
+  formatTicketTypeBreakdown,
+  PURCHASE_STATUS_LABEL,
+} from "@/lib/tickets-shared";
 import { formatDateTime } from "@/lib/format";
 import { TicketReviewActions } from "@/components/admin/TicketReviewActions";
 import { TicketCheckinToggle } from "@/components/admin/TicketCheckinToggle";
@@ -65,8 +69,16 @@ export default async function TicketPurchasePage({
             </a>
           </p>
           <p className="text-ink-muted">{purchase.phone}</p>
+          <p className="mt-2 text-ink-muted">
+            Registration number: {purchase.registration_number}
+          </p>
+          <p className="text-ink-muted">Faculty: {purchase.faculty}</p>
           <p className="mt-3 text-ink">
-            {purchase.ticket_type === "seating" ? "Seating" : "Standing"} ·{" "}
+            {purchase.ticket_type === "mixed"
+              ? formatTicketTypeBreakdown(purchase.ticket_types)
+              : purchase.ticket_type === "seating"
+                ? "Seating"
+                : "Standing"} ·{" "}
             {purchase.quantity} ticket{purchase.quantity === 1 ? "" : "s"} ·{" "}
             {formatLkr(purchase.amount_lkr)}
           </p>

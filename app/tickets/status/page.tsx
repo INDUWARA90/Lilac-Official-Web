@@ -27,7 +27,7 @@ export default function TicketStatusPage() {
             </div>
             
             <p className="mt-2.5 font-sans text-sm sm:text-base leading-relaxed text-ink-muted max-w-md">
-              Enter the phone number or email you used to buy your ticket — no account or reference number required.
+              Enter any one: the phone number, email address, or reference number used for your ticket purchase.
             </p>
           </div>
 

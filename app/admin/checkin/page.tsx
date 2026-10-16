@@ -36,7 +36,7 @@ export default async function AdminCheckinPage({
     fetchAll((from, to) =>
       db
         .from("ticket_purchases")
-        .select("id, reference, email, phone")
+        .select("id, reference, registration_number, email, phone")
         .eq("status", "approved")
         .order("id")
         .range(from, to),
@@ -53,6 +53,7 @@ export default async function AdminCheckinPage({
       (r) =>
         r.holder_name.toLowerCase().includes(ql) ||
         (r.purchase?.reference ?? "").toLowerCase().includes(ql) ||
+        (r.purchase?.registration_number ?? "").toLowerCase().includes(ql) ||
         (r.purchase?.email ?? "").toLowerCase().includes(ql) ||
         (r.purchase?.phone ?? "").includes(q),
     );
@@ -113,7 +114,7 @@ export default async function AdminCheckinPage({
 
       <form method="get" className="mt-6 flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 font-sans text-xs text-ink-muted">
-          Search name, reference, email, phone
+          Search name, reference, registration number, email, phone
           <input
             name="q"
             defaultValue={q}
@@ -128,7 +129,10 @@ export default async function AdminCheckinPage({
           Search
         </button>
         {q && (
-          <Link href="/admin/checkin" className="font-sans text-xs text-ink-muted underline">
+          <Link
+            href="/admin/checkin"
+            className="rounded-field border border-hairline px-4 py-2 font-sans text-sm font-medium text-ink-muted hover:border-accent hover:text-accent-strong"
+          >
             Clear
           </Link>
         )}

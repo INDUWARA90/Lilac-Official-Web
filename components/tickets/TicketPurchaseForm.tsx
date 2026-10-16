@@ -3,7 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import { z } from "zod";
 import { createAnonClient } from "@/lib/supabase/client";
-import { ticketPurchaseSchema } from "@/lib/validation/ticket";
+import {
+  ticketPurchaseDetailsSchema,
+  ticketPurchaseSchema,
+} from "@/lib/validation/ticket";
 import { TicketPaymentGuide } from "@/components/tickets/TicketPaymentGuide";
 import { TicketPurchaseDetails } from "@/components/tickets/TicketPurchaseDetails";
 import { TicketPurchaseSuccess } from "@/components/tickets/TicketPurchaseSuccess";
@@ -35,9 +38,11 @@ export function TicketPurchaseForm({
 }) {
   const [values, setValues] = useState<TicketPurchaseValues>({
     name: "",
+    registrationNumber: "",
+    faculty: "",
     email: "",
     phone: "",
-    ticketType: seatingLeft > 0 ? "seating" : "standing",
+    ticketTypes: [seatingLeft > 0 ? "seating" : "standing"],
     quantity: "1",
   });
   const [file, setFile] = useState<File | null>(null);
@@ -67,6 +72,32 @@ export function TicketPurchaseForm({
   function set<K extends keyof TicketPurchaseValues>(key: K, value: TicketPurchaseValues[K]) {
     setValues((v) => ({ ...v, [key]: value }));
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
+  }
+
+  function setQuantity(quantity: string) {
+    const count = Number(quantity);
+    setValues((current) => {
+      const ticketTypes = current.ticketTypes.slice(0, count);
+      while (ticketTypes.length < count) {
+        const seatingCount = ticketTypes.filter((type) => type === "seating").length;
+        const standingCount = ticketTypes.length - seatingCount;
+        ticketTypes.push(
+          seatingCount < seatingLeft ? "seating" : standingCount < standingLeft ? "standing" : "seating",
+        );
+      }
+      return { ...current, quantity, ticketTypes };
+    });
+    setErrors((current) => ({ ...current, quantity: undefined }));
+  }
+
+  function setTicketType(index: number, ticketType: TicketPurchaseValues["ticketTypes"][number]) {
+    setValues((current) => ({
+      ...current,
+      ticketTypes: current.ticketTypes.map((type, ticketIndex) =>
+        ticketIndex === index ? ticketType : type,
+      ),
+    }));
+    setErrors((current) => ({ ...current, ticketTypes: undefined }));
   }
 
   async function uploadSlip(): Promise<{ path: string } | { error: string }> {
@@ -104,7 +135,7 @@ export function TicketPurchaseForm({
     setFormError(null);
     setBusy(true);
     try {
-      const details = ticketPurchaseSchema.omit({ slipPath: true }).safeParse(values);
+      const details = ticketPurchaseDetailsSchema.safeParse(values);
       if (!details.success) {
         const flat = z.flattenError(details.error).fieldErrors;
         const mapped: TicketFieldErrors = {};
@@ -195,6 +226,8 @@ export function TicketPurchaseForm({
           previewUrl={previewUrl}
           busy={busy}
           onValueChange={set}
+          onQuantityChange={setQuantity}
+          onTicketTypeChange={setTicketType}
           onFileChange={(selectedFile) => {
             setReceiptFile(selectedFile);
             if (errors.slipPath) setErrors((current) => ({ ...current, slipPath: undefined }));

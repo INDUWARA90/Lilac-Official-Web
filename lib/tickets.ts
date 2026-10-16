@@ -6,7 +6,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { publicEnv } from "@/lib/env";
 import { sendTicketApproved } from "@/lib/email/mailjet";
 import { normalizeLkPhone } from "@/lib/validation/entry";
-import { fetchAll } from "@/lib/supabase/fetch-all";
 import {
   TICKET_SLIP_BUCKET,
   type TicketAvailability,
@@ -86,30 +85,31 @@ export const getTicketLinksVisible = unstable_cache(fetchTicketLinksVisible, [TI
 
 export async function getAvailability(): Promise<TicketAvailability> {
   const db = createAdminClient();
-  const [{ data: settings }, { data: live }] = await Promise.all([
+  const [
+    { data: settings, error: settingsError },
+    { data: totals, error: totalsError },
+  ] = await Promise.all([
     db
       .from("ticket_settings")
       .select("seating_capacity, standing_capacity, sales_open, ticket_links_visible")
       .eq("id", "default")
       .maybeSingle(),
-    fetchAll((from, to) =>
-      db
-        .from("ticket_purchases")
-        .select("ticket_type, quantity")
-        .in("status", ["pending_review", "approved"])
-        .order("id")
-        .range(from, to),
-    ),
+    db.rpc("get_ticket_capacity_totals"),
   ]);
+
+  if (settingsError) {
+    console.error(`ticket availability settings lookup failed: ${settingsError.code ?? "unknown"}`);
+    throw new Error("Could not load ticket availability settings.");
+  }
+  if (totalsError || !totals?.[0]) {
+    console.error(`ticket capacity totals lookup failed: ${totalsError?.code ?? "missing result"}`);
+    throw new Error("Could not load ticket capacity totals.");
+  }
 
   const seatingCapacity = settings?.seating_capacity ?? 100;
   const standingCapacity = settings?.standing_capacity ?? 100;
-  const seatingTaken = (live ?? [])
-    .filter((purchase) => purchase.ticket_type === "seating")
-    .reduce((n, purchase) => n + (purchase.quantity ?? 0), 0);
-  const standingTaken = (live ?? [])
-    .filter((purchase) => purchase.ticket_type === "standing")
-    .reduce((n, purchase) => n + (purchase.quantity ?? 0), 0);
+  const seatingTaken = totals[0].seating_taken;
+  const standingTaken = totals[0].standing_taken;
   const seatingLeft = Math.max(0, seatingCapacity - seatingTaken);
   const standingLeft = Math.max(0, standingCapacity - standingTaken);
   return {
@@ -165,9 +165,11 @@ type CreateResult =
 
 export async function createPurchase(input: {
   name: string;
+  registrationNumber: string;
+  faculty: string;
   email: string;
   phone: string;
-  ticketType: TicketType;
+  ticketTypes: TicketType[];
   quantity: number;
   slipPath: string;
 }): Promise<CreateResult> {
@@ -184,9 +186,11 @@ export async function createPurchase(input: {
   const reference = newReference();
   const { error } = await db.rpc("create_ticket_purchase", {
     p_name: input.name,
+    p_registration_number: input.registrationNumber,
+    p_faculty: input.faculty,
     p_email: input.email,
     p_phone: input.phone,
-    p_ticket_type: input.ticketType,
+    p_ticket_types: input.ticketTypes,
     p_quantity: input.quantity,
     p_slip_path: input.slipPath,
     p_reference: reference,
@@ -267,15 +271,25 @@ export async function approvePurchase(
   }
   const purchase = claimed;
 
-  const rows = Array.from({ length: purchase.quantity }, (_, i) => ({
-    purchase_id: purchase.id,
-    token: newToken(),
-    seat_label:
-      `${purchase.ticket_type === "seating" ? "Seating" : "Standing"}${
-        purchase.quantity === 1 ? "" : ` ${i + 1} of ${purchase.quantity}`
+  const ticketTypeCounts = purchase.ticket_types.reduce(
+    (counts, type) => ({ ...counts, [type]: counts[type] + 1 }),
+    { seating: 0, standing: 0 },
+  );
+  const issuedTypeCounts: Record<TicketType, number> = { seating: 0, standing: 0 };
+  const rows = purchase.ticket_types.map((ticketType) => {
+    issuedTypeCounts[ticketType] += 1;
+    const typeName = ticketType === "seating" ? "Seating" : "Standing";
+    return {
+      purchase_id: purchase.id,
+      token: newToken(),
+      seat_label: `${typeName}${
+        ticketTypeCounts[ticketType] === 1
+          ? ""
+          : ` ${issuedTypeCounts[ticketType]} of ${ticketTypeCounts[ticketType]}`
       }`,
-    holder_name: purchase.name,
-  }));
+      holder_name: purchase.name,
+    };
+  });
 
   const { data: created, error: insErr } = await db.from("tickets").insert(rows).select("*");
   if (insErr || !created) {
@@ -380,8 +394,10 @@ export async function rejectPurchase(
 
 export type PurchaseStatusItem = {
   reference: string;
+  phone: string;
+  email: string;
   status: TicketPurchaseStatus;
-  ticketType: TicketType;
+  ticketTypes: TicketType[];
   quantity: number;
   reviewNote: string | null;
   /** Only populated once `status === "approved"`. */
@@ -389,34 +405,35 @@ export type PurchaseStatusItem = {
 };
 
 /**
- * Buyer self-check: just their own phone or email, no login, no reference
- * needed. This is the whole replacement for the old "we'll email you" flow —
- * nothing is pushed to the buyer, they come back and check whenever they
- * like. `contact` is matched against phone (Sri Lankan formats, via
- * normalizeLkPhone) OR email (case-insensitive) — whichever it looks like.
- *
- * Returns every purchase for that contact, newest first — usually one, but a
- * rejected attempt followed by a fresh purchase would show both.
+ * Buyer self-check by phone, email, or reference. Each database query uses a
+ * separate equality filter so user input cannot modify the PostgREST query.
  */
 export async function getPurchaseStatus(contact: string): Promise<PurchaseStatusItem[]> {
   const db = createAdminClient();
   const contactTrimmed = contact.trim();
   const emailLower = contactTrimmed.toLowerCase();
   const normalizedPhone = normalizeLkPhone(contactTrimmed);
-
-  // Separate `.eq()` queries, never `.or("email.eq.<input>,...")`: `contact`
-  // is free text from an unauthenticated caller, and interpolating it into a
-  // PostgREST filter string lets input like `x,id.not.is.null` add its own
-  // conditions and dump every purchase (with its ticket tokens).
-  const [byEmail, byPhone] = await Promise.all([
+  const [byReference, byEmail, byPhone] = await Promise.all([
+    db
+      .from("ticket_purchases")
+      .select("*")
+      .eq("reference", contactTrimmed.toUpperCase()),
     contactTrimmed.includes("@")
       ? db.from("ticket_purchases").select("*").eq("email", emailLower)
       : null,
     normalizedPhone ? db.from("ticket_purchases").select("*").eq("phone", normalizedPhone) : null,
   ]);
   const found = new Map<string, TicketPurchaseRow>();
-  for (const p of [...(byEmail?.data ?? []), ...(byPhone?.data ?? [])]) found.set(p.id, p);
-  const purchases = [...found.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  for (const purchase of [
+    ...(byReference.data ?? []),
+    ...(byEmail?.data ?? []),
+    ...(byPhone?.data ?? []),
+  ]) {
+    found.set(purchase.id, purchase);
+  }
+  const purchases = [...found.values()].sort((a, b) =>
+    b.created_at.localeCompare(a.created_at),
+  );
   if (purchases.length === 0) return [];
 
   const results: PurchaseStatusItem[] = [];
@@ -432,8 +449,10 @@ export async function getPurchaseStatus(contact: string): Promise<PurchaseStatus
     }
     results.push({
       reference: purchase.reference,
+      phone: purchase.phone,
+      email: purchase.email,
       status: purchase.status as TicketPurchaseStatus,
-      ticketType: purchase.ticket_type,
+      ticketTypes: purchase.ticket_types,
       quantity: purchase.quantity,
       reviewNote: purchase.review_note,
       tickets,
@@ -447,6 +466,8 @@ export async function getPurchaseStatus(contact: string): Promise<PurchaseStatus
 export type CheckInLookup = {
   ticket: TicketRow;
   purchaseReference: string;
+  purchaseName: string;
+  purchaseFaculty: string;
   purchaseStatus: TicketPurchaseStatus;
 };
 
@@ -456,12 +477,14 @@ export async function getTicketByToken(token: string): Promise<CheckInLookup | n
   if (!ticket) return null;
   const { data: purchase } = await db
     .from("ticket_purchases")
-    .select("reference, status")
+    .select("reference, name, faculty, status")
     .eq("id", ticket.purchase_id)
     .maybeSingle();
   return {
     ticket,
     purchaseReference: purchase?.reference ?? "",
+    purchaseName: purchase?.name ?? ticket.holder_name,
+    purchaseFaculty: purchase?.faculty ?? "",
     // A missing purchase is an invalid ticket state; treat it as cancelled so
     // callers never accidentally render it as a valid, approved ticket.
     purchaseStatus: (purchase?.status as TicketPurchaseStatus | undefined) ?? "cancelled",

@@ -2,9 +2,11 @@ import type { TicketType } from "@/lib/tickets-shared";
 
 export type TicketPurchaseValues = {
   name: string;
+  registrationNumber: string;
+  faculty: string;
   email: string;
   phone: string;
-  ticketType: TicketType;
+  ticketTypes: TicketType[];
   quantity: string;
 };
 

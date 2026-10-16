@@ -5,6 +5,7 @@ import { TextField } from "@/components/ui/TextField";
 import { SelectField } from "@/components/ui/SelectField";
 import { Button } from "@/components/ui/Button";
 import { MAX_TICKETS_PER_PURCHASE, formatLkr } from "@/lib/tickets-shared";
+import { FACULTIES } from "@/lib/tshirts-shared";
 import type {
   TicketFieldErrors,
   TicketPurchaseValues,
@@ -22,6 +23,8 @@ export function TicketPurchaseDetails({
   previewUrl,
   busy,
   onValueChange,
+  onQuantityChange,
+  onTicketTypeChange,
   onFileChange,
 }: {
   values: TicketPurchaseValues;
@@ -34,38 +37,30 @@ export function TicketPurchaseDetails({
   previewUrl: string | null;
   busy: boolean;
   onValueChange: TicketValueSetter;
+  onQuantityChange: (quantity: string) => void;
+  onTicketTypeChange: (index: number, ticketType: TicketPurchaseValues["ticketTypes"][number]) => void;
   onFileChange: (file: File | null) => void;
 }) {
-  const selectedTypeLeft = values.ticketType === "seating" ? seatingLeft : standingLeft;
   const qtyOptions = useMemo(
     () =>
       Array.from(
-        { length: Math.min(MAX_TICKETS_PER_PURCHASE, Math.max(1, selectedTypeLeft)) },
+        { length: Math.min(MAX_TICKETS_PER_PURCHASE, seatingLeft + standingLeft) },
         (_, i) => String(i + 1),
       ),
-    [selectedTypeLeft],
+    [seatingLeft, standingLeft],
   );
-  const priceLkr = values.ticketType === "seating" ? seatingPriceLkr : standingPriceLkr;
-  const total = priceLkr * (Number(values.quantity) || 1);
+  const seatingCount = values.ticketTypes.filter((type) => type === "seating").length;
+  const standingCount = values.ticketTypes.length - seatingCount;
+  const total = seatingCount * seatingPriceLkr + standingCount * standingPriceLkr;
+  const formatType = (type: "seating" | "standing") =>
+    `${type === "seating" ? "Seating" : "Standing"} — ${formatLkr(
+      type === "seating" ? seatingPriceLkr : standingPriceLkr,
+    )}`;
 
   return (
     <>
       <div className="lailac-magic-card p-5 sm:p-7 space-y-5">
         <h3 className="font-serif text-base text-ink font-medium pb-1 border-b border-hairline">Attendee Details</h3>
-
-        <SelectField
-          label="Ticket type"
-          required
-          options={[
-            ...(seatingLeft > 0 ? [`Seating — ${formatLkr(seatingPriceLkr)}`] : []),
-            ...(standingLeft > 0 ? [`Standing — ${formatLkr(standingPriceLkr)}`] : []),
-          ]}
-          value={`${values.ticketType === "seating" ? "Seating" : "Standing"} — ${formatLkr(priceLkr)}`}
-          onChange={(e) => {
-            onValueChange("ticketType", e.target.value.startsWith("Seating") ? "seating" : "standing");
-            onValueChange("quantity", "1");
-          }}
-        />
 
         <TextField
           label="Full name"
@@ -75,6 +70,24 @@ export function TicketPurchaseDetails({
           value={values.name}
           onChange={(e) => onValueChange("name", e.target.value)}
           error={errors.name}
+        />
+        <TextField
+          label="Registration number"
+          required
+          autoComplete="off"
+          placeholder="e.g. 2023/ICT/001"
+          value={values.registrationNumber}
+          onChange={(e) => onValueChange("registrationNumber", e.target.value)}
+          error={errors.registrationNumber}
+        />
+        <SelectField
+          label="Faculty"
+          required
+          placeholder="Select your faculty"
+          options={FACULTIES}
+          value={values.faculty}
+          onChange={(e) => onValueChange("faculty", e.target.value)}
+          error={errors.faculty}
         />
         <TextField
           label="Email address"
@@ -105,9 +118,42 @@ export function TicketPurchaseDetails({
           required
           options={qtyOptions}
           value={values.quantity}
-          onChange={(e) => onValueChange("quantity", e.target.value)}
+          onChange={(e) => onQuantityChange(e.target.value)}
           error={errors.quantity}
         />
+
+        <div className="space-y-4 rounded-field border border-hairline p-4">
+          <div>
+            <h4 className="font-sans text-sm font-medium text-ink">Select ticket types</h4>
+            <p className="mt-1 font-sans text-xs text-ink-muted">
+              Choose Seating or Standing for each ticket.
+            </p>
+          </div>
+          {values.ticketTypes.map((type, index) => {
+            const options = [
+              ...(seatingLeft > seatingCount || type === "seating" ? ["seating" as const] : []),
+              ...(standingLeft > standingCount || type === "standing" ? ["standing" as const] : []),
+            ].map(formatType);
+            return (
+              <SelectField
+                key={index}
+                label={`Ticket ${index + 1}`}
+                required
+                options={options}
+                value={formatType(type)}
+                onChange={(event) => {
+                  const nextType = event.target.value.startsWith("Seating") ? "seating" : "standing";
+                  const nextSelectedCount =
+                    nextType === "seating" ? seatingCount : standingCount;
+                  const remaining = nextType === "seating" ? seatingLeft : standingLeft;
+                  if (nextType === type || nextSelectedCount < remaining) {
+                    onTicketTypeChange(index, nextType);
+                  }
+                }}
+              />
+            );
+          })}
+        </div>
 
         <div className="flex flex-col gap-2 font-sans text-sm font-medium text-ink-muted pt-2">
           <span className="flex items-center justify-between">
@@ -175,7 +221,9 @@ export function TicketPurchaseDetails({
             {values.quantity} {Number(values.quantity) === 1 ? "Ticket" : "Tickets"}
           </span>
           <p className="text-xs text-ink-muted mt-1.5 font-medium">
-            {formatLkr(priceLkr)} per ticket
+            {seatingCount > 0 && `${seatingCount} Seating`}
+            {seatingCount > 0 && standingCount > 0 && " · "}
+            {standingCount > 0 && `${standingCount} Standing`}
           </p>
         </div>
       </div>

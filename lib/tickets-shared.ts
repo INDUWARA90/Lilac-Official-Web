@@ -21,6 +21,17 @@ export type TicketPurchaseStatus =
 
 export type TicketType = "seating" | "standing";
 
+export function formatTicketTypeBreakdown(ticketTypes: readonly TicketType[]): string {
+  const seating = ticketTypes.filter((type) => type === "seating").length;
+  const standing = ticketTypes.length - seating;
+  return [
+    seating > 0 ? `${seating} Seating` : "",
+    standing > 0 ? `${standing} Standing` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
 export const PURCHASE_STATUS_LABEL: Record<TicketPurchaseStatus, string> = {
   pending_review: "Pending review",
   approved: "Approved",

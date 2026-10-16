@@ -5,7 +5,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAvailability, getTicketSettings } from "@/lib/tickets";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { formatLkr, PURCHASE_STATUS_LABEL } from "@/lib/tickets-shared";
+import { TicketBackupButton } from "@/components/admin/TicketBackupButton";
+import {
+  formatLkr,
+  formatTicketTypeBreakdown,
+  PURCHASE_STATUS_LABEL,
+} from "@/lib/tickets-shared";
 import { formatDate } from "@/lib/format";
 import type { TicketPurchaseStatusDb } from "@/lib/supabase/types";
 
@@ -36,19 +41,23 @@ export default async function AdminTicketsPage({
   const db = createAdminClient();
   let query = db
     .from("ticket_purchases")
-    .select("id, reference, name, email, phone, ticket_type, quantity, amount_lkr, status, created_at", {
+    .select("id, reference, name, registration_number, faculty, email, phone, ticket_type, ticket_types, quantity, amount_lkr, status, created_at", {
       count: "exact",
     })
     .order("created_at", { ascending: false });
   if (status) query = query.eq("status", status);
 
-  const [{ data: rows, count }, availability, settings, { count: checkedIn }, { count: issued }] =
+  const [
+    { data: rows, count },
+    availability,
+    settings,
+    { count: checkedIn },
+  ] =
     await Promise.all([
       query.range(from, from + PAGE_SIZE - 1),
       getAvailability(),
       getTicketSettings(),
       db.from("tickets").select("id", { count: "exact", head: true }).not("checked_in_at", "is", null),
-      db.from("tickets").select("id", { count: "exact", head: true }),
       getDrawUnlocked(), // warm the shared cache — AdminShell needs it too, see lib/app-config.ts
     ]);
 
@@ -66,17 +75,20 @@ export default async function AdminTicketsPage({
     <AdminShell email={session.email} role={session.role}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl text-ink">Tickets</h1>
-        {session.role === "admin" && (
-          <Link
-            href="/admin/tickets/settings"
-            className="rounded-field border border-hairline px-3 py-1.5 font-sans text-sm text-accent-strong hover:border-accent"
-          >
-            Settings & bank details
-          </Link>
-        )}
+        <div className="flex flex-wrap items-start gap-2">
+          <TicketBackupButton />
+          {session.role === "admin" && (
+            <Link
+              href="/admin/tickets/settings"
+              className="rounded-field border border-hairline px-3 py-1.5 font-sans text-sm text-accent-strong hover:border-accent"
+            >
+              Settings & bank details
+            </Link>
+          )}
+        </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {[
           {
             label: "Seating / Standing",
@@ -92,8 +104,7 @@ export default async function AdminTicketsPage({
             value: `${availability.standing.taken} / ${availability.standing.capacity}`,
             sub: availability.salesOpen ? `${availability.standing.left} left` : "sales closed",
           },
-          { label: "Tickets issued", value: issued ?? 0 },
-          { label: "Checked in", value: `${checkedIn ?? 0} / ${issued ?? 0}` },
+          { label: "Checked in", value: checkedIn ?? 0 },
         ].map((c) => (
           <div key={c.label} className="rounded-card border border-hairline p-4">
             <div className="font-sans text-lg font-semibold text-ink">{c.value}</div>
@@ -163,13 +174,19 @@ export default async function AdminTicketsPage({
                       {r.reference}
                     </Link>
                   </td>
-                  <td className="py-2 pr-4">{r.name}</td>
+                  <td className="py-2 pr-4">
+                    {r.name}
+                    <div className="mt-1 text-xs text-ink-muted">
+                      Reg: {r.registration_number}
+                      {r.faculty ? ` · ${r.faculty}` : ""}
+                    </div>
+                  </td>
                   <td className="py-2 pr-4 text-ink-muted">
                     {r.email}
                     <br />
                     {r.phone}
                   </td>
-                  <td className="py-2 pr-4 capitalize">{r.ticket_type}</td>
+                  <td className="py-2 pr-4">{formatTicketTypeBreakdown(r.ticket_types)}</td>
                   <td className="py-2 pr-4">{r.quantity}</td>
                   <td className="py-2 pr-4">{formatLkr(r.amount_lkr)}</td>
                   <td className="py-2 pr-4">{PURCHASE_STATUS_LABEL[r.status]}</td>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { SelectField } from "@/components/ui/SelectField";
 import { Sparkle } from "@/components/ui/decor/Sparkle";
-import { MAX_TSHIRT_ORDER_QUANTITY, TSHIRT_COLORS, TSHIRT_SIZES } from "@/lib/tshirts-shared";
+import { FACULTIES, MAX_TSHIRT_ORDER_QUANTITY, TSHIRT_COLORS, TSHIRT_SIZES } from "@/lib/tshirts-shared";
 import { formatLkr } from "@/lib/tickets-shared";
 import { CopyButton } from "@/components/ui/decor/CopyButton";
 import type { TicketBank } from "@/components/tickets/ticket-purchase-types";
@@ -20,19 +20,6 @@ export type TshirtOrderValues = {
 
 type Errors = Partial<Record<string, string>>;
 type SetOrderValue = <K extends keyof TshirtOrderValues>(key: K, value: string) => void;
-
-const FACULTIES = [
-  "Faculty of Technology",
-  "Faculty of Agriculture",
-  "Faculty of Allied Health Sciences",
-  "Faculty of Medicine",
-  "Faculty of Engineering",
-  "Faculty of Graduate Studies",
-  "Faculty of Fisheries and Marine Sciences & Technology",
-  "Faculty of Management and Finance",
-  "Faculty of Humanities and Social Sciences",
-  "Faculty of Science",
-];
 
 export function TshirtOrderFields({
   values,

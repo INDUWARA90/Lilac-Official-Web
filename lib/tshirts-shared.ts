@@ -10,6 +10,18 @@ export const TSHIRT_SIZE_CHART = [
 ] as const;
 export const TSHIRT_COLORS = ["White", "Black"] as const;
 export const MAX_TSHIRT_ORDER_QUANTITY = 3;
+export const FACULTIES = [
+  "Faculty of Technology",
+  "Faculty of Agriculture",
+  "Faculty of Allied Health Sciences",
+  "Faculty of Medicine",
+  "Faculty of Engineering",
+  "Faculty of Graduate Studies",
+  "Faculty of Fisheries and Marine Sciences & Technology",
+  "Faculty of Management and Finance",
+  "Faculty of Humanities and Social Sciences",
+  "Faculty of Science",
+] as const;
 export const TSHIRT_ORDER_STATUS = ["pending_review", "partially_paid", "payment_collected", "rejected", "cancelled"] as const;
 export type TshirtOrderStatus = (typeof TSHIRT_ORDER_STATUS)[number];
 export const TSHIRT_STATUS_LABEL: Record<TshirtOrderStatus, string> = {

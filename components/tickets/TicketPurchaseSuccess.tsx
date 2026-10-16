@@ -53,7 +53,7 @@ export function TicketPurchaseSuccess({
           <div className="flex items-start gap-2.5">
             <span className="text-accent-strong font-bold mt-0.5">•</span>
             <p className="text-left">
-              We verify bank transfers manually, typically within 48 to 72 hours. Once verified, your unique QR ticket{Number(quantity) === 1 ? "" : "s"} will be emailed directly to <strong className="text-ink">{email}</strong>.
+              We verify bank transfers manually, Once verified, your unique QR ticket{Number(quantity) === 1 ? "" : "s"} will be emailed directly to <strong className="text-ink">{email}</strong>.
             </p>
           </div>
 

@@ -20,7 +20,7 @@ const csp = [
   `default-src 'self'`,
   `script-src 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com${isDev ? " 'unsafe-eval'" : ""}`,
   `style-src 'self' 'unsafe-inline'`,
-  `img-src 'self' data: https:`,
+  `img-src 'self' data: blob: https:`,
   `media-src 'self' blob: https://*.supabase.co`,
   // The YouTube IFrame player spins up a same-origin blob worker for playback.
   `worker-src 'self' blob:`,
