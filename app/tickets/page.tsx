@@ -72,13 +72,38 @@ export default async function TicketsPage() {
           </div>
         </Reveal>
         {availability.ticketLinksVisible && (
-          <p className="mt-3 font-sans text-sm text-ink-muted">
-            Already bought a ticket?{" "}
-            <Link href="/tickets/status" className="text-accent-strong underline">
-              Check your ticket
+          <div className="group relative mt-6 inline-flex max-w-md items-center justify-between gap-4 overflow-hidden rounded-full border border-[#b79ddb]/40 bg-gradient-to-r from-white/95 via-[#f9f5ff]/90 to-[#f3ebff]/80 px-5 py-2.5 shadow-[0_12px_32px_-12px_rgba(110,80,160,0.2)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-[#7b539f]/60 hover:shadow-[0_18px_40px_-12px_rgba(110,80,160,0.3)]">
+            {/* Ambient inner glow */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-6 -top-6 size-20 rounded-full bg-[#b79ddb]/20 blur-xl transition-opacity duration-300 group-hover:opacity-100"
+            />
+
+            <div className="flex items-center gap-2.5">
+              {/* Animated Live Dot Indicator */}
+              <span className="relative flex size-2.5 shrink-0 items-center justify-center">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#9467c8] opacity-75" />
+                <span className="relative size-2 rounded-full bg-[#7b539f]" />
+              </span>
+
+              <span className="font-sans text-xs font-medium text-ink-muted sm:text-sm">
+                Already bought a ticket?
+              </span>
+            </div>
+
+            <Link
+              href="/tickets/status"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#7b539f]/10 px-3.5 py-1 font-sans text-xs font-semibold text-[#7b539f] transition-all duration-300 group-hover:bg-[#7b539f] group-hover:text-white group-hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7b539f]/40"
+            >
+              <span>Check status</span>
+              <span
+                aria-hidden="true"
+                className="inline-block text-xs transition-transform duration-300 group-hover:translate-x-1"
+              >
+                →
+              </span>
             </Link>
-            .
-          </p>
+          </div>
         )}
 
         {canBuy ? (
