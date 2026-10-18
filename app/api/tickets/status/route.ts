@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ticketStatusLookupSchema } from "@/lib/validation/ticket";
-import { getPurchaseStatus } from "@/lib/tickets";
+import { getPurchaseStatus, getTicketSettings } from "@/lib/tickets";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
 
@@ -10,6 +10,9 @@ export const dynamic = "force-dynamic";
 const json = (b: unknown, s = 200) => Response.json(b, { status: s });
 
 export async function POST(req: Request) {
+  if (!(await getTicketSettings()).ticketLinksVisible) {
+    return json({ ok: false, error: "Ticket status lookup is unavailable." }, 404);
+  }
   const ip = getClientIp(req.headers);
   if (!(await checkRateLimit(`ticket-status:${ip}`, 15, 10 * 60_000)).ok) {
     return json({ ok: false, error: "Too many attempts. Please wait a few minutes." }, 429);

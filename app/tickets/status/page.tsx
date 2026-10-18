@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { SiteFrame } from "@/components/ui/SiteFrame";
 import { TicketStatusLookup } from "@/components/tickets/TicketStatusLookup";
 import { Sparkle } from "@/components/ui/decor/Sparkle";
+import { getTicketSettings } from "@/lib/tickets";
 
 export const metadata: Metadata = { title: "Check your ticket status" };
 
-export default function TicketStatusPage() {
+export default async function TicketStatusPage() {
+  if (!(await getTicketSettings()).ticketLinksVisible) notFound();
   return (
     <SiteFrame>
       <div className="py-12 sm:py-16 flex flex-col items-center">

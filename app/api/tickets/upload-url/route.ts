@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
 import { TICKET_SLIP_BUCKET, MAX_SLIP_BYTES, ALLOWED_SLIP_TYPES } from "@/lib/tickets-shared";
+import { getTicketSettings } from "@/lib/tickets";
 
 /**
  * POST /api/tickets/upload-url — issue a one-time signed URL so a buyer can
@@ -20,6 +21,9 @@ const schema = z.object({
 const json = (b: unknown, s = 200) => Response.json(b, { status: s });
 
 export async function POST(req: Request) {
+  if (!(await getTicketSettings()).ticketLinksVisible) {
+    return json({ ok: false, error: "Ticket purchasing is unavailable." }, 404);
+  }
   const ip = getClientIp(req.headers);
   if (!(await checkRateLimit(`ticket-upload:${ip}`, 10, 10 * 60_000)).ok) {
     return json({ ok: false, error: "Too many attempts. Please wait a few minutes." }, 429);

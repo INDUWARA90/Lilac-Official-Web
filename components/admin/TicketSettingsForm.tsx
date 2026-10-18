@@ -113,7 +113,7 @@ export function TicketSettingsForm({ current }: { current: TicketSettings }) {
           onChange={(e) => set("ticketLinksVisible", e.target.checked)}
           className="accent-accent"
         />
-        Show ticket purchase and status links on the public site
+        Enable ticket purchase and status pages on the public site
       </label>
 
       <hr className="border-hairline" />

@@ -1,9 +1,12 @@
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
 import { tshirtOrderSchema } from "@/lib/validation/tshirt";
-import { createTshirtOrder } from "@/lib/tshirts";
+import { createTshirtOrder, getTshirtSettings } from "@/lib/tshirts";
 export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
+  if (!(await getTshirtSettings()).tshirtLinkVisible) {
+    return Response.json({ ok: false, error: "T-shirt ordering is unavailable." }, { status: 404 });
+  }
   if (!(await checkRateLimit(`tshirt-order:${getClientIp(req.headers)}`, 6, 10 * 60_000)).ok) return Response.json({ ok: false, error: "Too many attempts. Please wait a few minutes." }, { status: 429 });
   const parsed = tshirtOrderSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {

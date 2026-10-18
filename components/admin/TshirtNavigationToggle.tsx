@@ -43,9 +43,9 @@ export function TshirtNavigationToggle({ initialVisible }: { initialVisible: boo
           className="mt-1 accent-accent"
         />
         <span>
-          <strong className="block">Show T-shirt link on the public site</strong>
+          <strong className="block">Enable T-shirt orders on the public site</strong>
           <span className="mt-1 block text-xs text-ink-muted">
-            Controls the T-shirts navigation link and home-page order button. Hiding the link does not close orders or disable direct access.
+            Controls the navigation link, home-page order button, and public T-shirt URL. When disabled, direct visits and order uploads are unavailable.
           </span>
         </span>
       </label>

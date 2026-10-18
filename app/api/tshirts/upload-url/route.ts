@@ -3,11 +3,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
 import { ALLOWED_RECEIPT_TYPES, MAX_RECEIPT_BYTES, TSHIRT_RECEIPT_BUCKET } from "@/lib/tshirts-shared";
+import { getTshirtSettings } from "@/lib/tshirts";
 
 export const dynamic = "force-dynamic";
 const schema = z.object({ filename: z.string().min(1).max(200), size: z.number().int().positive(), contentType: z.enum(ALLOWED_RECEIPT_TYPES) });
 
 export async function POST(req: Request) {
+  if (!(await getTshirtSettings()).tshirtLinkVisible) {
+    return Response.json({ ok: false, error: "T-shirt ordering is unavailable." }, { status: 404 });
+  }
   if (!(await checkRateLimit(`tshirt-upload:${getClientIp(req.headers)}`, 10, 10 * 60_000)).ok) return Response.json({ ok: false, error: "Too many attempts. Please wait a few minutes." }, { status: 429 });
   const input = schema.safeParse(await req.json().catch(() => null));
   if (!input.success || input.data.size > MAX_RECEIPT_BYTES) return Response.json({ ok: false, error: "Choose a JPG, PNG, WebP or PDF up to 5 MB." }, { status: 400 });

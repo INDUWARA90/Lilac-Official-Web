@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { SiteFrame } from "@/components/ui/SiteFrame";
 import { TshirtOrderForm } from "@/components/tshirts/TshirtOrderForm";
 import { TshirtSizeGuide } from "@/components/tshirts/TshirtSizeGuide";
@@ -8,10 +9,11 @@ import { formatLkr } from "@/lib/tickets-shared";
 export const metadata: Metadata = { title: "T-shirts" };
 export const dynamic = "force-dynamic";
 export default async function TshirtsPage() {
-  const [settings, ticketSettings] = await Promise.all([
-    getTshirtSettings(),
-    getTicketSettings(),
-  ]);
+  // Hiding this section disables the public URL as well as its navigation
+  // links, including for bookmarks and manually entered addresses.
+  const settings = await getTshirtSettings();
+  if (!settings.tshirtLinkVisible) notFound();
+  const ticketSettings = await getTicketSettings();
   return <SiteFrame>
     <div className="py-8 sm:py-12">
       <h1 className="text-3xl text-ink sm:text-4xl">Official T-shirt</h1>

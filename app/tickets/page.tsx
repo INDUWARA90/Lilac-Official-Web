@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { SiteFrame } from "@/components/ui/SiteFrame";
 import { Sparkle } from "@/components/ui/decor/Sparkle";
 import { SeatsMeter } from "@/components/ui/decor/SeatsMeter";
@@ -19,7 +20,12 @@ export const metadata: Metadata = { title: "Tickets" };
 export const revalidate = 30;
 
 export default async function TicketsPage() {
-  const [availability, settings] = await Promise.all([getAvailability(), getTicketSettings()]);
+  // This is an access switch, not merely a navigation preference.  Returning a
+  // 404 also prevents bookmarked or manually-entered URLs from exposing the
+  // ticket purchase page after it has been deactivated in the admin area.
+  const settings = await getTicketSettings();
+  if (!settings.ticketLinksVisible) notFound();
+  const availability = await getAvailability();
   const canBuy =
     availability.salesOpen &&
     (availability.seating.left > 0 || availability.standing.left > 0);
