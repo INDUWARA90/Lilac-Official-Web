@@ -8,21 +8,27 @@ type FilterOption = { value: string; label: string };
 export function TshirtOrderFilters({
   initialQuery,
   initialStatus,
+  initialFaculty,
   statuses,
+  faculties,
 }: {
   initialQuery: string;
   initialStatus: string;
+  initialFaculty: string;
   statuses: readonly FilterOption[];
+  faculties: readonly string[];
 }) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState(initialStatus);
+  const [faculty, setFaculty] = useState(initialFaculty);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       const params = new URLSearchParams();
       if (query.trim()) params.set("q", query.trim());
       if (status) params.set("status", status);
+      if (faculty) params.set("faculty", faculty);
       const queryString = params.toString();
       router.replace(queryString ? `/admin/tshirts?${queryString}` : "/admin/tshirts", {
         scroll: false,
@@ -30,10 +36,10 @@ export function TshirtOrderFilters({
     }, query === initialQuery ? 0 : 300);
 
     return () => window.clearTimeout(timeout);
-  }, [query, status, initialQuery, router]);
+  }, [query, status, faculty, initialQuery, router]);
 
   return (
-    <div className="mt-5 grid gap-3 rounded-card border border-hairline p-4 sm:grid-cols-2">
+    <div className="mt-5 grid gap-3 rounded-card border border-hairline p-4 sm:grid-cols-2 lg:grid-cols-3">
       <label className="font-sans text-xs font-medium text-ink-muted">
         Search buyer / reference
         <input
@@ -51,12 +57,19 @@ export function TshirtOrderFilters({
         onChange={setStatus}
         options={statuses}
       />
-      <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
+      <FilterSelect
+        label="Faculty"
+        value={faculty}
+        onChange={setFaculty}
+        options={faculties}
+      />
+      <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
         <button
           type="button"
           onClick={() => {
             setQuery("");
             setStatus("");
+            setFaculty("");
           }}
           className="inline-flex min-h-10 items-center rounded-field border border-hairline px-4 font-sans text-sm text-ink-muted hover:border-accent"
         >

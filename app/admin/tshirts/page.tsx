@@ -6,14 +6,14 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { TshirtOrderFilters } from "@/components/admin/TshirtOrderFilters";
 import { TshirtNavigationToggle } from "@/components/admin/TshirtNavigationToggle";
 import { TshirtBackupButton } from "@/components/admin/TshirtBackupButton";
-import { TSHIRT_ORDER_STATUS, TSHIRT_STATUS_LABEL, type TshirtOrderStatus } from "@/lib/tshirts-shared";
+import { FACULTIES, TSHIRT_ORDER_STATUS, TSHIRT_STATUS_LABEL, type TshirtOrderStatus } from "@/lib/tshirts-shared";
 import { getTshirtSettings } from "@/lib/tshirts";
 import { formatLkr } from "@/lib/tickets-shared";
 import { formatDate } from "@/lib/format";
 export const metadata: Metadata = { title: "T-shirt orders", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
-type SearchParams = { q?: string; status?: string };
+type SearchParams = { q?: string; status?: string; faculty?: string };
 
 export default async function AdminTshirts({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const session = await requireTshirtAccess();
@@ -23,6 +23,9 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
   const status = TSHIRT_ORDER_STATUS.includes(params.status as TshirtOrderStatus)
     ? params.status as TshirtOrderStatus
     : "";
+  const faculty = FACULTIES.includes(params.faculty as typeof FACULTIES[number])
+    ? params.faculty as typeof FACULTIES[number]
+    : "";
 
   const db = createAdminClient();
   let query = db
@@ -30,6 +33,7 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
     .select("id, reference, name, registration_number, faculty, tshirt_size, quantity, order_items, amount_lkr, paid_amount_lkr, status, created_at")
     .order("created_at", { ascending: false });
   if (status) query = query.eq("status", status);
+  if (faculty) query = query.eq("faculty", faculty);
   if (search) {
     const term = `%${search}%`;
     query = query.or(
@@ -64,8 +68,8 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
         </div>
         {session.role !== "ticket_manager" && (
           <div className="flex flex-wrap gap-2">
-            <a href="/api/admin/export/tshirts" className="rounded-field border border-hairline px-3 py-1.5 font-sans text-sm text-accent-strong hover:border-accent">
-              Export CSV
+            <a href={faculty ? `/api/admin/export/tshirts?faculty=${encodeURIComponent(faculty)}` : "/api/admin/export/tshirts"} className="rounded-field border border-hairline px-3 py-1.5 font-sans text-sm text-accent-strong hover:border-accent">
+              {faculty ? "Export faculty CSV" : "Export CSV by faculty"}
             </a>
             <TshirtBackupButton />
           </div>
@@ -87,10 +91,12 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
       )}
 
       <TshirtOrderFilters
-        key={`${search}|${status}`}
+        key={`${search}|${status}|${faculty}`}
         initialQuery={search}
         initialStatus={status}
+        initialFaculty={faculty}
         statuses={TSHIRT_ORDER_STATUS.map((value) => ({ value, label: TSHIRT_STATUS_LABEL[value] }))}
+        faculties={FACULTIES}
       />
 
       <div className="mt-5 overflow-x-auto">
