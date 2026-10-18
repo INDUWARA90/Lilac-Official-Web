@@ -2,9 +2,14 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
-type NavItem = { href: string; label: string; icon: ReactNode };
+type NavItem = {
+  href: string;
+  label: string;
+  icon: ReactNode;
+  children?: Array<{ href: string; label: string }>;
+};
 
 const s = {
   width: 18,
@@ -73,6 +78,12 @@ const NAV: NavItem[] = [
   {
     href: "/admin/analytics",
     label: "Analytics",
+    children: [
+      { href: "/admin/analytics?section=site-wide#site-wide", label: "Site-wide" },
+      { href: "/admin/analytics?section=ad-performance#ad-performance", label: "Ad performance" },
+      { href: "/admin/analytics?section=tshirt-orders#tshirt-orders", label: "T-shirt orders" },
+      { href: "/admin/analytics?section=ticket-orders#ticket-orders", label: "Ticket orders" },
+    ],
     icon: (
       <svg {...s}>
         <path d="M4 19V5M4 19h16M8 19v-6M13 19V9M18 19v-3" />
@@ -151,6 +162,8 @@ export function AdminNav({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const analyticsSection = searchParams.get("section") ?? "site-wide";
   const items = NAV.filter((i) => i.href !== "/admin/draw" || drawUnlocked).filter((i) => {
     if (role === "admin") return true;
     if (role === "ticket_manager") return TICKET_MANAGER_HREFS.has(i.href);
@@ -166,23 +179,47 @@ export function AdminNav({
             : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            aria-current={active ? "page" : undefined}
-            className={
-              "group flex items-center gap-3 rounded-field px-3 py-2 font-sans text-sm transition-colors " +
-              (active
-                ? "lailac-nav-active bg-accent-wash font-medium text-accent-strong"
-                : "text-ink-muted hover:bg-canvas-raised hover:text-accent-strong")
-            }
-          >
-            <span className="shrink-0 text-current transition-transform duration-200 group-hover:scale-110 motion-reduce:transition-none">
-              {item.icon}
-            </span>
-            {item.label}
-          </Link>
+          <div key={item.href}>
+            <Link
+              href={item.href}
+              onClick={onNavigate}
+              aria-current={active ? "page" : undefined}
+              className={
+                "group flex items-center gap-3 rounded-field px-3 py-2 font-sans text-sm transition-colors " +
+                (active
+                  ? "lailac-nav-active bg-accent-wash font-medium text-accent-strong"
+                  : "text-ink-muted hover:bg-canvas-raised hover:text-accent-strong")
+              }
+            >
+              <span className="shrink-0 text-current transition-transform duration-200 group-hover:scale-110 motion-reduce:transition-none">
+                {item.icon}
+              </span>
+              {item.label}
+            </Link>
+            {active && item.children && (
+              <div className="ml-5 mt-1 flex flex-col gap-1 border-l border-hairline pl-3">
+                {item.children.map((child) => {
+                  const selected = child.href.split("section=")[1]?.split("#")[0] === analyticsSection;
+                  return (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      onClick={onNavigate}
+                      aria-current={selected ? "page" : undefined}
+                      className={
+                        "rounded-field px-2 py-1.5 font-sans text-xs transition-colors " +
+                        (selected
+                          ? "bg-accent-wash font-medium text-accent-strong"
+                          : "text-ink-muted hover:bg-canvas-raised hover:text-accent-strong")
+                      }
+                    >
+                      {child.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         );
       })}
     </nav>

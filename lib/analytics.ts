@@ -1,6 +1,8 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 import { getAds } from "@/lib/ads";
+import { TSHIRT_COLORS, TSHIRT_SIZES } from "@/lib/tshirts-shared";
 
 export interface AdAnalyticsRow {
   id: string;
@@ -18,6 +20,51 @@ export interface SiteAnalytics {
   flowSessionsCompleted: number;
   ticketBuyers: number;
 }
+
+export interface TshirtAnalytics {
+  submittedOrders: number;
+  activeOrders: number;
+  orderedShirts: number;
+  shirtsWithPayment: number;
+  awaitingReview: number;
+  rejectedOrCancelled: number;
+  unrecordedColorShirts: number;
+  sizeColor: Array<{ size: string; colors: Record<string, number>; unrecordedColor: number; total: number }>;
+  byFaculty: Array<{
+    faculty: string;
+    orders: number;
+    shirts: number;
+    shirtsWithPayment: number;
+    sizes: Record<string, number>;
+    colors: Record<string, number>;
+    colorSizes: Record<string, Record<string, number>>;
+    unrecordedColor: number;
+  }>;
+}
+
+export type TshirtAnalyticsResult = { ok: true; data: TshirtAnalytics } | { ok: false; error: string };
+
+export interface TicketAnalytics {
+  submittedOrders: number;
+  activeOrders: number;
+  ticketsRequested: number;
+  ticketsApproved: number;
+  awaitingReview: number;
+  rejectedOrCancelled: number;
+  byType: Array<{ type: string; requested: number; approved: number }>;
+  byFaculty: Array<{
+    faculty: string;
+    orders: number;
+    tickets: number;
+    ticketsApproved: number;
+    seatingRequested: number;
+    standingRequested: number;
+    seatingApproved: number;
+    standingApproved: number;
+  }>;
+}
+
+export type TicketAnalyticsResult = { ok: true; data: TicketAnalytics } | { ok: false; error: string };
 
 /**
  * Site-wide interaction numbers plus a per-ad breakdown (shown/watched/
@@ -73,5 +120,204 @@ export async function getSiteAnalytics(): Promise<SiteAnalytics> {
     flowSessionsStarted: flowViews.count ?? 0,
     flowSessionsCompleted: flowCompletes.count ?? 0,
     ticketBuyers: ticketsApproved.count ?? 0,
+  };
+}
+
+/**
+ * Summarize current T-shirt demand by size, color, and faculty. Rejected and
+ * cancelled orders are excluded from demand; partially paid orders remain in
+ * demand, with their paid quantity reported separately.
+ */
+export async function getTshirtAnalytics(): Promise<TshirtAnalyticsResult> {
+  const db = createAdminClient();
+  const { data: orders, error } = await fetchAll((from, to) =>
+    db
+      .from("tshirt_orders")
+      .select("faculty, tshirt_size, quantity, order_items, status")
+      .order("id")
+      .range(from, to),
+  );
+
+  if (error) {
+    console.error("T-shirt analytics lookup failed", error);
+    const message =
+      error && typeof error === "object" && "message" in error && typeof error.message === "string"
+        ? error.message
+        : "Unknown database error";
+    return { ok: false, error: message };
+  }
+
+  const activeStatuses = new Set(["pending_review", "partially_paid", "payment_collected"]);
+  const paidStatuses = new Set(["partially_paid", "payment_collected"]);
+  const sizeColor = TSHIRT_SIZES.map((size) => {
+    const colors: Record<string, number> = Object.fromEntries(TSHIRT_COLORS.map((color) => [color, 0]));
+    return { size, colors, unrecordedColor: 0, total: 0 };
+  });
+  const sizesByName = new Map<string, (typeof sizeColor)[number]>(sizeColor.map((row) => [row.size, row]));
+  const facultyTotals = new Map<string, {
+    orders: number; shirts: number; shirtsWithPayment: number;
+    sizes: Record<string, number>; colors: Record<string, number>;
+    colorSizes: Record<string, Record<string, number>>; unrecordedColor: number;
+  }>();
+  let activeOrders = 0;
+  let orderedShirts = 0;
+  let shirtsWithPayment = 0;
+  let awaitingReview = 0;
+  let rejectedOrCancelled = 0;
+  let unrecordedColorShirts = 0;
+
+  for (const order of orders) {
+    if (order.status === "rejected" || order.status === "cancelled") {
+      rejectedOrCancelled += 1;
+      continue;
+    }
+    if (!activeStatuses.has(order.status)) continue;
+
+    activeOrders += 1;
+    orderedShirts += order.quantity;
+    if (order.status === "pending_review") awaitingReview += 1;
+    const hasPayment = paidStatuses.has(order.status);
+    if (hasPayment) shirtsWithPayment += order.quantity;
+
+    const facultyName = order.faculty.trim() || "Not provided";
+    const faculty = facultyTotals.get(facultyName) ?? {
+      orders: 0, shirts: 0, shirtsWithPayment: 0,
+      sizes: Object.fromEntries(TSHIRT_SIZES.map((size) => [size, 0])),
+      colors: Object.fromEntries(TSHIRT_COLORS.map((color) => [color, 0])),
+      colorSizes: Object.fromEntries(
+        TSHIRT_COLORS.map((color) => [color, Object.fromEntries(TSHIRT_SIZES.map((size) => [size, 0]))]),
+      ),
+      unrecordedColor: 0,
+    };
+    faculty.orders += 1;
+    faculty.shirts += order.quantity;
+    if (hasPayment) faculty.shirtsWithPayment += order.quantity;
+    facultyTotals.set(facultyName, faculty);
+
+    const items = order.order_items?.length
+      ? order.order_items
+      : Array.from({ length: order.quantity }, () => ({ size: order.tshirt_size, color: null }));
+    for (const item of items) {
+      const sizeRow = sizesByName.get(item.size);
+      if (sizeRow) {
+        sizeRow.total += 1;
+        faculty.sizes[item.size] += 1;
+        if (item.color && Object.hasOwn(sizeRow.colors, item.color)) {
+          sizeRow.colors[item.color] += 1;
+          faculty.colors[item.color] += 1;
+          faculty.colorSizes[item.color][item.size] += 1;
+        } else if (item.color === null) {
+          sizeRow.unrecordedColor += 1;
+          faculty.unrecordedColor += 1;
+        }
+      }
+      if (item.color === null) unrecordedColorShirts += 1;
+    }
+  }
+
+  return {
+    ok: true,
+    data: {
+      submittedOrders: orders.length,
+      activeOrders,
+      orderedShirts,
+      shirtsWithPayment,
+      awaitingReview,
+      rejectedOrCancelled,
+      unrecordedColorShirts,
+      sizeColor,
+      byFaculty: [...facultyTotals.entries()]
+        .map(([faculty, totals]) => ({ faculty, ...totals }))
+        .sort((a, b) => b.shirts - a.shirts || a.faculty.localeCompare(b.faculty)),
+    },
+  };
+}
+
+/**
+ * Summarize ticket demand by ticket type and buyer faculty. Pending purchases
+ * are included in requested demand; only approved purchases count as approved.
+ */
+export async function getTicketAnalytics(): Promise<TicketAnalyticsResult> {
+  const db = createAdminClient();
+  const { data: purchases, error } = await fetchAll((from, to) =>
+    db
+      .from("ticket_purchases")
+      .select("faculty, quantity, ticket_types, status")
+      .order("id")
+      .range(from, to),
+  );
+
+  if (error) {
+    console.error("Ticket analytics lookup failed", error);
+    const message =
+      error && typeof error === "object" && "message" in error && typeof error.message === "string"
+        ? error.message
+        : "Unknown database error";
+    return { ok: false, error: message };
+  }
+
+  const byType = [
+    { type: "Seating", requested: 0, approved: 0 },
+    { type: "Standing", requested: 0, approved: 0 },
+  ];
+  const byFaculty = new Map<string, {
+    orders: number; tickets: number; ticketsApproved: number;
+    seatingRequested: number; standingRequested: number;
+    seatingApproved: number; standingApproved: number;
+  }>();
+  let activeOrders = 0;
+  let ticketsRequested = 0;
+  let ticketsApproved = 0;
+  let awaitingReview = 0;
+  let rejectedOrCancelled = 0;
+
+  for (const purchase of purchases) {
+    if (purchase.status === "rejected" || purchase.status === "cancelled") {
+      rejectedOrCancelled += 1;
+      continue;
+    }
+    if (purchase.status !== "pending_review" && purchase.status !== "approved") continue;
+
+    activeOrders += 1;
+    ticketsRequested += purchase.quantity;
+    const isApproved = purchase.status === "approved";
+    if (isApproved) ticketsApproved += purchase.quantity;
+    else awaitingReview += 1;
+
+    const facultyName = purchase.faculty.trim() || "Not provided";
+    const faculty = byFaculty.get(facultyName) ?? {
+      orders: 0, tickets: 0, ticketsApproved: 0,
+      seatingRequested: 0, standingRequested: 0, seatingApproved: 0, standingApproved: 0,
+    };
+    faculty.orders += 1;
+    faculty.tickets += purchase.quantity;
+    if (isApproved) faculty.ticketsApproved += purchase.quantity;
+    byFaculty.set(facultyName, faculty);
+
+    for (const ticketType of purchase.ticket_types) {
+      const row = ticketType === "seating" ? byType[0] : byType[1];
+      row.requested += 1;
+      if (ticketType === "seating") faculty.seatingRequested += 1;
+      else faculty.standingRequested += 1;
+      if (isApproved) row.approved += 1;
+      if (isApproved && ticketType === "seating") faculty.seatingApproved += 1;
+      if (isApproved && ticketType !== "seating") faculty.standingApproved += 1;
+    }
+  }
+
+  return {
+    ok: true,
+    data: {
+      submittedOrders: purchases.length,
+      activeOrders,
+      ticketsRequested,
+      ticketsApproved,
+      awaitingReview,
+      rejectedOrCancelled,
+      byType,
+      byFaculty: [...byFaculty.entries()]
+        .map(([faculty, totals]) => ({ faculty, ...totals }))
+        .sort((a, b) => b.tickets - a.tickets || a.faculty.localeCompare(b.faculty)),
+    },
   };
 }
