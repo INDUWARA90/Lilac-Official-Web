@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAudit } from "@/lib/audit";
 
 /**
  * Single-row `app_config` — app-wide flags read/written server-side.
@@ -9,6 +10,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const DRAW_UNLOCKED_TAG = "draw-unlocked";
 const ARTIST_REVEAL_TAG = "artist-reveal-visible";
+const MAP_VISIBLE_TAG = "map-visible";
 
 async function fetchDrawUnlocked(): Promise<boolean> {
   const { data, error } = await createAdminClient()
@@ -117,5 +119,55 @@ export async function setArtistRevealVisible(visible: boolean, by: string): Prom
   revalidateTag(ARTIST_REVEAL_TAG, { expire: 0 });
   revalidatePath("/", "page");
   revalidatePath("/about", "page");
+  return true;
+}
+
+async function fetchMapVisible(): Promise<boolean> {
+  const { data, error } = await createAdminClient()
+    .from("app_config")
+    .select("map_visible")
+    .eq("id", "default")
+    .maybeSingle();
+  if (error) {
+    console.error("Map visibility: failed to read app config", error);
+    return true; // Default to visible on lookup error
+  }
+  return data?.map_visible ?? true;
+}
+
+export const getMapVisible = cache(fetchMapVisible);
+
+export const getPublicMapVisible = unstable_cache(
+  fetchMapVisible,
+  ["map-visible"],
+  { tags: [MAP_VISIBLE_TAG], revalidate: 60 },
+);
+
+export async function setMapVisible(visible: boolean, by: string): Promise<boolean> {
+  const { data, error } = await createAdminClient()
+    .from("app_config")
+    .upsert(
+      {
+        id: "default",
+        map_visible: visible,
+        updated_at: new Date().toISOString(),
+        updated_by: by,
+      },
+      { onConflict: "id" },
+    )
+    .select("map_visible")
+    .single();
+
+  if (error || !data || data.map_visible !== visible) {
+    console.error("Map visibility: failed to persist app config", error);
+    return false;
+  }
+
+  await logAudit("map.visibility_changed", { visible }, by);
+
+  revalidateTag(MAP_VISIBLE_TAG, { expire: 0 });
+  revalidatePath("/", "layout");
+  revalidatePath("/map", "page");
+  revalidatePath("/admin/map", "page");
   return true;
 }

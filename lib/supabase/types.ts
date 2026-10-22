@@ -1,5 +1,5 @@
 /**
- * Hand-written database types mirroring supabase/migrations/0001_init.sql.
+ * Hand-written database types mirroring supabase/migrations/0001_init.sql through 0025_map_places.sql.
  *
  * These are declared as `type` (not `interface`) on purpose: the Supabase client
  * generics require each Row/Insert/Update to be assignable to
@@ -101,6 +101,7 @@ export type AppConfigRow = {
   id: string;
   draw_unlocked: boolean;
   artist_reveal_visible: boolean;
+  map_visible: boolean;
   updated_at: string;
   updated_by: string | null;
 };
@@ -178,6 +179,33 @@ export type TshirtOrderRow = {
   collected_by: string | null; collected_at: string | null; created_at: string; updated_at: string;
 };
 
+export type MapCategory = "stall" | "stage" | "food";
+
+export type MapPlaceRow = {
+  id: string;
+  name: string;
+  category: MapCategory;
+  description: string;
+  location_tag: string;
+  position_x: number;
+  position_z: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MapPlaceInsert = Omit<MapPlaceRow, "id" | "created_at" | "updated_at"> &
+  Partial<Pick<MapPlaceRow, "id" | "created_at" | "updated_at">>;
+
+export type MapPlaceUpdate = Partial<Omit<MapPlaceRow, "id" | "created_at">>;
+
+export type AuditLogRow = {
+  id: string;
+  admin_id: string | null;
+  action: string;
+  details: Record<string, unknown>;
+  created_at: string;
+};
+
 type TableShape<Row, Insert, Update> = {
   Row: Row;
   Insert: Insert;
@@ -242,6 +270,12 @@ export type Database = {
         TshirtOrderRow,
         Omit<TshirtOrderRow, "id" | "created_at" | "updated_at" | "status"> & Partial<Pick<TshirtOrderRow, "id" | "created_at" | "updated_at" | "status">>,
         Partial<TshirtOrderRow>
+      >;
+      map_places: TableShape<MapPlaceRow, MapPlaceInsert, MapPlaceUpdate>;
+      audit_log: TableShape<
+        AuditLogRow,
+        Omit<AuditLogRow, "id" | "created_at"> & Partial<Pick<AuditLogRow, "id" | "created_at">>,
+        Partial<AuditLogRow>
       >;
     };
     Views: { [_ in never]: never };

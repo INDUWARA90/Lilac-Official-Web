@@ -101,15 +101,37 @@ export async function getAvailability(): Promise<TicketAvailability> {
     console.error(`ticket availability settings lookup failed: ${settingsError.code ?? "unknown"}`);
     throw new Error("Could not load ticket availability settings.");
   }
-  if (totalsError || !totals?.[0]) {
-    console.error(`ticket capacity totals lookup failed: ${totalsError?.code ?? "missing result"}`);
-    throw new Error("Could not load ticket capacity totals.");
+  let seatingTaken = totals?.[0]?.seating_taken;
+  let standingTaken = totals?.[0]?.standing_taken;
+
+  // Older deployments may not have migration 0024 yet, which creates the
+  // compact totals RPC. Fall back to the source rows so admin pages and ticket
+  // sales keep an accurate capacity count while that migration is applied.
+  if (totalsError || seatingTaken === undefined || standingTaken === undefined) {
+    console.error(
+      `ticket capacity totals RPC unavailable: ${totalsError?.message ?? totalsError?.code ?? "missing result"}`,
+    );
+    const { data: purchases, error: purchasesError } = await db
+      .from("ticket_purchases")
+      .select("ticket_types")
+      .in("status", ["pending_review", "approved"]);
+    if (purchasesError) {
+      console.error(`ticket capacity fallback lookup failed: ${purchasesError.message ?? purchasesError.code}`);
+      throw new Error("Could not load ticket capacity totals.");
+    }
+
+    seatingTaken = 0;
+    standingTaken = 0;
+    for (const purchase of purchases ?? []) {
+      for (const ticketType of purchase.ticket_types) {
+        if (ticketType === "seating") seatingTaken += 1;
+        if (ticketType === "standing") standingTaken += 1;
+      }
+    }
   }
 
   const seatingCapacity = settings?.seating_capacity ?? 100;
   const standingCapacity = settings?.standing_capacity ?? 100;
-  const seatingTaken = totals[0].seating_taken;
-  const standingTaken = totals[0].standing_taken;
   const seatingLeft = Math.max(0, seatingCapacity - seatingTaken);
   const standingLeft = Math.max(0, standingCapacity - standingTaken);
   return {

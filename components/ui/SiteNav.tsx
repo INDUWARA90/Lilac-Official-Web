@@ -7,6 +7,7 @@ import { Logo } from "@/components/ui/Logo";
 
 const LINKS = [
   { href: "/", label: "Home" },
+  { href: "/map", label: "Event map" },
   { href: "/tickets", label: "Tickets" },
   { href: "/tshirts", label: "T-shirts" },
   { href: "/about", label: "About us" },
@@ -25,16 +26,19 @@ export function SiteNav({
   showResults = false,
   showTickets = true,
   showTshirts = true,
+  showMap = true,
 }: {
   showResults?: boolean;
   showTickets?: boolean;
   showTshirts?: boolean;
+  showMap?: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const mapFiltered = showMap ? LINKS : LINKS.filter((link) => link.href !== "/map");
   const visibleLinks = showTickets
-    ? LINKS
-    : LINKS.filter(
+    ? mapFiltered
+    : mapFiltered.filter(
         (link) => link.href !== "/tickets" && link.href !== "/tickets/status",
       );
   const merchLinks = showTshirts
