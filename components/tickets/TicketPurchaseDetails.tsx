@@ -75,7 +75,7 @@ export function TicketPurchaseDetails({
           label="Registration number"
           required
           autoComplete="off"
-          placeholder="e.g. 2023/ICT/001"
+          placeholder="e.g. TG/2023/001"
           value={values.registrationNumber}
           onChange={(e) => onValueChange("registrationNumber", e.target.value)}
           error={errors.registrationNumber}
