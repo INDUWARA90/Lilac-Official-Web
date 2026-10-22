@@ -1,14 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function TicketBackupButton() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!busy) return;
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1_000);
+    return () => window.clearInterval(timer);
+  }, [busy]);
 
   async function downloadBackup() {
     setBusy(true);
+    setElapsedSeconds(0);
+    setDownloadProgress(null);
     setMessage("Preparing ticket purchases and slips...");
     setError(null);
 
@@ -19,7 +32,12 @@ export function TicketBackupButton() {
         throw new Error(result.error ?? "Could not prepare the ticket backup.");
       }
 
-      const blob = await response.blob();
+      const contentLength = Number(response.headers.get("content-length"));
+      const blob = await downloadBlob(response, (received) => {
+        if (Number.isFinite(contentLength) && contentLength > 0) {
+          setDownloadProgress(Math.min(100, Math.round((received / contentLength) * 100)));
+        }
+      });
       if (blob.type !== "application/zip") {
         throw new Error("The server returned an invalid backup file. Please try again.");
       }
@@ -62,6 +80,21 @@ export function TicketBackupButton() {
           {message}
         </p>
       )}
+      {busy && (
+        <div className="w-full max-w-64" aria-live="polite">
+          <div className="h-1.5 overflow-hidden rounded-full bg-accent-wash" aria-hidden="true">
+            <div
+              className={"h-full rounded-full bg-accent " + (downloadProgress === null ? "w-2/3 animate-pulse" : "transition-[width]")}
+              style={downloadProgress === null ? undefined : { width: `${downloadProgress}%` }}
+            />
+          </div>
+          <p className="mt-1 font-sans text-xs text-ink-muted">
+            {downloadProgress === null
+              ? `Preparing backup (${formatElapsed(elapsedSeconds)})`
+              : `Downloading backup (${downloadProgress}%)`}
+          </p>
+        </div>
+      )}
       {error && (
         <p role="alert" className="font-sans text-xs text-red-600">
           {error}
@@ -69,4 +102,26 @@ export function TicketBackupButton() {
       )}
     </div>
   );
+}
+
+function formatElapsed(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+}
+
+async function downloadBlob(response: Response, onChunk: (received: number) => void): Promise<Blob> {
+  if (!response.body) return response.blob();
+
+  const reader = response.body.getReader();
+  const chunks: ArrayBuffer[] = [];
+  let received = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength) as ArrayBuffer);
+    received += value.byteLength;
+    onChunk(received);
+  }
+  return new Blob(chunks, { type: response.headers.get("content-type") ?? "application/zip" });
 }

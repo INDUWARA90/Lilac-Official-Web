@@ -137,6 +137,7 @@ export async function GET() {
     return new Response(responseBody, {
       headers: {
         "content-type": "application/zip",
+        "content-length": String(responseBody.byteLength),
         "content-disposition": `attachment; filename="lailac-tshirt-orders-backup-${stamp}.zip"`,
         "cache-control": "no-store",
       },

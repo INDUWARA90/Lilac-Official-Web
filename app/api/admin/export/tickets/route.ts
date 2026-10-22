@@ -20,7 +20,7 @@ export async function GET() {
       .select(
         "reference, name, registration_number, faculty, email, phone, ticket_type, ticket_types, quantity, amount_lkr, status, review_note, reviewed_by, reviewed_at, created_at",
       )
-      .order("created_at", { ascending: true })
+      .order("faculty", { ascending: true })
       .order("id")
       .range(from, to),
   );

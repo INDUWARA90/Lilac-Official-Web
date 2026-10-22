@@ -57,7 +57,7 @@ export async function GET() {
       .select(
         "id, reference, name, registration_number, faculty, email, phone, ticket_type, ticket_types, quantity, amount_lkr, slip_path, status, review_note, reviewed_by, reviewed_at, created_at",
       )
-      .order("created_at", { ascending: true })
+      .order("faculty", { ascending: true })
       .order("id")
       .range(from, to),
   );
@@ -163,6 +163,7 @@ export async function GET() {
     return new Response(responseBody, {
       headers: {
         "content-type": "application/zip",
+        "content-length": String(responseBody.byteLength),
         "content-disposition": `attachment; filename="lailac-ticket-purchases-backup-${stamp}.zip"`,
         "cache-control": "no-store",
       },

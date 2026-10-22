@@ -76,6 +76,14 @@ export default async function AdminTicketsPage({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl text-ink">Tickets</h1>
         <div className="flex flex-wrap items-start gap-2">
+          {session.role === "admin" && (
+            <a
+              href="/api/admin/export/tickets"
+              className="rounded-field border border-hairline px-3 py-1.5 font-sans text-sm text-accent-strong hover:border-accent"
+            >
+              Export tickets CSV
+            </a>
+          )}
           <TicketBackupButton />
           {session.role === "admin" && (
             <Link
