@@ -1,16 +1,11 @@
 import { Sparkle } from "@/components/ui/decor/Sparkle";
-import { formatLkr } from "@/lib/tickets-shared";
 
 export function TshirtOrderSuccess({
   reference,
   email,
-  paidAmountLkr,
-  total,
 }: {
   reference: string;
   email: string;
-  paidAmountLkr: number;
-  total: number;
 }) {
   return (
     <div className="lailac-magic-card relative overflow-hidden border border-accent/30 p-5 text-center shadow-md sm:p-8 md:p-10">
@@ -21,8 +16,7 @@ export function TshirtOrderSuccess({
         ✨
       </div>
       <p className="mt-4 font-sans text-sm text-ink-muted">
-        Payment submitted: <strong className="text-ink">{formatLkr(paidAmountLkr)}</strong>
-        {" · "}Balance remaining: <strong className="text-ink">{formatLkr(Math.max(0, total - paidAmountLkr))}</strong>
+        Your full payment has been submitted and is awaiting verification.
       </p>
 
       <span className="inline-block rounded-full bg-accent/10 px-3.5 py-1 font-sans text-xs font-semibold text-accent-strong uppercase tracking-wider mb-2">

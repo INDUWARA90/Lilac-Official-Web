@@ -37,7 +37,6 @@ export function TshirtOrderForm({
     items: [{ size: "", color: "" }],
   });
   const [file, setFile] = useState<File | null>(null);
-  const [paidAmountLkr, setPaidAmountLkr] = useState(1000);
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -55,9 +54,8 @@ export function TshirtOrderForm({
         return { ...v, items: items.slice(0, quantity) };
       });
       setErrors((current) => Object.fromEntries(
-        Object.entries(current).filter(([errorKey]) => !errorKey.startsWith("items") && errorKey !== "paidAmountLkr"),
+        Object.entries(current).filter(([errorKey]) => !errorKey.startsWith("items")),
       ));
-      setPaidAmountLkr(Number(value) * 1000);
     } else {
       setValues((v) => ({ ...v, [key]: value }));
       setErrors((current) => ({ ...current, [key]: undefined }));
@@ -94,18 +92,8 @@ export function TshirtOrderForm({
     e.preventDefault();
     setBusy(true);
     setFormError(null);
-    if (paidAmountLkr > total) {
-      const message = "Payment cannot be more than the order total.";
-      setErrors((current) => ({ ...current, paidAmountLkr: message }));
-      setFormError(message);
-      setBusy(false);
-      return;
-    }
     try {
-      const details = tshirtOrderDetailsSchema.safeParse({
-        ...values,
-        paidAmountLkr,
-      });
+      const details = tshirtOrderDetailsSchema.safeParse(values);
       if (!details.success) {
         const fieldErrors = errorsFrom(details.error);
         setErrors(fieldErrors);
@@ -166,8 +154,6 @@ export function TshirtOrderForm({
       <TshirtOrderSuccess
         reference={reference}
         email={values.email}
-        paidAmountLkr={paidAmountLkr}
-        total={total}
       />
     );
   }
@@ -181,11 +167,6 @@ export function TshirtOrderForm({
         file={file}
         busy={busy}
         total={total}
-        paidAmountLkr={paidAmountLkr}
-        onPaidAmountChange={(amount) => {
-          setPaidAmountLkr(amount);
-          setErrors((current) => ({ ...current, paidAmountLkr: undefined }));
-        }}
         bank={bank}
         onValueChange={set}
         onItemChange={setItem}

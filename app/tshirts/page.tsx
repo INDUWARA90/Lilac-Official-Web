@@ -22,7 +22,7 @@ export default async function TshirtsPage() {
         <strong className="text-ink">{formatLkr(settings.priceLkr)}</strong> each.
       </p>
       <p className="mt-2 font-sans text-sm text-ink-muted sm:text-base">
-        Minimum advance payment: <strong className="text-ink">LKR 1,000 per T-shirt</strong>
+        Full payment is required when you place your order.
       </p>
       <TshirtSizeGuide />
       {settings.salesOpen ? (

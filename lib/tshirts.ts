@@ -54,15 +54,16 @@ export async function updateTshirtLinkVisible(visible: boolean, by: string): Pro
   return true;
 }
 
-export async function createTshirtOrder(input: { name: string; registrationNumber: string; faculty: string; email: string; phone: string; items: Array<{ size: string; color: string }>; paidAmountLkr: number; receiptPath: string }) {
+export async function createTshirtOrder(input: { name: string; registrationNumber: string; faculty: string; email: string; phone: string; items: Array<{ size: string; color: string }>; receiptPath: string }) {
   const db = createAdminClient();
   const { data: files } = await db.storage.from(TSHIRT_RECEIPT_BUCKET).list("", { search: input.receiptPath });
   if (!files?.some((file) => file.name === input.receiptPath)) return { ok: false as const, error: "Your receipt upload was not found. Please attach it again." };
   const ref = reference();
+  const { priceLkr } = await getTshirtSettings();
   const { error } = await db.rpc("create_new_tshirt_order", {
     p_name: input.name, p_registration_number: input.registrationNumber, p_faculty: input.faculty,
     p_email: input.email, p_phone: input.phone, p_order_items: input.items,
-    p_paid_amount_lkr: input.paidAmountLkr,
+    p_paid_amount_lkr: input.items.length * priceLkr,
     p_receipt_path: input.receiptPath, p_reference: ref,
   });
   if (error) {
@@ -79,7 +80,7 @@ export async function createTshirtOrder(input: { name: string; registrationNumbe
     error: error.message.includes("SALES_CLOSED")
       ? "T-shirt orders are currently closed."
       : error.message.includes("BAD_PAYMENT_AMOUNT")
-        ? "Payment must be at least LKR 1,000 per T-shirt and cannot exceed the order total."
+        ? "Full payment of the order total is required."
         : "Could not place your order. Please try again.",
     };
   }

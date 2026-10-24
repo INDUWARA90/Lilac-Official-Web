@@ -27,8 +27,6 @@ export function TshirtOrderFields({
   file,
   busy,
   total,
-  paidAmountLkr,
-  onPaidAmountChange,
   bank,
   onValueChange,
   onItemChange,
@@ -40,8 +38,6 @@ export function TshirtOrderFields({
   file: File | null;
   busy: boolean;
   total: number;
-  paidAmountLkr: number;
-  onPaidAmountChange: (amount: number) => void;
   bank: TicketBank;
   onValueChange: SetOrderValue;
   onItemChange: (index: number, key: "size" | "color", value: string) => void;
@@ -74,7 +70,7 @@ export function TshirtOrderFields({
             <p className="text-red-600">Bank details are currently unavailable — please contact the organiser.</p>
           )}
           <p className="mt-2 border-t border-hairline pt-2 text-ink-muted">
-            Minimum advance payment: <strong className="text-ink">LKR 1,000 per T-shirt</strong>
+            Full payment is required: <strong className="text-ink">{formatLkr(total)}</strong> for your selected T-shirt{values.items.length > 1 ? "s" : ""}.
           </p>
         </div>
       </div>
@@ -185,21 +181,6 @@ export function TshirtOrderFields({
             ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <TextField
-              label="Amount paid (LKR)"
-              type="number"
-              min={values.items.length * 1000}
-              max={total}
-              step={1}
-              required
-              value={paidAmountLkr || ""}
-              onChange={(event) => onPaidAmountChange(Number(event.target.value))}
-              hint={`Minimum LKR ${(values.items.length * 1000).toLocaleString("en-LK")} for ${values.items.length} T-shirt${values.items.length > 1 ? "s" : ""}; maximum LKR ${total.toLocaleString("en-LK")}.`}
-              error={errors.paidAmountLkr}
-            />
-          </div>
-
           <div className="flex flex-col gap-1.5">
             <label className="flex flex-col gap-0.5 font-sans text-sm font-medium text-ink sm:flex-row sm:items-center sm:justify-between sm:gap-3">
               <span>Payment receipt slip <span className="text-accent-strong">*</span></span>
@@ -236,7 +217,7 @@ export function TshirtOrderFields({
             <span className="text-xs text-ink-muted">({values.items.length} item{values.items.length > 1 ? "s" : ""})</span>
           </div>
           <p className="mt-2 font-sans text-sm text-ink-muted">
-            Amount paid: {formatLkr(paidAmountLkr)} · Balance due: {formatLkr(Math.max(0, total - paidAmountLkr))}
+            Full payment required: {formatLkr(total)}
           </p>
         </div>
 
