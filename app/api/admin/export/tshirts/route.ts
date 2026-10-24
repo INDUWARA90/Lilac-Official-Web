@@ -19,7 +19,7 @@ export async function GET(req: Request) {
   const db = createAdminClient();
   const { data, error } = await fetchAll((from, to) => {
     let query = db
-      .from("tshirt_orders")
+      .from("tshirt_new_orders")
       .select("reference, name, registration_number, faculty, email, phone, tshirt_size, quantity, order_items, amount_lkr, paid_amount_lkr, status, review_note, collected_by, collected_at, created_at")
       .order("faculty", { ascending: true })
       .order("created_at", { ascending: true })

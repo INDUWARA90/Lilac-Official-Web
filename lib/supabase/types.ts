@@ -292,6 +292,11 @@ export type Database = {
         Omit<TshirtOrderRow, "id" | "created_at" | "updated_at" | "status"> & Partial<Pick<TshirtOrderRow, "id" | "created_at" | "updated_at" | "status">>,
         Partial<TshirtOrderRow>
       >;
+      tshirt_new_orders: TableShape<
+        TshirtOrderRow,
+        Omit<TshirtOrderRow, "id" | "created_at" | "updated_at" | "status"> & Partial<Pick<TshirtOrderRow, "id" | "created_at" | "updated_at" | "status">>,
+        Partial<TshirtOrderRow>
+      >;
       map_places: TableShape<MapPlaceRow, MapPlaceInsert, MapPlaceUpdate>;
       audit_log: TableShape<
         AuditLogRow,
@@ -324,6 +329,10 @@ export type Database = {
         Returns: { purchase_id: string; purchase_reference: string }[];
       };
       create_tshirt_order: {
+        Args: { p_name: string; p_registration_number: string; p_faculty: string; p_email: string; p_phone: string; p_order_items: Json; p_paid_amount_lkr: number; p_receipt_path: string; p_reference: string };
+        Returns: string;
+      };
+      create_new_tshirt_order: {
         Args: { p_name: string; p_registration_number: string; p_faculty: string; p_email: string; p_phone: string; p_order_items: Json; p_paid_amount_lkr: number; p_receipt_path: string; p_reference: string };
         Returns: string;
       };

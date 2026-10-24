@@ -6,7 +6,7 @@ import { TSHIRT_RECEIPT_BUCKET } from "@/lib/tshirts-shared";
 
 const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const TSHIRT_LINKS_TAG = "tshirt-link-visible";
-function reference() { let s = ""; for (let i = 0; i < 6; i++) s += ALPHABET[randomInt(ALPHABET.length)]; return `TS-${s}`; }
+function reference() { let s = ""; for (let i = 0; i < 6; i++) s += ALPHABET[randomInt(ALPHABET.length)]; return `NTS-${s}`; }
 
 export async function getTshirtSettings() {
   const { data, error } = await createAdminClient().from("tshirt_settings").select("price_lkr, sales_open, tshirt_link_visible").eq("id", "default").maybeSingle();
@@ -59,7 +59,7 @@ export async function createTshirtOrder(input: { name: string; registrationNumbe
   const { data: files } = await db.storage.from(TSHIRT_RECEIPT_BUCKET).list("", { search: input.receiptPath });
   if (!files?.some((file) => file.name === input.receiptPath)) return { ok: false as const, error: "Your receipt upload was not found. Please attach it again." };
   const ref = reference();
-  const { error } = await db.rpc("create_tshirt_order", {
+  const { error } = await db.rpc("create_new_tshirt_order", {
     p_name: input.name, p_registration_number: input.registrationNumber, p_faculty: input.faculty,
     p_email: input.email, p_phone: input.phone, p_order_items: input.items,
     p_paid_amount_lkr: input.paidAmountLkr,
@@ -99,7 +99,7 @@ export async function reviewTshirtOrder(id: string, action: "collect" | "collect
   };
 
   if (action === "collect") {
-    const { data: order, error: lookupError } = await db.from("tshirt_orders").select("amount_lkr, paid_amount_lkr").eq("id", id).eq("status", "pending_review").maybeSingle();
+    const { data: order, error: lookupError } = await db.from("tshirt_new_orders").select("amount_lkr, paid_amount_lkr").eq("id", id).eq("status", "pending_review").maybeSingle();
     if (lookupError) return { ok: false, error: "Could not load the order for review." };
     if (!order) return { ok: false, error: "This order has already been reviewed." };
     currentStatus = "pending_review";
@@ -107,7 +107,7 @@ export async function reviewTshirtOrder(id: string, action: "collect" | "collect
     status = paidAmountLkr < order.amount_lkr ? "partially_paid" : "payment_collected";
     values.paid_amount_lkr = paidAmountLkr;
   } else if (action === "collect_balance") {
-    const { data: order, error: lookupError } = await db.from("tshirt_orders").select("amount_lkr").eq("id", id).eq("status", "partially_paid").maybeSingle();
+    const { data: order, error: lookupError } = await db.from("tshirt_new_orders").select("amount_lkr").eq("id", id).eq("status", "partially_paid").maybeSingle();
     if (lookupError) return { ok: false, error: "Could not load the order for review." };
     if (!order) return { ok: false, error: "This order is not awaiting a balance payment." };
     currentStatus = "partially_paid";
@@ -118,16 +118,21 @@ export async function reviewTshirtOrder(id: string, action: "collect" | "collect
     status = "rejected";
   }
   values.status = status;
-  const { data, error } = await db.from("tshirt_orders").update(values).eq("id", id).eq("status", currentStatus).select("reference").maybeSingle();
+  const { data, error } = await db.from("tshirt_new_orders").update(values).eq("id", id).eq("status", currentStatus).select("reference").maybeSingle();
   if (error) return { ok: false, error: "Could not update the order." };
   if (!data) return { ok: false, error: "This order has already been reviewed." };
   return { ok: true };
 }
 
 /** Records the physical handover independently of payment status. */
-export async function markTshirtHandedOver(id: string, by: string): Promise<{ ok: boolean; error?: string }> {
+type TshirtOrderRound = "new" | "previous";
+function tshirtOrderTable(round: TshirtOrderRound) {
+  return round === "previous" ? "tshirt_orders" : "tshirt_new_orders";
+}
+
+export async function markTshirtHandedOver(id: string, by: string, round: TshirtOrderRound = "new"): Promise<{ ok: boolean; error?: string }> {
   const { data, error } = await createAdminClient()
-    .from("tshirt_orders")
+    .from(tshirtOrderTable(round))
     .update({ handed_over: true, handed_over_at: new Date().toISOString(), handed_over_by: by, updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("handed_over", false)
@@ -139,9 +144,9 @@ export async function markTshirtHandedOver(id: string, by: string): Promise<{ ok
 }
 
 /** Reopens a handover record when a staff member needs to correct it. */
-export async function markTshirtNotHandedOver(id: string): Promise<{ ok: boolean; error?: string }> {
+export async function markTshirtNotHandedOver(id: string, round: TshirtOrderRound = "new"): Promise<{ ok: boolean; error?: string }> {
   const { data, error } = await createAdminClient()
-    .from("tshirt_orders")
+    .from(tshirtOrderTable(round))
     .update({ handed_over: false, handed_over_at: null, handed_over_by: null, updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("handed_over", true)

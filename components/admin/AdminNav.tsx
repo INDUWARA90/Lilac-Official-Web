@@ -114,7 +114,7 @@ const NAV: NavItem[] = [
   },
   {
     href: "/admin/tshirts",
-    label: "T-shirt orders",
+    label: "New T-shirt orders",
     icon: (
       <svg {...s}>
         <path d="M7 5l3-2h4l3 2 4 3-3 4-2-1v10H8V11l-2 1-3-4 4-3z" />
@@ -123,7 +123,28 @@ const NAV: NavItem[] = [
   },
   {
     href: "/admin/tshirts/handover",
-    label: "T-shirt handover",
+    label: "New T-shirt handover",
+    icon: (
+      <svg {...s}>
+        <path d="M4 12h5l2 2h2l2-2h5" />
+        <path d="M6 12V8l3-3h6l3 3v4" />
+        <path d="M7 16v3h10v-3" />
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/tshirts/previous",
+    label: "Previous T-shirt orders",
+    icon: (
+      <svg {...s}>
+        <path d="M7 5l3-2h4l3 2 4 3-3 4-2-1v10H8V11l-2 1-3-4 4-3z" />
+        <path d="M9 15h6" />
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/tshirts/handover?round=previous",
+    label: "Previous T-shirt handover",
     icon: (
       <svg {...s}>
         <path d="M4 12h5l2 2h2l2-2h5" />
@@ -165,7 +186,7 @@ const NAV: NavItem[] = [
 
 // Manager navigation is scoped by role; server-side guards enforce the same.
 const TICKET_MANAGER_HREFS = new Set(["/admin/tickets", "/admin/checkin"]);
-const TSHIRT_MANAGER_HREFS = new Set(["/admin/tshirts", "/admin/tshirts/handover"]);
+const TSHIRT_MANAGER_HREFS = new Set(["/admin/tshirts", "/admin/tshirts/handover", "/admin/tshirts/previous", "/admin/tshirts/handover?round=previous"]);
 
 /**
  * Admin nav — a vertical list of icon + label links, used in both the desktop
@@ -200,7 +221,11 @@ export function AdminNav({
           item.href === "/admin"
             ? pathname === "/admin"
             : item.href === "/admin/tshirts"
-              ? pathname === "/admin/tshirts" || (pathname.startsWith("/admin/tshirts/") && !pathname.startsWith("/admin/tshirts/handover"))
+              ? pathname === "/admin/tshirts" || (pathname.startsWith("/admin/tshirts/") && !pathname.startsWith("/admin/tshirts/handover") && !pathname.startsWith("/admin/tshirts/previous"))
+            : item.href === "/admin/tshirts/handover?round=previous"
+              ? pathname === "/admin/tshirts/handover" && searchParams.get("round") === "previous"
+            : item.href === "/admin/tshirts/handover"
+              ? pathname === "/admin/tshirts/handover" && searchParams.get("round") !== "previous"
             : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
         return (

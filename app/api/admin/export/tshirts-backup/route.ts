@@ -53,7 +53,7 @@ export async function GET() {
   const db = createAdminClient();
   const { data: orders, error } = await fetchAll((from, to) =>
     db
-      .from("tshirt_orders")
+      .from("tshirt_new_orders")
       .select(
         "id, reference, name, registration_number, faculty, email, phone, tshirt_size, quantity, order_items, amount_lkr, paid_amount_lkr, receipt_path, status, review_note, collected_by, collected_at, created_at",
       )

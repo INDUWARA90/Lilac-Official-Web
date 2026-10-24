@@ -29,7 +29,7 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
 
   const db = createAdminClient();
   let query = db
-    .from("tshirt_orders")
+    .from("tshirt_new_orders")
     .select("id, reference, name, registration_number, faculty, tshirt_size, quantity, order_items, amount_lkr, paid_amount_lkr, status, created_at")
     .order("created_at", { ascending: false });
   if (status) query = query.eq("status", status);
@@ -47,9 +47,9 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
     { count: awaiting, error: awaitingError },
     { data: allOrders, error: allOrdersError },
   ] = await Promise.all([
-    db.from("tshirt_orders").select("quantity, amount_lkr, paid_amount_lkr, status").in("status", ["partially_paid", "payment_collected"]),
-    db.from("tshirt_orders").select("id", { count: "exact", head: true }).eq("status", "pending_review"),
-    db.from("tshirt_orders").select("quantity"),
+    db.from("tshirt_new_orders").select("quantity, amount_lkr, paid_amount_lkr, status").in("status", ["partially_paid", "payment_collected"]),
+    db.from("tshirt_new_orders").select("id", { count: "exact", head: true }).eq("status", "pending_review"),
+    db.from("tshirt_new_orders").select("quantity"),
   ]);
   const loadError = orderResult.error ?? salesError ?? awaitingError ?? allOrdersError;
 
@@ -63,7 +63,7 @@ export default async function AdminTshirts({ searchParams }: { searchParams: Pro
     <AdminShell email={session.email} role={session.role}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl text-ink">T-shirt orders</h1>
+          <h1 className="text-2xl text-ink">New T-shirt orders</h1>
           <p className="mt-2 font-sans text-sm text-ink-muted">Review receipts and record payments collected manually.</p>
         </div>
         {session.role !== "ticket_manager" && (

@@ -152,7 +152,7 @@ export async function getTshirtAnalytics(): Promise<TshirtAnalyticsResult> {
   const db = createAdminClient();
   const { data: orders, error } = await fetchAll((from, to) =>
     db
-      .from("tshirt_orders")
+      .from("tshirt_new_orders")
       .select("faculty, tshirt_size, quantity, order_items, status")
       .order("id")
       .range(from, to),
@@ -261,7 +261,7 @@ export async function getTshirtHandoverAnalytics(): Promise<TshirtHandoverAnalyt
   const db = createAdminClient();
   const { data: orders, error } = await fetchAll((from, to) =>
     db
-      .from("tshirt_orders")
+      .from("tshirt_new_orders")
       .select("faculty, tshirt_size, quantity, order_items, status, handed_over")
       .order("id")
       .range(from, to),
