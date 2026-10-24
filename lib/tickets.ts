@@ -467,6 +467,7 @@ export type CheckInLookup = {
   ticket: TicketRow;
   purchaseReference: string;
   purchaseName: string;
+  purchaseRegistrationNumber: string;
   purchaseFaculty: string;
   purchaseStatus: TicketPurchaseStatus;
 };
@@ -477,13 +478,14 @@ export async function getTicketByToken(token: string): Promise<CheckInLookup | n
   if (!ticket) return null;
   const { data: purchase } = await db
     .from("ticket_purchases")
-    .select("reference, name, faculty, status")
+    .select("reference, name, registration_number, faculty, status")
     .eq("id", ticket.purchase_id)
     .maybeSingle();
   return {
     ticket,
     purchaseReference: purchase?.reference ?? "",
     purchaseName: purchase?.name ?? ticket.holder_name,
+    purchaseRegistrationNumber: purchase?.registration_number ?? "",
     purchaseFaculty: purchase?.faculty ?? "",
     // A missing purchase is an invalid ticket state; treat it as cancelled so
     // callers never accidentally render it as a valid, approved ticket.

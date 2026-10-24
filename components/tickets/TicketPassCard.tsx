@@ -10,6 +10,7 @@ type TicketPassCardProps = {
   ticket: { seat_label: string; holder_name: string; checked_in_at: string | null };
   purchaseReference: string;
   purchaseName: string;
+  purchaseRegistrationNumber: string;
   purchaseFaculty: string;
   purchaseStatus: TicketPurchaseStatus;
   qr: string | null;
@@ -19,6 +20,7 @@ export function TicketPassCard({
   ticket,
   purchaseReference,
   purchaseName,
+  purchaseRegistrationNumber,
   purchaseFaculty,
   purchaseStatus,
   qr,
@@ -157,14 +159,16 @@ export function TicketPassCard({
       ctx.fillText(purchaseFaculty || "Faculty of Technology", canvas.width / 2, metaY + 45);
 
       ctx.fillStyle = "#5d3a85";
+      ctx.font = "bold 26px monospace";
+      ctx.fillText(`REG NO: ${purchaseRegistrationNumber || "Not provided"}`, canvas.width / 2, metaY + 90);
       ctx.font = "bold 32px monospace";
-      ctx.fillText(`ENTRY REF: ${purchaseReference}`, canvas.width / 2, metaY + 110);
+      ctx.fillText(`ENTRY REF: ${purchaseReference}`, canvas.width / 2, metaY + 140);
 
       // 8. Footer Instructions & Legal Note
       ctx.fillStyle = "#8a7b96";
       ctx.font = "24px Arial, sans-serif";
-      ctx.fillText("Please present this QR code clearly at the entrance gate.", canvas.width / 2, metaY + 180);
-      ctx.fillText("Valid for single admission. Non-transferable.", canvas.width / 2, metaY + 220);
+      ctx.fillText("Please present this QR code clearly at the entrance gate.", canvas.width / 2, metaY + 205);
+      ctx.fillText("Valid for single admission. Non-transferable.", canvas.width / 2, metaY + 245);
 
       // 9. Download Trigger
       const link = document.createElement("a");
@@ -193,6 +197,7 @@ export function TicketPassCard({
       <div className="mt-1.5 flex flex-col items-center gap-1 font-sans text-sm text-ink-muted">
         <span className="font-medium text-ink">{purchaseName}</span>
         <span>{purchaseFaculty || "Faculty not provided"}</span>
+        <span>Registration no: {purchaseRegistrationNumber || "Not provided"}</span>
         <span className="font-mono uppercase tracking-wider">{purchaseReference}</span>
       </div>
       {valid ? (

@@ -32,7 +32,7 @@ export default async function CheckinHome() {
               type="submit"
               className="rounded-field border border-hairline px-3 py-1.5 text-xs font-medium text-ink-muted hover:border-accent hover:text-accent-strong"
             >
-              Lock this device
+              Log out of this device
             </button>
           </form>
         </div>
