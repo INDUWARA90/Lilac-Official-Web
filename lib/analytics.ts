@@ -44,6 +44,26 @@ export interface TshirtAnalytics {
 
 export type TshirtAnalyticsResult = { ok: true; data: TshirtAnalytics } | { ok: false; error: string };
 
+export interface TshirtHandoverAnalytics {
+  activeOrders: number;
+  shirts: number;
+  givenShirts: number;
+  notGivenShirts: number;
+  bySize: Array<{ size: string; shirts: number; given: number; notGiven: number }>;
+  byFaculty: Array<{
+    faculty: string;
+    orders: number;
+    shirts: number;
+    given: number;
+    notGiven: number;
+    sizes: Record<string, { shirts: number; given: number; notGiven: number }>;
+  }>;
+}
+
+export type TshirtHandoverAnalyticsResult =
+  | { ok: true; data: TshirtHandoverAnalytics }
+  | { ok: false; error: string };
+
 export interface TicketAnalytics {
   submittedOrders: number;
   activeOrders: number;
@@ -227,6 +247,91 @@ export async function getTshirtAnalytics(): Promise<TshirtAnalyticsResult> {
       unrecordedColorShirts,
       sizeColor,
       byFaculty: [...facultyTotals.entries()]
+        .map(([faculty, totals]) => ({ faculty, ...totals }))
+        .sort((a, b) => b.shirts - a.shirts || a.faculty.localeCompare(b.faculty)),
+    },
+  };
+}
+
+/**
+ * Physical collection reporting. Payment status is deliberately not used to
+ * decide whether a shirt is handed over: staff record that independently.
+ */
+export async function getTshirtHandoverAnalytics(): Promise<TshirtHandoverAnalyticsResult> {
+  const db = createAdminClient();
+  const { data: orders, error } = await fetchAll((from, to) =>
+    db
+      .from("tshirt_orders")
+      .select("faculty, tshirt_size, quantity, order_items, status, handed_over")
+      .order("id")
+      .range(from, to),
+  );
+
+  if (error) {
+    console.error("T-shirt handover analytics lookup failed", error);
+    const message =
+      error && typeof error === "object" && "message" in error && typeof error.message === "string"
+        ? error.message
+        : "Unknown database error";
+    return { ok: false, error: message };
+  }
+
+  const sizeTotals = new Map(TSHIRT_SIZES.map((size) => [size, { shirts: 0, given: 0, notGiven: 0 }]));
+  const faculties = new Map<string, {
+    orders: number; shirts: number; given: number; notGiven: number;
+    sizes: Record<string, { shirts: number; given: number; notGiven: number }>;
+  }>();
+  const activeStatuses = new Set(["pending_review", "partially_paid", "payment_collected"]);
+  let activeOrders = 0;
+  let shirts = 0;
+  let givenShirts = 0;
+
+  for (const order of orders) {
+    if (!activeStatuses.has(order.status)) continue;
+    const given = order.handed_over === true;
+    const facultyName = order.faculty.trim() || "Not provided";
+    const faculty = faculties.get(facultyName) ?? {
+      orders: 0, shirts: 0, given: 0, notGiven: 0,
+      sizes: Object.fromEntries(TSHIRT_SIZES.map((size) => [size, { shirts: 0, given: 0, notGiven: 0 }])),
+    };
+    activeOrders += 1;
+    faculty.orders += 1;
+
+    const items = order.order_items?.length
+      ? order.order_items
+      : Array.from({ length: order.quantity }, () => ({ size: order.tshirt_size }));
+    for (const item of items) {
+      if (!TSHIRT_SIZES.includes(item.size as (typeof TSHIRT_SIZES)[number])) continue;
+      const size = item.size as (typeof TSHIRT_SIZES)[number];
+      const total = sizeTotals.get(size);
+      if (!total || !faculty.sizes[size]) continue;
+      shirts += 1;
+      faculty.shirts += 1;
+      total.shirts += 1;
+      faculty.sizes[size].shirts += 1;
+      if (given) {
+        givenShirts += 1;
+        faculty.given += 1;
+        total.given += 1;
+        faculty.sizes[size].given += 1;
+      } else {
+        faculty.notGiven += 1;
+        total.notGiven += 1;
+        faculty.sizes[size].notGiven += 1;
+      }
+    }
+    faculties.set(facultyName, faculty);
+  }
+
+  return {
+    ok: true,
+    data: {
+      activeOrders,
+      shirts,
+      givenShirts,
+      notGivenShirts: shirts - givenShirts,
+      bySize: TSHIRT_SIZES.map((size) => ({ size, ...sizeTotals.get(size)! })),
+      byFaculty: [...faculties.entries()]
         .map(([faculty, totals]) => ({ faculty, ...totals }))
         .sort((a, b) => b.shirts - a.shirts || a.faculty.localeCompare(b.faculty)),
     },

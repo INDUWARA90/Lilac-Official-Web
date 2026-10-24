@@ -1,6 +1,6 @@
 import { getAdminSession } from "@/lib/auth";
 import { toCsvSections, csvResponse } from "@/lib/csv";
-import { getSiteAnalytics, getTshirtAnalytics, getTicketAnalytics } from "@/lib/analytics";
+import { getSiteAnalytics, getTshirtAnalytics, getTicketAnalytics, getTshirtHandoverAnalytics } from "@/lib/analytics";
 import { TSHIRT_COLORS } from "@/lib/tshirts-shared";
 import { TSHIRT_SIZES } from "@/lib/tshirts-shared";
 
@@ -14,9 +14,10 @@ export async function GET(request: Request) {
     return Response.json({ ok: false, error: "Not authorised." }, { status: 403 });
   }
 
-  const [data, tshirtResult, ticketResult] = await Promise.all([
+  const [data, tshirtResult, handoverResult, ticketResult] = await Promise.all([
     getSiteAnalytics(),
     getTshirtAnalytics(),
+    getTshirtHandoverAnalytics(),
     getTicketAnalytics(),
   ]);
   if (!tshirtResult.ok) {
@@ -24,6 +25,9 @@ export async function GET(request: Request) {
   }
   if (!ticketResult.ok) {
     return Response.json({ ok: false, error: "Ticket analytics export failed." }, { status: 500 });
+  }
+  if (!handoverResult.ok) {
+    return Response.json({ ok: false, error: "T-shirt handover analytics export failed. Apply migration 0028_tshirt_handover.sql first." }, { status: 500 });
   }
 
   const siteRows = [
@@ -55,6 +59,14 @@ export async function GET(request: Request) {
     ...TSHIRT_COLORS.flatMap((color) => TSHIRT_SIZES.map((size) => row.colorSizes[color][size])),
     row.unrecordedColor,
   ]);
+  const handoverSummaryRows = [
+    ["Active orders", handoverResult.data.activeOrders],
+    ["Shirts to hand over", handoverResult.data.shirts],
+    ["Shirts given", handoverResult.data.givenShirts],
+    ["Shirts not given", handoverResult.data.notGivenShirts],
+  ];
+  const handoverSizeRows = handoverResult.data.bySize.map((row) => [row.size, row.shirts, row.given, row.notGiven]);
+  const handoverFacultyRows = handoverResult.data.byFaculty.map((row) => [row.faculty, row.orders, row.shirts, row.given, row.notGiven]);
   const ticketSummaryRows = [
     ["Orders submitted", ticketResult.data.submittedOrders],
     ["Active orders", ticketResult.data.activeOrders],
@@ -92,6 +104,11 @@ export async function GET(request: Request) {
     { headers: ["Size", "Color", "Shirts"], rows: tshirtVariantRows },
     { headers: ["Faculty", "Orders", "Shirts ordered", "Shirts paid", ...TSHIRT_COLORS.flatMap((color) => TSHIRT_SIZES.map((size) => `${color} ${size}`)), "Color not recorded"], rows: tshirtFacultyRows },
     ],
+    "tshirt-handover": [
+    { headers: ["T-shirt handover metric", "Value"], rows: handoverSummaryRows },
+    { headers: ["Size", "Shirts", "Given", "Not given"], rows: handoverSizeRows },
+    { headers: ["Faculty", "Orders", "Shirts", "Given", "Not given"], rows: handoverFacultyRows },
+    ],
     "ticket-orders": [
     { headers: ["Ticket metric", "Value"], rows: ticketSummaryRows },
     { headers: ["Ticket type", "Tickets requested", "Tickets approved"], rows: ticketTypeRows },
@@ -99,7 +116,7 @@ export async function GET(request: Request) {
     ],
   };
   const requestedSection = new URL(request.url).searchParams.get("section");
-  const validSection = requestedSection === "site-wide" || requestedSection === "ad-performance" || requestedSection === "tshirt-orders" || requestedSection === "ticket-orders";
+  const validSection = requestedSection === "site-wide" || requestedSection === "ad-performance" || requestedSection === "tshirt-orders" || requestedSection === "tshirt-handover" || requestedSection === "ticket-orders";
   const csv = toCsvSections(validSection ? sections[requestedSection] : Object.values(sections).flat());
   const name = validSection ? `lailac-${requestedSection}-analytics` : "lailac-analytics";
   return csvResponse(`${name}-${stamp}.csv`, csv);

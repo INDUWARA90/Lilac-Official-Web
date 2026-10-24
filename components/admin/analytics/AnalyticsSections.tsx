@@ -1,5 +1,5 @@
 import { CountUp } from "@/components/ui/decor/CountUp";
-import type { SiteAnalytics, TicketAnalyticsResult, TshirtAnalyticsResult } from "@/lib/analytics";
+import type { SiteAnalytics, TicketAnalyticsResult, TshirtAnalyticsResult, TshirtHandoverAnalyticsResult } from "@/lib/analytics";
 import { TSHIRT_COLORS, TSHIRT_SIZES } from "@/lib/tshirts-shared";
 
 export function SiteWideSection({ data }: { data: SiteAnalytics }) {
@@ -26,6 +26,32 @@ export function TshirtOrdersSection({ result }: { result: TshirtAnalyticsResult 
     <div className="grid gap-4 sm:grid-cols-3"><Insight label="Most requested size" value={topEntry(data.sizeColor.map((row) => [row.size, row.total] as const))} /><Insight label="Most requested color" value={topEntry(TSHIRT_COLORS.map((color) => [color, data.sizeColor.reduce((total, row) => total + row.colors[color], 0)] as const))} /><Insight label="Highest-demand faculty" value={topEntry(data.byFaculty.map((row) => [row.faculty, row.shirts] as const))} /></div>
     <section className="rounded-3xl border border-hairline bg-surface p-6 shadow-xs"><h3 className="font-serif text-lg font-bold text-ink">Total demand by size and color</h3><div className="mt-4 overflow-x-auto"><table className="w-full border-collapse font-sans text-sm"><thead><tr className="border-b border-hairline text-left text-xs uppercase tracking-wider text-ink-muted"><th className="py-3 pr-4">Size</th>{TSHIRT_COLORS.map((color) => <th key={color} className="py-3 pr-4">{color}</th>)}<th className="py-3">Total</th></tr></thead><tbody className="divide-y divide-hairline">{data.sizeColor.map((row) => <tr key={row.size}><td className="py-3 pr-4 font-semibold text-ink">{row.size}</td>{TSHIRT_COLORS.map((color) => <td key={color} className="py-3 pr-4 font-mono text-ink-muted">{row.colors[color]}</td>)}<td className="py-3 font-mono font-bold text-[#7b539f]">{row.total}</td></tr>)}</tbody></table></div></section>
     <section className="rounded-3xl border border-hairline bg-surface p-6 shadow-xs"><h3 className="font-serif text-lg font-bold text-ink">T-shirt demand by faculty</h3><p className="mt-1 font-sans text-xs text-ink-muted">White and Black quantities are separated by size in every faculty card.</p>{data.byFaculty.length === 0 ? <p className="py-6 text-center font-sans text-sm text-ink-muted">No active T-shirt orders yet.</p> : <div className="mt-5 grid gap-4 xl:grid-cols-2">{data.byFaculty.map((row) => <FacultyShirtCard key={row.faculty} row={row} />)}</div>}</section>
+  </section>;
+}
+
+export function TshirtHandoverSection({ result }: { result: TshirtHandoverAnalyticsResult }) {
+  if (!result.ok) return <ErrorMessage message={`Could not load T-shirt handover analytics: ${result.error}. Apply migration 0028_tshirt_handover.sql if it has not been applied yet.`} />;
+  const { data } = result;
+  return <section className="space-y-6">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <Summary label="Active orders" value={data.activeOrders} />
+      <Summary label="Shirts to hand over" value={data.shirts} />
+      <Summary label="Given" value={data.givenShirts} highlight />
+      <Summary label="Not given" value={data.notGivenShirts} />
+    </div>
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Insight label="Most collected size" value={topEntry(data.bySize.map((row) => [row.size, row.given] as const))} />
+      <Insight label="Most remaining size" value={topEntry(data.bySize.map((row) => [row.size, row.notGiven] as const))} />
+    </div>
+    <section className="rounded-3xl border border-hairline bg-surface p-6 shadow-xs">
+      <h3 className="font-serif text-lg font-bold text-ink">Collection by size</h3>
+      <p className="mt-1 font-sans text-xs text-ink-muted">Counts come from the physical handover status, independently of payment status.</p>
+      <div className="mt-4 overflow-x-auto"><table className="w-full border-collapse font-sans text-sm"><thead><tr className="border-b border-hairline text-left text-xs uppercase tracking-wider text-ink-muted"><th className="py-3 pr-4">Size</th><th className="py-3 pr-4">Total</th><th className="py-3 pr-4">Given</th><th className="py-3">Not given</th></tr></thead><tbody className="divide-y divide-hairline">{data.bySize.map((row) => <tr key={row.size}><td className="py-3 pr-4 font-semibold text-ink">{row.size}</td><td className="py-3 pr-4 font-mono text-ink-muted">{row.shirts}</td><td className="py-3 pr-4 font-mono font-bold text-[#7b539f]">{row.given}</td><td className="py-3 font-mono text-ink-muted">{row.notGiven}</td></tr>)}</tbody></table></div>
+    </section>
+    <section className="rounded-3xl border border-hairline bg-surface p-6 shadow-xs">
+      <h3 className="font-serif text-lg font-bold text-ink">Collection by faculty</h3>
+      {data.byFaculty.length === 0 ? <p className="py-6 text-center font-sans text-sm text-ink-muted">No active T-shirt orders yet.</p> : <div className="mt-4 overflow-x-auto"><table className="w-full border-collapse font-sans text-sm"><thead><tr className="border-b border-hairline text-left text-xs uppercase tracking-wider text-ink-muted"><th className="py-3 pr-4">Faculty</th><th className="py-3 pr-4">Orders</th><th className="py-3 pr-4">Shirts</th><th className="py-3 pr-4">Given</th><th className="py-3">Not given</th></tr></thead><tbody className="divide-y divide-hairline">{data.byFaculty.map((row) => <tr key={row.faculty}><td className="py-3 pr-4 font-medium text-ink">{row.faculty}</td><td className="py-3 pr-4 font-mono text-ink-muted">{row.orders}</td><td className="py-3 pr-4 font-mono text-ink-muted">{row.shirts}</td><td className="py-3 pr-4 font-mono font-bold text-[#7b539f]">{row.given}</td><td className="py-3 font-mono text-ink-muted">{row.notGiven}</td></tr>)}</tbody></table></div>}
+    </section>
   </section>;
 }
 

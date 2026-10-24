@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Node ops scripts — not part of the app bundle.
     "scripts/**",
+    "mail-backend/dist/**",
+    "mail-backend/node_modules/**",
   ]),
 ]);
 

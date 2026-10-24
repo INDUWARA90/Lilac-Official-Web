@@ -82,6 +82,7 @@ const NAV: NavItem[] = [
       { href: "/admin/analytics?section=site-wide#site-wide", label: "Site-wide" },
       { href: "/admin/analytics?section=ad-performance#ad-performance", label: "Ad performance" },
       { href: "/admin/analytics?section=tshirt-orders#tshirt-orders", label: "T-shirt orders" },
+      { href: "/admin/analytics?section=tshirt-handover#tshirt-handover", label: "T-shirt handover" },
       { href: "/admin/analytics?section=ticket-orders#ticket-orders", label: "Ticket orders" },
     ],
     icon: (
