@@ -48,7 +48,7 @@ export default async function AdminTicketsPage({
   if (status) query = query.eq("status", status);
 
   const [
-    { data: rows, count },
+    ticketResult,
     availability,
     settings,
     { count: checkedIn },
@@ -60,6 +60,16 @@ export default async function AdminTicketsPage({
       db.from("tickets").select("id", { count: "exact", head: true }).not("checked_in_at", "is", null),
       getDrawUnlocked(), // warm the shared cache — AdminShell needs it too, see lib/app-config.ts
     ]);
+
+  const rows = ticketResult.data ?? [];
+  const count = ticketResult.count;
+  const { data: emailDeliveries } = rows.length
+    ? await db
+        .from("ticket_email_deliveries")
+        .select("purchase_id, status, sent_at, last_error")
+        .in("purchase_id", rows.map((row) => row.id))
+    : { data: [] };
+  const emailByPurchase = new Map((emailDeliveries ?? []).map((delivery) => [delivery.purchase_id, delivery]));
 
   const total = count ?? 0;
   const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -161,13 +171,14 @@ export default async function AdminTicketsPage({
               <th className="py-2 pr-4 font-medium">Qty</th>
               <th className="py-2 pr-4 font-medium">Amount</th>
               <th className="py-2 pr-4 font-medium">Status</th>
+              <th className="py-2 pr-4 font-medium">Email</th>
               <th className="py-2 font-medium">Date</th>
             </tr>
           </thead>
           <tbody className="lailac-rows">
             {(rows ?? []).length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-6 text-center text-ink-muted">
+                <td colSpan={9} className="py-6 text-center text-ink-muted">
                   No purchases.
                 </td>
               </tr>
@@ -198,6 +209,9 @@ export default async function AdminTicketsPage({
                   <td className="py-2 pr-4">{r.quantity}</td>
                   <td className="py-2 pr-4">{formatLkr(r.amount_lkr)}</td>
                   <td className="py-2 pr-4">{PURCHASE_STATUS_LABEL[r.status]}</td>
+                  <td className="py-2 pr-4">
+                    <EmailDeliveryBadge delivery={emailByPurchase.get(r.id)} approved={r.status === "approved"} />
+                  </td>
                   <td className="py-2 whitespace-nowrap text-ink-muted">
                     {formatDate(r.created_at)}
                   </td>
@@ -222,4 +236,18 @@ export default async function AdminTicketsPage({
       </div>
     </AdminShell>
   );
+}
+
+function EmailDeliveryBadge({
+  delivery,
+  approved,
+}: {
+  delivery: { status: "pending" | "sending" | "sent" | "failed"; sent_at: string | null; last_error: string | null } | undefined;
+  approved: boolean;
+}) {
+  if (!approved) return <span className="text-ink-muted">—</span>;
+  if (!delivery) return <span className="text-amber-700">Not queued</span>;
+  const style = delivery.status === "sent" ? "text-emerald-700" : delivery.status === "failed" ? "text-red-700" : "text-amber-700";
+  const label = delivery.status === "sent" ? "Sent" : delivery.status === "failed" ? "Failed" : delivery.status === "sending" ? "Sending" : "Queued";
+  return <span className={style} title={delivery.last_error ?? delivery.sent_at ?? undefined}>{label}</span>;
 }

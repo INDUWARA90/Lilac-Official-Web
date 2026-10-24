@@ -58,7 +58,7 @@ export function TicketReviewActions({ purchaseId }: { purchaseId: string }) {
         <h2 className="text-lg text-ink">Order confirmed — email didn&rsquo;t send</h2>
         <p className="mt-1 font-sans text-sm text-ink-muted">
           Tickets were issued, but the e-ticket email did not send. Check the{" "}
-          <code className="text-xs">MAILJET_*</code> environment variables. The buyer can still get their ticket at{" "}
+          <code className="text-xs">MAIL_BACKEND_*</code> settings and local mail service. The buyer can still get their ticket at{" "}
           <a href="/tickets/status" className="text-accent-strong underline">
             /tickets/status
           </a>

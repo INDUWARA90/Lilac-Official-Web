@@ -20,6 +20,13 @@
 # production
 /build
 
+# Local NestJS mail backend: commit its source, package manifests, and
+# .env.example; never commit live SMTP/Supabase credentials or generated files.
+/mail-backend/.env
+/mail-backend/dist
+/mail-backend/node_modules
+/mail-backend/*.log
+
 # misc
 .DS_Store
 *.pem

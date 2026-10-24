@@ -121,6 +121,17 @@ const NAV: NavItem[] = [
     ),
   },
   {
+    href: "/admin/tshirts/handover",
+    label: "T-shirt handover",
+    icon: (
+      <svg {...s}>
+        <path d="M4 12h5l2 2h2l2-2h5" />
+        <path d="M6 12V8l3-3h6l3 3v4" />
+        <path d="M7 16v3h10v-3" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/checkin",
     label: "Check-in",
     icon: (
@@ -153,7 +164,7 @@ const NAV: NavItem[] = [
 
 // Manager navigation is scoped by role; server-side guards enforce the same.
 const TICKET_MANAGER_HREFS = new Set(["/admin/tickets", "/admin/checkin"]);
-const TSHIRT_MANAGER_HREFS = new Set(["/admin/tshirts"]);
+const TSHIRT_MANAGER_HREFS = new Set(["/admin/tshirts", "/admin/tshirts/handover"]);
 
 /**
  * Admin nav — a vertical list of icon + label links, used in both the desktop
@@ -187,6 +198,8 @@ export function AdminNav({
         const active =
           item.href === "/admin"
             ? pathname === "/admin"
+            : item.href === "/admin/tshirts"
+              ? pathname === "/admin/tshirts" || (pathname.startsWith("/admin/tshirts/") && !pathname.startsWith("/admin/tshirts/handover"))
             : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
         return (

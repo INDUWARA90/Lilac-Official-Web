@@ -55,6 +55,24 @@ values for now.
 - `CHECKIN_ACCESS_CODE` — shared code that unlocks the door-staff check-in pages
 - `CHECKIN_SESSION_SECRET` — optional, falls back to `ADMIN_SESSION_SECRET`; set a real value in production
 
+### Transactional approved-ticket email
+
+`mail-backend/` is a separate local NestJS SMTP service. Each time an admin
+approves a ticket payment, the website calls it to send that purchaser's email
+once. It saves the delivery state in Supabase, so repeated approval clicks do
+not re-send a successful email.
+
+1. Apply `supabase/migrations/0027_ticket_email_deliveries.sql` in Supabase.
+2. Copy `mail-backend/.env.example` to `mail-backend/.env`; add SMTP,
+   Supabase service-role, and `MAILER_API_KEY` values.
+3. Add the same key as `MAIL_BACKEND_API_KEY` in the website `.env.local`.
+4. Start the service from `mail-backend`: `npm run start:dev`.
+5. To catch up historical approved purchases that are not marked sent, run
+   `npm run send:pending` from `mail-backend`.
+
+The local backend listens only on `127.0.0.1:3010`. If the website is deployed
+elsewhere, host this backend where that website can securely reach it.
+
 ### Admin panel
 
 `/admin` is protected. Sign in at `/admin/login` with either the full-admin or

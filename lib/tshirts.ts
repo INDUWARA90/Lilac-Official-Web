@@ -124,6 +124,34 @@ export async function reviewTshirtOrder(id: string, action: "collect" | "collect
   return { ok: true };
 }
 
+/** Records the physical handover independently of payment status. */
+export async function markTshirtHandedOver(id: string, by: string): Promise<{ ok: boolean; error?: string }> {
+  const { data, error } = await createAdminClient()
+    .from("tshirt_orders")
+    .update({ handed_over: true, handed_over_at: new Date().toISOString(), handed_over_by: by, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("handed_over", false)
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, error: "Could not record the handover." };
+  if (!data) return { ok: false, error: "This order was already handed over or no longer exists." };
+  return { ok: true };
+}
+
+/** Reopens a handover record when a staff member needs to correct it. */
+export async function markTshirtNotHandedOver(id: string): Promise<{ ok: boolean; error?: string }> {
+  const { data, error } = await createAdminClient()
+    .from("tshirt_orders")
+    .update({ handed_over: false, handed_over_at: null, handed_over_by: null, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("handed_over", true)
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, error: "Could not reopen the handover." };
+  if (!data) return { ok: false, error: "This order is already marked as not given or no longer exists." };
+  return { ok: true };
+}
+
 export async function tshirtReceiptUrl(path: string) {
   const { data } = await createAdminClient().storage.from(TSHIRT_RECEIPT_BUCKET).createSignedUrl(path, 60 * 60 * 24 * 30);
   return data?.signedUrl ?? null;

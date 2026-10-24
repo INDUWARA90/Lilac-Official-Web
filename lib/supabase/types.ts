@@ -161,6 +161,19 @@ export type TicketRow = {
   created_at: string;
 };
 
+export type TicketEmailDeliveryRow = {
+  id: string;
+  purchase_id: string;
+  status: "pending" | "sending" | "sent" | "failed";
+  attempts: number;
+  locked_at: string | null;
+  sent_at: string | null;
+  provider_message_id: string | null;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type TshirtSettingsRow = {
   id: string;
   price_lkr: number;
@@ -176,7 +189,9 @@ export type TshirtOrderRow = {
   email: string; phone: string; tshirt_size: string; quantity: number; amount_lkr: number; paid_amount_lkr: number | null;
   order_items: { size: string; color: string }[] | null;
   receipt_path: string; status: TshirtOrderStatusDb; review_note: string | null;
-  collected_by: string | null; collected_at: string | null; created_at: string; updated_at: string;
+  collected_by: string | null; collected_at: string | null;
+  handed_over: boolean; handed_over_at: string | null; handed_over_by: string | null;
+  created_at: string; updated_at: string;
 };
 
 export type MapCategory = "stall" | "stage" | "food";
@@ -264,6 +279,12 @@ export type Database = {
             Pick<TicketRow, "id" | "created_at" | "checked_in_at" | "checked_in_by">
           >,
         Partial<TicketRow>
+      >;
+      ticket_email_deliveries: TableShape<
+        TicketEmailDeliveryRow,
+        Omit<TicketEmailDeliveryRow, "id" | "created_at" | "updated_at"> &
+          Partial<Pick<TicketEmailDeliveryRow, "id" | "created_at" | "updated_at">>,
+        Partial<TicketEmailDeliveryRow>
       >;
       tshirt_settings: TableShape<TshirtSettingsRow, Partial<TshirtSettingsRow>, Partial<TshirtSettingsRow>>;
       tshirt_orders: TableShape<

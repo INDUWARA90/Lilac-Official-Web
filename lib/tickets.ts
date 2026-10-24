@@ -3,8 +3,7 @@ import { randomBytes, randomInt } from "node:crypto";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { publicEnv } from "@/lib/env";
-import { sendTicketApproved } from "@/lib/email/mailjet";
+import { publicEnv, serverEnv } from "@/lib/env";
 import { normalizeLkPhone } from "@/lib/validation/entry";
 import {
   TICKET_SLIP_BUCKET,
@@ -326,44 +325,23 @@ export async function approvePurchase(
     return { ok: false, error: "Could not issue the tickets. Try again." };
   }
 
-  // Email the QR + reference via Mailjet. Best effort — the tickets already
-  // exist and are reachable at /tickets/status either way (and door staff can
-  // still check them in), so a Mailjet hiccup (including QR generation
-  // itself) does not fail the approval, which has already committed by this
-  // point.
-  const sent = await (async (): Promise<{ ok: boolean; reason?: string }> => {
-    try {
-      const attachments = await Promise.all(
-        created.map(async (t, i) => ({
-          filename: `lailac-ticket-${i + 1}.png`,
-          contentType: "image/png",
-          contentId: `qr-ticket-${i}`, // matches the `cid` below — shows inline, not just attached
-          base64Content: (
-            await QRCode.toBuffer(checkinUrl(t.token), { width: 512, margin: 1 })
-          ).toString("base64"),
-        })),
-      );
-      return await sendTicketApproved({
-        to: purchase.email,
-        name: purchase.name,
-        reference: purchase.reference,
-        tickets: created.map((t, i) => ({
-          seatLabel: t.seat_label,
-          url: ticketUrl(t.token),
-          cid: `qr-ticket-${i}`,
-        })),
-        attachments,
-      });
-    } catch {
-      return { ok: false, reason: "threw" };
-    }
-  })();
+  // The local NestJS SMTP service sends this one purchase immediately. If it
+  // is offline, `npm run send:pending` later finds this approved purchase.
+  return { ok: true, emailSent: await notifyTicketMailer(purchase.id) };
+}
 
-  if (!sent.ok) {
-    console.error(`e-ticket email failed for ${purchase.reference}: ${sent.reason ?? "unknown"}`);
+async function notifyTicketMailer(purchaseId: string): Promise<boolean> {
+  const { url, apiKey } = serverEnv.ticketMailer;
+  if (!url || !apiKey) return false;
+  try {
+    const response = await fetch(`${url}/ticket-emails/${purchaseId}/send`, {
+      method: "POST", headers: { "x-mailer-key": apiKey }, cache: "no-store",
+    });
+    const data = (await response.json().catch(() => null)) as { sent?: boolean } | null;
+    return response.ok && data?.sent === true;
+  } catch {
+    return false;
   }
-
-  return { ok: true, emailSent: sent.ok };
 }
 
 export async function rejectPurchase(

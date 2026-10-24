@@ -42,6 +42,11 @@ export const serverEnv = {
     senderName: clean(process.env.MAILJET_SENDER_NAME) || "Lilac",
   },
 
+  ticketMailer: {
+    url: clean(process.env.MAIL_BACKEND_URL).replace(/\/$/, ""),
+    apiKey: clean(process.env.MAIL_BACKEND_API_KEY),
+  },
+
   // Admin panel: the single allowed admin email + password, and the secret used
   // to sign the admin session cookie.
   adminEmail: clean(process.env.ADMIN_EMAIL).toLowerCase(),
