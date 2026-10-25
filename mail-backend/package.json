@@ -7,7 +7,8 @@
     "start:dev": "nest start --watch",
     "build": "nest build",
     "test:smtp": "npm run build && node dist/test-smtp.js",
-    "send:pending": "npm run build && node dist/send-pending.js"
+    "send:pending": "npm run build && node dist/send-pending.js",
+    "send:failed": "npm run build && node dist/send-failed.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",

@@ -44,6 +44,27 @@ export class TicketEmailService {
     return { checked: purchases.length, sent, failed, alreadySent };
   }
 
+  /** One retry pass for deliveries already recorded as failed. */
+  async retryFailedEmailsOnce(): Promise<{ checked: number; sent: number; failed: number }> {
+    await this.releaseStaleClaims();
+    const { data, error } = await this.db
+      .from("ticket_email_deliveries")
+      .select("purchase_id")
+      .eq("status", "failed")
+      .order("created_at");
+    if (error) throw new Error(`Could not load failed emails: ${error.message}`);
+
+    let sent = 0;
+    let failed = 0;
+    for (const row of data ?? []) {
+      const result = await this.sendOne(row.purchase_id);
+      if (result.sent) sent += 1;
+      else failed += 1;
+      if (this.delayMs) await new Promise((resolve) => setTimeout(resolve, this.delayMs));
+    }
+    return { checked: data?.length ?? 0, sent, failed };
+  }
+
   /** Sends one database-independent sample pass through the real attachment renderer. */
   async sendTestPass(recipient: string): Promise<string> {
     const sample: Purchase = {
@@ -81,7 +102,11 @@ export class TicketEmailService {
       await this.finish(delivery.deliveryId, "sent", info.messageId);
       return { sent: true, status: "sent" };
     } catch (error) {
-      await this.finish(delivery.deliveryId, "failed", error instanceof Error ? error.message : "SMTP send failed");
+      const detail = error instanceof Error ? error.message : "SMTP send failed";
+      // Keep the terminal actionable during a bulk run. Brevo has no log when
+      // the failure happens locally before SMTP accepts the message.
+      console.error(`[ticket-email] Failed purchase ${purchaseId}: ${detail}`);
+      await this.finish(delivery.deliveryId, "failed", detail);
       return { sent: false, status: "failed" };
     }
   }

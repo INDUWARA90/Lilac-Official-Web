@@ -4,6 +4,7 @@ import {
   approvePurchase,
   rejectPurchase,
   checkInTicket,
+  markTicketEmailSentManually,
   undoCheckIn,
   updateTicketSettings,
 } from "@/lib/tickets";
@@ -29,6 +30,7 @@ const schema = z.discriminatedUnion("action", [
   }),
   z.object({ action: z.literal("checkin"), token: z.string().min(1).max(200) }),
   z.object({ action: z.literal("undo_checkin"), token: z.string().min(1).max(200) }),
+  z.object({ action: z.literal("mark_email_sent_manually"), purchaseId: z.uuid() }),
   z.object({
     action: z.literal("update_settings"),
     seatingPriceLkr: z.coerce.number().int().min(0).max(1_000_000).optional(),
@@ -72,6 +74,10 @@ export async function POST(req: Request) {
   }
   if (input.action === "undo_checkin") {
     const r = await undoCheckIn(input.token);
+    return r.ok ? json({ ok: true }) : json({ ok: false, error: r.error }, 400);
+  }
+  if (input.action === "mark_email_sent_manually") {
+    const r = await markTicketEmailSentManually(input.purchaseId, session.email);
     return r.ok ? json({ ok: true }) : json({ ok: false, error: r.error }, 400);
   }
 

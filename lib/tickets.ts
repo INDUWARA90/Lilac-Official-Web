@@ -344,6 +344,43 @@ async function notifyTicketMailer(purchaseId: string): Promise<boolean> {
   }
 }
 
+/** Records an email the staff member sent outside the automated SMTP queue. */
+export async function markTicketEmailSentManually(
+  purchaseId: string,
+  by: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const db = createAdminClient();
+  const { data: purchase, error: purchaseError } = await db
+    .from("ticket_purchases")
+    .select("id, status")
+    .eq("id", purchaseId)
+    .maybeSingle();
+  if (purchaseError || !purchase) return { ok: false, error: "Ticket purchase not found." };
+  if (purchase.status !== "approved") return { ok: false, error: "Only approved ticket emails can be marked sent." };
+
+  const { data: existing, error: deliveryError } = await db
+    .from("ticket_email_deliveries")
+    .select("id, status")
+    .eq("purchase_id", purchaseId)
+    .maybeSingle();
+  if (deliveryError) return { ok: false, error: "Could not check email delivery status." };
+  if (existing?.status === "sending") return { ok: false, error: "The automated email is currently sending. Wait a moment and refresh." };
+
+  const now = new Date().toISOString();
+  const update = {
+    status: "sent" as const,
+    locked_at: null,
+    sent_at: now,
+    provider_message_id: `manual:${by}`.slice(0, 500),
+    last_error: null,
+    updated_at: now,
+  };
+  const { error } = existing
+    ? await db.from("ticket_email_deliveries").update(update).eq("id", existing.id)
+    : await db.from("ticket_email_deliveries").insert({ purchase_id: purchaseId, attempts: 0, ...update });
+  return error ? { ok: false, error: "Could not mark the email as sent." } : { ok: true };
+}
+
 export async function rejectPurchase(
   purchaseId: string,
   by: string,
