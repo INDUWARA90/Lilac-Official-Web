@@ -146,9 +146,10 @@ function PurchaseCard({ purchase }: { purchase: Purchase }) {
       )}
 
       {purchase.status === "cancelled" && (
-        <p className="mt-3 font-sans text-sm leading-relaxed text-ink-muted">
-          This purchase was cancelled.
-        </p>
+        <div className="mt-3 font-sans text-sm leading-relaxed text-ink-muted">
+          <p>This purchase was deactivated and its tickets are no longer valid.</p>
+          {purchase.reviewNote && <p className="mt-2">{purchase.reviewNote}</p>}
+        </div>
       )}
 
       {purchase.status === "approved" && (

@@ -39,7 +39,7 @@ export default async function CheckinHome() {
       ) : (
         <>
           <p className="mt-3 font-sans text-sm text-ink-muted">
-            Enter the staff access code to use this device for check-in.
+            Enter the staff access code once to authorize this browser for check-in.
           </p>
           <CheckinUnlock />
         </>

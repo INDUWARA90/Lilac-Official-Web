@@ -15,6 +15,8 @@ import {
 import { formatDateTime } from "@/lib/format";
 import { TicketReviewActions } from "@/components/admin/TicketReviewActions";
 import { TicketCheckinToggle } from "@/components/admin/TicketCheckinToggle";
+import { TicketDeactivateActions } from "@/components/admin/TicketDeactivateActions";
+import { TicketRestoreToReview } from "@/components/admin/TicketRestoreToReview";
 
 export const metadata: Metadata = { title: "Ticket purchase", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -128,6 +130,18 @@ export default async function TicketPurchasePage({
       {purchase.status === "pending_review" && (
         <div className="mt-6">
           <TicketReviewActions purchaseId={purchase.id} />
+        </div>
+      )}
+
+      {purchase.status === "approved" && (
+        <div className="mt-6">
+          <TicketDeactivateActions purchaseId={purchase.id} />
+        </div>
+      )}
+
+      {purchase.status === "cancelled" && (
+        <div className="mt-6">
+          <TicketRestoreToReview purchaseId={purchase.id} />
         </div>
       )}
 

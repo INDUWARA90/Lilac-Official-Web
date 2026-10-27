@@ -12,4 +12,12 @@ export class TicketEmailController {
     if (!/^[0-9a-f-]{36}$/i.test(purchaseId)) throw new ForbiddenException("Invalid purchase id.");
     return this.emails.sendForApprovedPurchase(purchaseId);
   }
+
+  @Post(":purchaseId/deactivation")
+  async sendDeactivation(@Param("purchaseId") purchaseId: string, @Headers("x-mailer-key") key?: string) {
+    const expected = this.config.get<string>("MAILER_API_KEY");
+    if (!expected || key !== expected) throw new ForbiddenException();
+    if (!/^[0-9a-f-]{36}$/i.test(purchaseId)) throw new ForbiddenException("Invalid purchase id.");
+    return this.emails.sendDeactivationNotice(purchaseId);
+  }
 }

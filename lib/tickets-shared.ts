@@ -36,7 +36,7 @@ export const PURCHASE_STATUS_LABEL: Record<TicketPurchaseStatus, string> = {
   pending_review: "Pending review",
   approved: "Approved",
   rejected: "Rejected",
-  cancelled: "Cancelled",
+  cancelled: "Deactivated",
 };
 
 export type TicketSettings = {

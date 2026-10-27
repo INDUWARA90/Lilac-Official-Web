@@ -427,6 +427,110 @@ export async function rejectPurchase(
   return { ok: true };
 }
 
+/**
+ * Withdraw issued QR codes and return an approved purchase to review so staff
+ * can correct it and issue a fresh replacement set of tickets.
+ */
+export async function deactivatePurchase(
+  purchaseId: string,
+  by: string,
+  note: string,
+): Promise<{ ok: boolean; error?: string; emailSent?: boolean }> {
+  const db = createAdminClient();
+  const now = new Date().toISOString();
+  const { data: purchase, error } = await db
+    .from("ticket_purchases")
+    .update({
+      status: "pending_review",
+      review_note: note || "Tickets withdrawn by event staff for correction and reissue.",
+      reviewed_by: by,
+      reviewed_at: now,
+      updated_at: now,
+    })
+    .eq("id", purchaseId)
+    .eq("status", "approved")
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, error: "Could not deactivate the purchase." };
+  if (!purchase) {
+    const { data: current } = await db
+      .from("ticket_purchases")
+      .select("status")
+      .eq("id", purchaseId)
+      .maybeSingle();
+    if (!current) return { ok: false, error: "Purchase not found." };
+    return { ok: false, error: `Only approved purchases can be deactivated (currently ${current.status}).` };
+  }
+
+  // Old tokens must never come back when this purchase is approved again.
+  // Clearing delivery state makes the normal approval flow send the new QR set.
+  const [{ error: ticketsError }, { error: deliveryError }] = await Promise.all([
+    db.from("tickets").delete().eq("purchase_id", purchaseId),
+    db.from("ticket_email_deliveries").delete().eq("purchase_id", purchaseId),
+  ]);
+  if (ticketsError || deliveryError) {
+    console.error("deactivatePurchase cleanup failed", ticketsError ?? deliveryError);
+    return { ok: false, error: "Tickets were returned to review, but old ticket cleanup failed. Do not approve yet; refresh and contact an administrator." };
+  }
+
+  revalidatePath("/tickets");
+  return { ok: true, emailSent: await notifyTicketDeactivationMailer(purchaseId) };
+}
+
+/** Restores a legacy cancelled purchase to the same replacement-review flow. */
+export async function restoreCancelledPurchaseToReview(
+  purchaseId: string,
+  by: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const db = createAdminClient();
+  const now = new Date().toISOString();
+  const { data: purchase, error } = await db
+    .from("ticket_purchases")
+    .update({
+      status: "pending_review",
+      review_note: "Returned to pending review by event staff for correction and reissue.",
+      reviewed_by: by,
+      reviewed_at: now,
+      updated_at: now,
+    })
+    .eq("id", purchaseId)
+    .eq("status", "cancelled")
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, error: "Could not return the purchase to review." };
+  if (!purchase) return { ok: false, error: "Only deactivated purchases can be returned to review." };
+
+  const [{ error: ticketsError }, { error: deliveryError }] = await Promise.all([
+    db.from("tickets").delete().eq("purchase_id", purchaseId),
+    db.from("ticket_email_deliveries").delete().eq("purchase_id", purchaseId),
+  ]);
+  if (ticketsError || deliveryError) {
+    console.error("restoreCancelledPurchaseToReview cleanup failed", ticketsError ?? deliveryError);
+    return { ok: false, error: "Purchase was returned to review, but old ticket cleanup failed. Do not approve it yet." };
+  }
+  revalidatePath("/tickets");
+  return { ok: true };
+}
+
+async function notifyTicketDeactivationMailer(purchaseId: string): Promise<boolean> {
+  const { url, apiKey } = serverEnv.ticketMailer;
+  if (!url || !apiKey) return false;
+  try {
+    const response = await fetch(`${url}/ticket-emails/${purchaseId}/deactivation`, {
+      method: "POST", headers: { "x-mailer-key": apiKey }, cache: "no-store",
+    });
+    const data = (await response.json().catch(() => null)) as { sent?: boolean } | null;
+    return response.ok && data?.sent === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Reconcile a pending order with the amount on its bank slip. This is limited
+ * to removing tickets from the original selection, so the correction can
+ * never consume extra capacity or silently change a buyer's ticket type.
+ */
 // ---- buyer self-service status lookup ----------------------------------
 
 export type PurchaseStatusItem = {
@@ -537,6 +641,14 @@ export async function checkInTicket(
   const db = createAdminClient();
   const { data: ticket } = await db.from("tickets").select("*").eq("token", token).maybeSingle();
   if (!ticket) return { ok: false, error: "Ticket not found." };
+  const { data: purchase } = await db
+    .from("ticket_purchases")
+    .select("status")
+    .eq("id", ticket.purchase_id)
+    .maybeSingle();
+  if (purchase?.status !== "approved") {
+    return { ok: false, error: "This ticket is no longer valid." };
+  }
   if (ticket.checked_in_at) {
     return { ok: false, error: "Already checked in.", alreadyAt: ticket.checked_in_at };
   }

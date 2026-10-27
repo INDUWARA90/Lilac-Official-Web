@@ -2,6 +2,8 @@ import { z } from "zod";
 import { getAdminSession } from "@/lib/auth";
 import {
   approvePurchase,
+  deactivatePurchase,
+  restoreCancelledPurchaseToReview,
   rejectPurchase,
   checkInTicket,
   markTicketEmailSentManually,
@@ -14,6 +16,7 @@ import {
  *
  *   { action: "approve", purchaseId }
  *   { action: "reject", purchaseId, note? }
+ *   { action: "deactivate", purchaseId, note? }
  *   { action: "checkin" | "undo_checkin", token }
  *   { action: "update_settings", seatingPriceLkr?, standingPriceLkr?, seatingCapacity?, standingCapacity?, salesOpen?, bank*? }
  */
@@ -23,6 +26,12 @@ const json = (b: unknown, s = 200) => Response.json(b, { status: s });
 
 const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("approve"), purchaseId: z.uuid() }),
+  z.object({
+    action: z.literal("deactivate"),
+    purchaseId: z.uuid(),
+    note: z.string().trim().max(500).optional(),
+  }),
+  z.object({ action: z.literal("restore_cancelled_to_review"), purchaseId: z.uuid() }),
   z.object({
     action: z.literal("reject"),
     purchaseId: z.uuid(),
@@ -61,6 +70,14 @@ export async function POST(req: Request) {
     return r.ok
       ? json({ ok: true, emailSent: r.emailSent })
       : json({ ok: false, error: r.error }, 400);
+  }
+  if (input.action === "deactivate") {
+    const r = await deactivatePurchase(input.purchaseId, session.email, input.note ?? "");
+    return r.ok ? json({ ok: true, emailSent: r.emailSent }) : json({ ok: false, error: r.error }, 400);
+  }
+  if (input.action === "restore_cancelled_to_review") {
+    const r = await restoreCancelledPurchaseToReview(input.purchaseId, session.email);
+    return r.ok ? json({ ok: true }) : json({ ok: false, error: r.error }, 400);
   }
   if (input.action === "reject") {
     const r = await rejectPurchase(input.purchaseId, session.email, input.note ?? "");

@@ -16,12 +16,13 @@ type Filter = "all" | "in" | "out";
 export default async function AdminCheckinPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; f?: string }>;
+  searchParams: Promise<{ q?: string; f?: string; faculty?: string }>;
 }) {
   const session = await requireAdmin();
   const sp = await searchParams;
   const q = (sp.q ?? "").trim().slice(0, 80);
   const filter: Filter = sp.f === "in" ? "in" : sp.f === "out" ? "out" : "all";
+  const facultyFilter = (sp.faculty ?? "").trim().slice(0, 150);
 
   const db = createAdminClient();
   const [{ data: tickets }, { data: purchases }] = await Promise.all([
@@ -36,7 +37,7 @@ export default async function AdminCheckinPage({
     fetchAll((from, to) =>
       db
         .from("ticket_purchases")
-        .select("id, reference, registration_number, email, phone")
+        .select("id, name, reference, registration_number, faculty, email, phone")
         .eq("status", "approved")
         .order("id")
         .range(from, to),
@@ -47,25 +48,34 @@ export default async function AdminCheckinPage({
   const byId = new Map((purchases ?? []).map((p) => [p.id, p]));
   let rows = (tickets ?? []).map((t) => ({ ...t, purchase: byId.get(t.purchase_id) }));
 
-  const ql = q.toLowerCase();
+  const normalize = (value: string | null | undefined) => (value ?? "").trim().toLowerCase();
+  const ql = normalize(q);
+  const phoneQuery = q.replace(/\D/g, "");
   if (q) {
     rows = rows.filter(
       (r) =>
-        r.holder_name.toLowerCase().includes(ql) ||
-        (r.purchase?.reference ?? "").toLowerCase().includes(ql) ||
-        (r.purchase?.registration_number ?? "").toLowerCase().includes(ql) ||
-        (r.purchase?.email ?? "").toLowerCase().includes(ql) ||
-        (r.purchase?.phone ?? "").includes(q),
+        normalize(r.holder_name).includes(ql) ||
+        normalize(r.purchase?.name).includes(ql) ||
+        normalize(r.purchase?.reference).includes(ql) ||
+        normalize(r.purchase?.registration_number).includes(ql) ||
+        normalize(r.purchase?.faculty).includes(ql) ||
+        normalize(r.purchase?.email).includes(ql) ||
+        (phoneQuery.length > 0 && (r.purchase?.phone ?? "").replace(/\D/g, "").includes(phoneQuery)),
     );
   }
+  if (facultyFilter) rows = rows.filter((r) => r.purchase?.faculty === facultyFilter);
   const total = rows.length;
   const inCount = rows.filter((r) => r.checked_in_at).length;
+  const outCount = total - inCount;
   if (filter === "in") rows = rows.filter((r) => r.checked_in_at);
   if (filter === "out") rows = rows.filter((r) => !r.checked_in_at);
+
+  const faculties = [...new Set((purchases ?? []).map((p) => p.faculty).filter((value): value is string => Boolean(value)))].sort((a, b) => a.localeCompare(b));
 
   const tab = (f: Filter, label: string) => {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
+    if (facultyFilter) params.set("faculty", facultyFilter);
     if (f !== "all") params.set("f", f);
     const href = params.toString() ? `/admin/checkin?${params}` : "/admin/checkin";
     return (
@@ -96,7 +106,7 @@ export default async function AdminCheckinPage({
       </div>
       <p className="mt-1 font-sans text-sm text-ink-muted">
         Every issued ticket. Door staff normally scan the QR, but you can check anyone in by
-        hand here.
+        hand here. Use “Undo check-in” to correct a mistaken check-in.
       </p>
 
       <div className="mt-4 grid grid-cols-3 gap-3 sm:max-w-md">
@@ -114,12 +124,19 @@ export default async function AdminCheckinPage({
 
       <form method="get" className="mt-6 flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 font-sans text-xs text-ink-muted">
-          Search name, reference, registration number, email, phone
+          Search name, registration number, faculty, reference, email or phone
           <input
             name="q"
             defaultValue={q}
             className="w-64 rounded-field border border-hairline bg-transparent px-3 py-1.5 text-sm text-ink focus:border-accent focus:outline-none"
           />
+        </label>
+        <label className="flex min-w-52 flex-col gap-1 font-sans text-xs text-ink-muted">
+          Faculty
+          <select name="faculty" defaultValue={facultyFilter} className="rounded-field border border-hairline bg-transparent px-3 py-1.5 text-sm text-ink focus:border-accent focus:outline-none">
+            <option value="">All faculties</option>
+            {faculties.map((faculty) => <option key={faculty} value={faculty}>{faculty}</option>)}
+          </select>
         </label>
         {filter !== "all" && <input type="hidden" name="f" value={filter} />}
         <button
@@ -128,7 +145,7 @@ export default async function AdminCheckinPage({
         >
           Search
         </button>
-        {q && (
+        {(q || facultyFilter) && (
           <Link
             href="/admin/checkin"
             className="rounded-field border border-hairline px-4 py-2 font-sans text-sm font-medium text-ink-muted hover:border-accent hover:text-accent-strong"
@@ -140,8 +157,8 @@ export default async function AdminCheckinPage({
 
       <div className="mt-4 flex gap-2">
         {tab("all", `All (${total})`)}
-        {tab("out", "Not checked in")}
-        {tab("in", "Checked in")}
+        {tab("out", `Not checked in (${outCount})`)}
+        {tab("in", `Checked in (${inCount})`)}
       </div>
 
       <div className="mt-3 overflow-x-auto">
@@ -149,6 +166,8 @@ export default async function AdminCheckinPage({
           <thead>
             <tr className="border-b border-hairline text-left text-ink-muted">
               <th className="py-2 pr-4 font-medium">Name</th>
+              <th className="py-2 pr-4 font-medium">Registration no.</th>
+              <th className="py-2 pr-4 font-medium">Faculty</th>
               <th className="py-2 pr-4 font-medium">Reference</th>
               <th className="py-2 pr-4 font-medium">Seat</th>
               <th className="py-2 pr-4 font-medium">Checked in</th>
@@ -158,7 +177,7 @@ export default async function AdminCheckinPage({
           <tbody className="lailac-rows">
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-6 text-center text-ink-muted">
+                <td colSpan={7} className="py-6 text-center text-ink-muted">
                   {(tickets ?? []).length === 0
                     ? "No tickets issued yet."
                     : "No tickets match."}
@@ -168,6 +187,8 @@ export default async function AdminCheckinPage({
               rows.map((r) => (
                 <tr key={r.id} className="border-b border-hairline align-top">
                   <td className="py-2 pr-4">{r.holder_name}</td>
+                  <td className="py-2 pr-4 font-mono text-xs text-ink-muted">{r.purchase?.registration_number ?? "â€”"}</td>
+                  <td className="py-2 pr-4 text-ink-muted">{r.purchase?.faculty ?? "â€”"}</td>
                   <td className="py-2 pr-4">
                     <Link
                       href={`/admin/tickets/${r.purchase_id}`}

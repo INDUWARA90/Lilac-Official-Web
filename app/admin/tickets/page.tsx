@@ -32,7 +32,7 @@ type EmailDeliveryFilter = (typeof EMAIL_DELIVERY_FILTERS)[number];
 export default async function AdminTicketsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; page?: string; q?: string; faculty?: string; email?: string }>;
+  searchParams: Promise<{ status?: string; page?: string; q?: string; faculty?: string; email?: string; type?: string }>;
 }) {
   const session = await requireAdmin();
   const sp = await searchParams;
@@ -44,6 +44,7 @@ export default async function AdminTicketsPage({
   const emailFilter = EMAIL_DELIVERY_FILTERS.includes(sp.email as EmailDeliveryFilter)
     ? (sp.email as EmailDeliveryFilter)
     : null;
+  const ticketTypeFilter = sp.type === "seating" || sp.type === "standing" ? sp.type : null;
   const page = Math.max(1, Number(sp.page) || 1);
   const from = (page - 1) * PAGE_SIZE;
 
@@ -56,6 +57,8 @@ export default async function AdminTicketsPage({
     .order("created_at", { ascending: false });
   if (status) query = query.eq("status", status);
   if (faculty) query = query.eq("faculty", faculty);
+  // `ticket_types` is an array, so mixed orders appear in both matching views.
+  if (ticketTypeFilter) query = query.contains("ticket_types", [ticketTypeFilter]);
   if (search) {
     const term = search.replace(/[,.()]/g, " ").replace(/%/g, "").trim();
     if (term) {
@@ -116,6 +119,8 @@ export default async function AdminTicketsPage({
     if (nextStatus) params.set("status", nextStatus);
     if (search) params.set("q", search);
     if (faculty) params.set("faculty", faculty);
+    const nextType = "type" in p ? String(p.type) : ticketTypeFilter;
+    if (nextType) params.set("type", nextType);
     const nextEmail = "email" in p ? String(p.email) : emailFilter;
     if (nextEmail) params.set("email", nextEmail);
     for (const [k, v] of Object.entries(p)) if (v && v !== 1) params.set(k, String(v));
@@ -226,10 +231,18 @@ export default async function AdminTicketsPage({
           Email delivery
           <TicketEmailDeliveryFilter value={emailFilter ?? ""} />
         </label>
+        <label className="flex min-w-36 flex-col gap-1 text-xs font-medium text-ink-muted">
+          Ticket type
+          <select name="type" defaultValue={ticketTypeFilter ?? ""} className="rounded-field border border-hairline bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-accent">
+            <option value="">All types</option>
+            <option value="seating">Seating</option>
+            <option value="standing">Standing</option>
+          </select>
+        </label>
         <button type="submit" className="rounded-field bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong">
           Find
         </button>
-        {(search || faculty || emailFilter) && (
+        {(search || faculty || emailFilter || ticketTypeFilter) && (
           <Link href={status ? `/admin/tickets?status=${status}` : "/admin/tickets"} className="px-2 py-2 text-sm text-accent-strong hover:underline">
             Clear
           </Link>

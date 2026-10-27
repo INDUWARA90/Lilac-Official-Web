@@ -18,7 +18,10 @@ import { getAdminSession } from "@/lib/auth";
  * second, cheap guard against replaying one cookie shape as the other.
  */
 export const CHECKIN_COOKIE = "checkin_session";
-const SESSION_MS = 16 * 60 * 60 * 1000; // one long event day
+// Door devices should only need the shared code once during the event setup.
+// The cookie is restricted to check-in and can be revoked using the visible
+// "Log out of this device" button.
+const SESSION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 function secret(): string {
   return requireServer("CHECKIN_SESSION_SECRET", serverEnv.checkinSessionSecret);

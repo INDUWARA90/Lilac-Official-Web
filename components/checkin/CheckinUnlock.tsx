@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 
-/** Door-staff unlock: enter the shared access code once per device. */
+/** Door-staff unlock: enter the shared access code once per browser/device. */
 export function CheckinUnlock() {
   const router = useRouter();
   const [code, setCode] = useState("");
@@ -48,7 +48,7 @@ export function CheckinUnlock() {
       </label>
       {error && <p className="font-sans text-sm text-red-600">{error}</p>}
       <Button type="submit" loading={busy} className="self-start">
-        Unlock this device
+        Authorize this browser
       </Button>
     </form>
   );

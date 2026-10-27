@@ -7,6 +7,7 @@ import * as QRCode from "qrcode";
 import sharp = require("sharp");
 
 type Purchase = { id: string; name: string; email: string; reference: string; registration_number: string; faculty: string };
+type DeactivatedPurchase = Purchase & { review_note: string | null };
 type Delivery = Purchase & { deliveryId: string };
 type Ticket = { token: string; seat_label: string };
 
@@ -26,6 +27,25 @@ export class TicketEmailService {
     if (!purchase) throw new Error("Purchase is not approved or does not exist.");
     await this.enqueue(purchase.id);
     return this.sendOne(purchase.id);
+  }
+
+  /** Sends a separate, non-ticket email after staff invalidates an issued QR pass. */
+  async sendDeactivationNotice(purchaseId: string): Promise<{ sent: boolean; status: string }> {
+    const purchase = await this.replacementPendingPurchase(purchaseId);
+    if (!purchase) throw new Error("Purchase is not awaiting replacement or does not exist.");
+    try {
+      await this.transporter().sendMail({
+        from: { name: this.config.get<string>("SMTP_FROM_NAME") || "Lilac", address: this.required("SMTP_FROM_EMAIL") },
+        to: { name: purchase.name, address: purchase.email },
+        subject: "Important: your Lilac tickets have been deactivated",
+        text: this.deactivationMessage(purchase),
+      });
+      return { sent: true, status: "sent" };
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "SMTP send failed";
+      console.error(`[ticket-email] Failed deactivation notice for ${purchaseId}: ${detail}`);
+      return { sent: false, status: "failed" };
+    }
   }
 
   /** Catch-up command: finds every approved purchase without a sent email. */
@@ -140,6 +160,16 @@ export class TicketEmailService {
     if (error) throw new Error(`Could not load purchase: ${error.message}`);
     return data as Purchase | null;
   }
+  private async replacementPendingPurchase(id: string): Promise<DeactivatedPurchase | null> {
+    const { data, error } = await this.db
+      .from("ticket_purchases")
+      .select("id, name, email, reference, registration_number, faculty, review_note")
+      .eq("id", id)
+      .eq("status", "pending_review")
+      .maybeSingle();
+    if (error) throw new Error(`Could not load replacement purchase: ${error.message}`);
+    return data as DeactivatedPurchase | null;
+  }
   private async allApprovedPurchases(): Promise<Purchase[]> {
     const { data, error } = await this.db.from("ticket_purchases").select("id, name, email, reference, registration_number, faculty").eq("status", "approved").order("id");
     if (error) throw new Error(`Could not load approved purchases: ${error.message}`);
@@ -187,6 +217,19 @@ export class TicketEmailService {
   private checkinUrl(token: string): string { return `${this.required("PUBLIC_SITE_URL").replace(/\/$/, "")}/checkin/t/${token}`; }
   private transporter(): Transporter { return nodemailer.createTransport({ host: this.required("SMTP_HOST"), port: this.number("SMTP_PORT", 587), secure: this.config.get<string>("SMTP_SECURE") === "true", auth: { user: this.required("SMTP_USER"), pass: this.required("SMTP_PASSWORD") } }); }
   private message(p: Purchase): string { return this.required("EMAIL_TEXT_TEMPLATE").replace(/\\n/g, "\n").replaceAll("{{name}}", p.name).replaceAll("{{email}}", p.email).replaceAll("{{reference}}", p.reference); }
+  private deactivationMessage(p: DeactivatedPurchase): string {
+    const reason = p.review_note ? `\nReason: ${p.review_note}\n` : "\n";
+    return `Hi ${p.name},
+
+Your Lilac Live in Concert ticket purchase (${p.reference}) has been deactivated. All QR codes from this purchase are no longer valid for entry.
+${reason}
+Our team will correct the ticket details. Once the replacement tickets are issued, we will send new QR tickets to this email address. Please do not use or share the previous QR codes.
+
+If you have any questions, please contact the event team and include your reference number.
+
+Thank you,
+Lilac Event Team`;
+  }
   private required(name: string): string { const value = this.config.get<string>(name)?.trim(); if (!value) throw new Error(`${name} is required.`); return value; }
   private number(name: string, fallback: number): number { const value = this.config.get<string>(name); if (!value) return fallback; const n = Number(value); if (!Number.isInteger(n) || n < 0) throw new Error(`${name} must be a positive number.`); return n; }
 }
