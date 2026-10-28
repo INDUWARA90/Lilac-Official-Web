@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { hasCheckinSession } from "@/lib/checkin-auth";
 import { getAdminSession } from "@/lib/auth";
-import { checkInTicket } from "@/lib/tickets";
+import { checkInTicket, undoCheckIn } from "@/lib/tickets";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/http";
 
@@ -39,12 +39,13 @@ export async function POST(
 
   const { token } = await params;
   const parsed = z
-    .object({ action: z.enum(["checkin", "refuse"]) })
+    .object({ action: z.enum(["checkin", "checkout"]) })
     .safeParse(await req.json().catch(() => null));
   if (!parsed.success) return json({ ok: false, error: "Invalid request." }, 400);
 
-  if (parsed.data.action === "refuse") {
-    return json({ ok: true, refused: true });
+  if (parsed.data.action === "checkout") {
+    const r = await undoCheckIn(token);
+    return r.ok ? json({ ok: true }) : json({ ok: false, error: r.error }, 400);
   }
 
   const r = await checkInTicket(token, by);
