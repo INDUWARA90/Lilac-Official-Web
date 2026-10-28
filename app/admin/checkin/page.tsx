@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getDrawUnlocked } from "@/lib/app-config";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { TicketCheckinToggle } from "@/components/admin/TicketCheckinToggle";
+import { LiveTicketStateRefresh } from "@/components/checkin/LiveTicketStateRefresh";
 import { formatTimeAndDate } from "@/lib/format";
 import { fetchAll } from "@/lib/supabase/fetch-all";
 
@@ -108,6 +109,8 @@ export default async function AdminCheckinPage({
         Every issued ticket. Door staff normally scan the QR, but you can check anyone in by
         hand here. Use “Undo check-in” to correct a mistaken check-in.
       </p>
+
+      <LiveTicketStateRefresh />
 
       <div className="mt-4 grid grid-cols-3 gap-3 sm:max-w-md">
         {[

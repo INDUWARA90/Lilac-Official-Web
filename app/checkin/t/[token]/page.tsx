@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireCheckin } from "@/lib/checkin-auth";
 import { getTicketByToken } from "@/lib/tickets";
 import { CheckinPanel } from "@/components/checkin/CheckinPanel";
+import { LiveTicketStateRefresh } from "@/components/checkin/LiveTicketStateRefresh";
 
 export const metadata: Metadata = { title: "Ticket", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -35,7 +36,14 @@ export default async function ScanResultPage({
           <div className="mt-1 text-sm font-normal">{purchaseStatus.replace("_", " ")}</div>
         </div>
       ) : (
-        <CheckinPanel token={token} initiallyCheckedIn={Boolean(ticket.checked_in_at)} />
+        <>
+          <CheckinPanel
+            key={ticket.checked_in_at ?? "not-checked-in"}
+            token={token}
+            initiallyCheckedIn={Boolean(ticket.checked_in_at)}
+          />
+          <LiveTicketStateRefresh />
+        </>
       )}
 
       <a href="/checkin" className="mt-8 inline-block font-sans text-sm text-accent-strong">
