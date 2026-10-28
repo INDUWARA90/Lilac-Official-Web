@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Action = "checkin" | "checkout";
 
@@ -12,6 +13,7 @@ export function CheckinPanel({
   token: string;
   initiallyCheckedIn: boolean;
 }) {
+  const router = useRouter();
   const [checkedIn, setCheckedIn] = useState(initiallyCheckedIn);
   const [busy, setBusy] = useState<Action | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -37,6 +39,9 @@ export function CheckinPanel({
         const nowCheckedIn = action === "checkin";
         setCheckedIn(nowCheckedIn);
         setMessage(nowCheckedIn ? "Checked in" : "Checked out");
+        // Keep the server-rendered ticket state in sync without requiring a
+        // manual page refresh. The local state above updates the UI first.
+        router.refresh();
       } else {
         if (data.alreadyAt) setCheckedIn(true);
         setError(data.error ?? "Could not update this ticket.");
