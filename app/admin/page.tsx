@@ -50,6 +50,7 @@ export default async function AdminDashboard() {
     settings,
     { data: entryRows },
     { data: approved },
+    { data: recentTickets },
   ] = await Promise.all([
     db.from("entries").select("*", head),
     db.from("draws").select("*", head),
@@ -76,6 +77,11 @@ export default async function AdminDashboard() {
         .order("id")
         .range(from, to),
     ),
+    db
+      .from("tickets")
+      .select("id, holder_name, seat_label, checked_in_at, checked_in_by, purchase:ticket_purchases(reference)")
+      .order("created_at", { ascending: false })
+      .limit(12),
   ]);
 
   const totalC = total.count ?? 0;
@@ -130,6 +136,17 @@ export default async function AdminDashboard() {
       seatingPrice={formatLkr(settings.seatingPriceLkr)}
       standingPrice={formatLkr(settings.standingPriceLkr)}
       drawUnlocked={drawUnlocked}
+      recentTickets={(recentTickets ?? []).map((ticket) => {
+        const purchase = Array.isArray(ticket.purchase) ? ticket.purchase[0] : ticket.purchase;
+        return {
+          id: ticket.id,
+          holderName: ticket.holder_name,
+          reference: purchase?.reference ?? "Unknown",
+          seatLabel: ticket.seat_label,
+          checkedInAt: ticket.checked_in_at,
+          checkedInBy: ticket.checked_in_by,
+        };
+      })}
     />
   );
 }

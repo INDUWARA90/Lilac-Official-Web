@@ -3,6 +3,8 @@ import { CountUp } from "@/components/ui/decor/CountUp";
 import { DrawLock } from "@/components/admin/DrawLock";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { ArtistRevealToggle } from "@/components/admin/ArtistRevealToggle";
+import { LiveTicketStateRefresh } from "@/components/checkin/LiveTicketStateRefresh";
+import { formatTimeAndDate } from "@/lib/format";
 import type { ArtistLineupEntry } from "@/lib/artist-lineup";
 
 type BreakdownData = { title: string; data: [string, number][] };
@@ -20,6 +22,7 @@ export function AdminDashboardView({
   seatingPrice,
   standingPrice,
   drawUnlocked,
+  recentTickets,
 }: {
   email: string;
   artistLineup: readonly ArtistLineupEntry[];
@@ -32,10 +35,19 @@ export function AdminDashboardView({
   seatingPrice: string;
   standingPrice: string;
   drawUnlocked: boolean;
+  recentTickets: {
+    id: string;
+    holderName: string;
+    reference: string;
+    seatLabel: string;
+    checkedInAt: string | null;
+    checkedInBy: string | null;
+  }[];
 }) {
   return (
     <AdminShell email={email}>
       <h1 className="text-2xl text-ink">Dashboard</h1>
+      <LiveTicketStateRefresh />
 
       <h2 className="mt-6 font-sans text-sm font-semibold uppercase tracking-wider text-ink-muted">
         Raffle funnel
@@ -99,6 +111,46 @@ export function AdminDashboardView({
         {buyers} confirmed purchase{buyers === 1 ? "" : "s"} · Seating {seatingPrice} /
         Standing {standingPrice}.
       </p>
+
+      <h2 className="mt-8 font-sans text-sm font-semibold uppercase tracking-wider text-ink-muted">
+        Live ticket watch
+      </h2>
+      <div className="mt-3 overflow-x-auto rounded-card border border-hairline">
+        <table className="w-full border-collapse font-sans text-sm">
+          <thead>
+            <tr className="border-b border-hairline text-left text-ink-muted">
+              <th className="px-4 py-2 font-medium">Holder</th>
+              <th className="px-4 py-2 font-medium">Reference</th>
+              <th className="px-4 py-2 font-medium">Seat</th>
+              <th className="px-4 py-2 font-medium">State</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentTickets.map((ticket) => (
+              <tr key={ticket.id} className="border-b border-hairline last:border-0">
+                <td className="px-4 py-2 text-ink">{ticket.holderName}</td>
+                <td className="px-4 py-2 font-mono text-xs text-ink-muted">{ticket.reference}</td>
+                <td className="px-4 py-2 text-ink-muted">{ticket.seatLabel}</td>
+                <td className="px-4 py-2">
+                  {ticket.checkedInAt ? (
+                    <span className="text-green-700">
+                      Checked in {formatTimeAndDate(ticket.checkedInAt)}
+                      {ticket.checkedInBy ? ` by ${ticket.checkedInBy}` : ""}
+                    </span>
+                  ) : (
+                    <span className="text-ink-muted">Not checked in</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {recentTickets.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-4 py-6 text-center text-ink-muted">No issued tickets yet.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <h2 className="mt-8 font-sans text-sm font-semibold uppercase tracking-wider text-ink-muted">
         Public artist photos
