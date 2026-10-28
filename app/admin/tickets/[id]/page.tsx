@@ -133,7 +133,7 @@ export default async function TicketPurchasePage({
         </div>
       )}
 
-      {purchase.status === "approved" && (
+      {session.role === "admin" && purchase.status === "approved" && (
         <div className="mt-6">
           <TicketDeactivateActions purchaseId={purchase.id} />
         </div>

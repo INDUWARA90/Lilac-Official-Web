@@ -21,11 +21,17 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> },
 ) {
   // Generous cap — never trips real door traffic, blunts a runaway script.
-  if (!(await checkRateLimit(`checkin-action:${getClientIp(req.headers)}`, 240, 60_000)).ok) {
+  const [rateLimit, checkinOk] = await Promise.all([
+    checkRateLimit(`checkin-action:${getClientIp(req.headers)}`, 1_200, 60_000),
+    hasCheckinSession(),
+  ]);
+  if (!rateLimit.ok) {
     return json({ ok: false, error: "Too many requests." }, 429);
   }
 
-  const [checkinOk, adminSession] = await Promise.all([hasCheckinSession(), getAdminSession()]);
+  // Door staff use the scoped session, so skip admin-cookie verification on
+  // their normal scan path. Admin credentials remain a supported fallback.
+  const adminSession = checkinOk ? null : await getAdminSession();
   if (adminSession?.role === "tshirt_manager" || (!checkinOk && !adminSession)) {
     return json({ ok: false, error: "Not authorised." }, 401);
   }

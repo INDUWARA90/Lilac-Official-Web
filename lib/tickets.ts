@@ -254,7 +254,7 @@ export async function createPurchase(input: {
 export async function approvePurchase(
   purchaseId: string,
   by: string,
-): Promise<{ ok: boolean; error?: string; emailSent?: boolean }> {
+): Promise<{ ok: boolean; error?: string }> {
   const db = createAdminClient();
 
   // Claim the purchase atomically FIRST, guarded on its current status, before
@@ -325,12 +325,11 @@ export async function approvePurchase(
     return { ok: false, error: "Could not issue the tickets. Try again." };
   }
 
-  // The local NestJS SMTP service sends this one purchase immediately. If it
-  // is offline, `npm run send:pending` later finds this approved purchase.
-  return { ok: true, emailSent: await notifyTicketMailer(purchase.id) };
+  return { ok: true };
 }
 
-async function notifyTicketMailer(purchaseId: string): Promise<boolean> {
+/** Queue the approved-purchase notification after its admin action responds. */
+export async function notifyTicketMailer(purchaseId: string): Promise<boolean> {
   const { url, apiKey } = serverEnv.ticketMailer;
   if (!url || !apiKey) return false;
   try {
@@ -435,7 +434,7 @@ export async function deactivatePurchase(
   purchaseId: string,
   by: string,
   note: string,
-): Promise<{ ok: boolean; error?: string; emailSent?: boolean }> {
+): Promise<{ ok: boolean; error?: string }> {
   const db = createAdminClient();
   const now = new Date().toISOString();
   const { data: purchase, error } = await db
@@ -474,7 +473,7 @@ export async function deactivatePurchase(
   }
 
   revalidatePath("/tickets");
-  return { ok: true, emailSent: await notifyTicketDeactivationMailer(purchaseId) };
+  return { ok: true };
 }
 
 /** Restores a legacy cancelled purchase to the same replacement-review flow. */
@@ -512,7 +511,8 @@ export async function restoreCancelledPurchaseToReview(
   return { ok: true };
 }
 
-async function notifyTicketDeactivationMailer(purchaseId: string): Promise<boolean> {
+/** Queue the ticket-withdrawal notification after its admin action responds. */
+export async function notifyTicketDeactivationMailer(purchaseId: string): Promise<boolean> {
   const { url, apiKey } = serverEnv.ticketMailer;
   if (!url || !apiKey) return false;
   try {
@@ -639,13 +639,13 @@ export async function checkInTicket(
   by: string,
 ): Promise<{ ok: boolean; error?: string; alreadyAt?: string }> {
   const db = createAdminClient();
-  const { data: ticket } = await db.from("tickets").select("*").eq("token", token).maybeSingle();
-  if (!ticket) return { ok: false, error: "Ticket not found." };
-  const { data: purchase } = await db
-    .from("ticket_purchases")
-    .select("status")
-    .eq("id", ticket.purchase_id)
+  const { data: ticket } = await db
+    .from("tickets")
+    .select("id, checked_in_at, purchase:ticket_purchases!inner(status)")
+    .eq("token", token)
     .maybeSingle();
+  if (!ticket) return { ok: false, error: "Ticket not found." };
+  const purchase = Array.isArray(ticket.purchase) ? ticket.purchase[0] : ticket.purchase;
   if (purchase?.status !== "approved") {
     return { ok: false, error: "This ticket is no longer valid." };
   }
@@ -683,13 +683,14 @@ export async function checkInTicket(
 
 export async function undoCheckIn(token: string): Promise<{ ok: boolean; error?: string }> {
   const db = createAdminClient();
-  const { data: ticket } = await db.from("tickets").select("id").eq("token", token).maybeSingle();
-  if (!ticket) return { ok: false, error: "Ticket not found." };
-  const { error } = await db
+  const { data: updated, error } = await db
     .from("tickets")
     .update({ checked_in_at: null, checked_in_by: null })
-    .eq("id", ticket.id);
+    .eq("token", token)
+    .select("id")
+    .maybeSingle();
   if (error) return { ok: false, error: "Could not update the ticket." };
+  if (!updated) return { ok: false, error: "Ticket not found." };
   return { ok: true };
 }
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { after } from "next/server";
 import { getAdminSession } from "@/lib/auth";
 import {
   approvePurchase,
@@ -7,6 +8,8 @@ import {
   rejectPurchase,
   checkInTicket,
   markTicketEmailSentManually,
+  notifyTicketDeactivationMailer,
+  notifyTicketMailer,
   undoCheckIn,
   updateTicketSettings,
 } from "@/lib/tickets";
@@ -67,13 +70,18 @@ export async function POST(req: Request) {
 
   if (input.action === "approve") {
     const r = await approvePurchase(input.purchaseId, session.email);
-    return r.ok
-      ? json({ ok: true, emailSent: r.emailSent })
-      : json({ ok: false, error: r.error }, 400);
+    if (!r.ok) return json({ ok: false, error: r.error }, 400);
+    after(() => notifyTicketMailer(input.purchaseId));
+    return json({ ok: true });
   }
   if (input.action === "deactivate") {
+    if (session.role !== "admin") {
+      return json({ ok: false, error: "Not authorised." }, 403);
+    }
     const r = await deactivatePurchase(input.purchaseId, session.email, input.note ?? "");
-    return r.ok ? json({ ok: true, emailSent: r.emailSent }) : json({ ok: false, error: r.error }, 400);
+    if (!r.ok) return json({ ok: false, error: r.error }, 400);
+    after(() => notifyTicketDeactivationMailer(input.purchaseId));
+    return json({ ok: true });
   }
   if (input.action === "restore_cancelled_to_review") {
     const r = await restoreCancelledPurchaseToReview(input.purchaseId, session.email);
