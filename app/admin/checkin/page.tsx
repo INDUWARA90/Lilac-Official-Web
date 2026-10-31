@@ -13,17 +13,20 @@ export const metadata: Metadata = { title: "Check-in", robots: { index: false } 
 export const dynamic = "force-dynamic";
 
 type Filter = "all" | "in" | "out";
+type TicketTypeFilter = "seating" | "standing" | null;
 
 export default async function AdminCheckinPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; f?: string; faculty?: string }>;
+  searchParams: Promise<{ q?: string; f?: string; faculty?: string; type?: string }>;
 }) {
   const session = await requireAdmin();
   const sp = await searchParams;
   const q = (sp.q ?? "").trim().slice(0, 80);
   const filter: Filter = sp.f === "in" ? "in" : sp.f === "out" ? "out" : "all";
   const facultyFilter = (sp.faculty ?? "").trim().slice(0, 150);
+  const ticketTypeFilter: TicketTypeFilter =
+    sp.type === "seating" || sp.type === "standing" ? sp.type : null;
 
   const db = createAdminClient();
   const [{ data: tickets }, { data: purchases }] = await Promise.all([
@@ -65,6 +68,12 @@ export default async function AdminCheckinPage({
     );
   }
   if (facultyFilter) rows = rows.filter((r) => r.purchase?.faculty === facultyFilter);
+  // Every issued ticket's label starts with its type (for example, "Seating"
+  // or "Standing 2 of 3"), including mixed orders where one purchase contains
+  // both types.
+  if (ticketTypeFilter) {
+    rows = rows.filter((r) => normalize(r.seat_label).startsWith(ticketTypeFilter));
+  }
   const total = rows.length;
   const inCount = rows.filter((r) => r.checked_in_at).length;
   const outCount = total - inCount;
@@ -77,6 +86,7 @@ export default async function AdminCheckinPage({
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (facultyFilter) params.set("faculty", facultyFilter);
+    if (ticketTypeFilter) params.set("type", ticketTypeFilter);
     if (f !== "all") params.set("f", f);
     const href = params.toString() ? `/admin/checkin?${params}` : "/admin/checkin";
     return (
@@ -141,6 +151,14 @@ export default async function AdminCheckinPage({
             {faculties.map((faculty) => <option key={faculty} value={faculty}>{faculty}</option>)}
           </select>
         </label>
+        <label className="flex min-w-40 flex-col gap-1 font-sans text-xs text-ink-muted">
+          Ticket type
+          <select name="type" defaultValue={ticketTypeFilter ?? ""} className="rounded-field border border-hairline bg-transparent px-3 py-1.5 text-sm text-ink focus:border-accent focus:outline-none">
+            <option value="">All ticket types</option>
+            <option value="seating">Seating</option>
+            <option value="standing">Standing</option>
+          </select>
+        </label>
         {filter !== "all" && <input type="hidden" name="f" value={filter} />}
         <button
           type="submit"
@@ -148,7 +166,7 @@ export default async function AdminCheckinPage({
         >
           Search
         </button>
-        {(q || facultyFilter) && (
+        {(q || facultyFilter || ticketTypeFilter) && (
           <Link
             href="/admin/checkin"
             className="rounded-field border border-hairline px-4 py-2 font-sans text-sm font-medium text-ink-muted hover:border-accent hover:text-accent-strong"
